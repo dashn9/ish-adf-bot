@@ -5,7 +5,7 @@ from typing import Union
 IMPLICITLY_WAIT_TIME = 15
 
 # Selenium Web Drivers Locations
-WEB_DRIVERS_BASE_LOCATION = "/home/kali/PycharmProjects/ish_bots/SeleniumWebDrivers"
+WEB_DRIVERS_BASE_LOCATION = "/home/ubuntu/ish-adf-bot/SeleniumWebDrivers"
 
 WEB_DRIVERS_CHROME_LOCATION = "/Chrome"
 CHROME_WEBDRIVER = "/chromedriver"
