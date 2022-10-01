@@ -1,0 +1,38 @@
+import os
+# With Great Power Comes Great Responsibility
+
+# Time Constants
+IMPLICITLY_WAIT_TIME = 15
+
+# FULL WORKING DIRECTORY
+FULL_DIRECTORY_PATH = os.path.dirname(os.path.realpath(__file__)).replace("/constants", "")
+
+# Selenium Web Drivers Locations
+WEB_DRIVERS_BASE_LOCATION = "/SeleniumWebDrivers"
+
+WEB_DRIVERS_CHROME_LOCATION = "/Chrome"
+CHROME_WEBDRIVER = "/chromedriver"
+
+WEB_DRIVERS_GECKO_LOCATION = "/Gecko"
+GECKO_WEBDRIVER = "/geckodriver"
+
+WEB_DRIVERS_FIREFOX_LOCATION = "/Gecko"
+FIREFOX_WEBDRIVER = "/geckodriver"
+
+BOT_MAX_ALIVE_TIME = 90
+BOT_MIN_ALIVE_TIME = 35
+
+MAX_OVPN_CONNECT_RETRIES = 1
+OVPN_MAX_WAIT_TIME_TILL_IP_IMPROVISE = 7
+
+PX_VALUE_TO_CHECK_WHEN_SCROLL_TO_POINT = 250
+
+NORDVPN_OVPN_FILE_PATH = os.getenv("NORDVPN_OVPN_FILE_PATH")
+
+IPVANISH_OVPN_FILE_PATH = os.getenv("IPVANISH_OVPN_FILE_PATH")
+
+SCREEN_WIDTH = os.getenv("SCREEN_WIDTH")
+
+SCREEN_HEIGHT = os.getenv("SCREEN_HEIGHT")
+
+UP_TASKBAR_HEIGHT = 5
