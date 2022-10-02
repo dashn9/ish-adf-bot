@@ -239,13 +239,13 @@ class Identity:
                                  password=vpn_account["PASSWORD"])
                 break
 
-            elif "Enter Username" in line:
+            elif "Enter Auth Username" in line:
                 print("No Potential Username Found In Configuration")
                 self.data_controller.update_vpn_account_status(vpn_client, vpn_account["ID"], 0)
                 print("Fetching New Account And Reconnecting")
                 self.connect_vpn(vpn_client, vpn_file_name)
                 break
-            elif "Enter Password" in line:
+            elif "Enter Auth Password" in line:
                 print("No Potential Password Found In Configuration")
                 self.data_controller.update_vpn_account_status(vpn_client, vpn_account["ID"], 0)
                 print("Fetching New Account And Reconnecting")

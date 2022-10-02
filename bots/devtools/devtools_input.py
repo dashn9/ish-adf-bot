@@ -256,22 +256,21 @@ class Touchscreen:
         # Touches appear to be lost during the first frame after navigation.
         # This waits a frame before sending the tap.
         # @see https:#crbug.com/613219
-        self.webdriver.execute_cdp_cmd('_runtime.evaluate', dict(
-            expression='new Promise(x => requestAnimation_frame(() => requestAnimation_frame(x)))',
-            awaitPromise=True
-        ))
+        #self.webdriver.execute_cdp_cmd('_runtime.evaluate', dict(
+        #    expression='new Promise(x => requestAnimation_frame(() => requestAnimation_frame(x)))',
+        #    awaitPromise=True
+        #))
 
-        touch_points = [{x: round(x), y: round(y)}]    
+        touch_points = [{"x": round(x), "y": round(y)}]
+        print("tap: ",touch_points)
         self.webdriver.execute_cdp_cmd('Input.dispatchTouchEvent', dict(
             type='touchStart',
-            touchPoints=touch_points,
-            modifiers=self.keyboard.modifiers
+            touchPoints=touch_points
         ))
-
+        time.sleep(random.uniform(0.01, 0.04))
         self.webdriver.execute_cdp_cmd('Input.dispatchTouchEvent', dict(
             type='touchEnd',
-            touchPoints=[],
-            modifiers=self.keyboard.modifiers
+            touchPoints=[]
         ))
 
     def simulate_human_touch_movement_with_mouse(self, start_point=(0, 0), end_point=(0, 0), duration=3):

@@ -459,8 +459,8 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
                             scroll_with_touch(False, 1)
                         else:
                             scroll(K_Keys["ArrowDown"])
-                            if not has_page_offset_changed():
-                                return True
+                        if not has_page_offset_changed():
+                            return True
                         element_browser_coordinates = self.get_element_window_location_screen_offsets(html_web_element)
                 elif element_browser_coordinates["html_web_element"][2] < \
                         element_browser_coordinates["browser_window_rect"][1]:
@@ -470,8 +470,8 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
                             scroll_with_touch(True, 1)
                         else:
                             scroll(K_Keys["ArrowUp"])
-                            if not has_page_offset_changed():
-                                return True
+                        if not has_page_offset_changed():
+                            return True
                         element_browser_coordinates = self.get_element_window_location_screen_offsets(html_web_element)
 
         else:
@@ -763,11 +763,12 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
             link_to_follow = links_to_follow[rand.randint(0, len(links_to_follow) - 1)]
             self.move_pointing_device_to_element(link_to_follow)
             if self.touch:
-                element_location_and_dimensions = self.get_element_window_location_screen_offsets(link_to_follow)
-                self.touch.tap(element_location_and_dimensions["area_width"] +
-                               rand.uniform(0, element_location_and_dimensions["area_width"]),
-                               element_location_and_dimensions["area_height"] +
-                               rand.uniform(0, element_location_and_dimensions["area_height"])
+                print("tapping")
+                element_location_and_dimensions = self.get_element_location_window_offset(link_to_follow)
+                self.touch.tap(element_location_and_dimensions["x_offset"] +
+                               rand.uniform(0, link_to_follow.rect["width"]),
+                               element_location_and_dimensions["y_offset"] +
+                               rand.uniform(0, link_to_follow.rect["height"])
                                )
             else:
                 pyautogui.click()
