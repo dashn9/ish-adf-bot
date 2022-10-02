@@ -77,7 +77,6 @@ while True:
                 web_bot.read_element_content(web_bot.web_browser_driver.find_element(page_content_element_type,
                                                                                      page_content_element_name))
                 if page_info.get("related_articles_elements_type") and page_info.get("related_articles_elements_name"):
-                    identity.page_depth = 1
                     while random.random() < identity.page_depth:
                         web_bot.time_activated = time.time()
                         web_bot.open_link_in_related_articles_section(web_bot.web_browser_driver.find_elements(

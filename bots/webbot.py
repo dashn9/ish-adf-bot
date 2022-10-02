@@ -431,18 +431,18 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
                         element_browser_coordinates["browser_window_rect"][1]:
                     while element_browser_coordinates["html_web_element"][1] >= \
                             element_browser_coordinates["browser_window_rect"][1]:
-                        if self.touch:
+                        if isinstance(self.touch, Touchscreen):
                             scroll_with_touch(True, 1)
                         else:
                             scroll(K_Keys["ArrowDown"])
-                            if not has_page_offset_changed():
-                                return True
+                        if not has_page_offset_changed():
+                            return True
                         element_browser_coordinates = self.get_element_window_location_screen_offsets(html_web_element)
                 elif element_browser_coordinates["html_web_element"][1] < \
                         element_browser_coordinates["browser_window_rect"][1]:
                     while element_browser_coordinates["html_web_element"][1] <= \
                             element_browser_coordinates["browser_window_rect"][1]:
-                        if self.touch:
+                        if isinstance(self.touch, Touchscreen):
                             scroll_with_touch(False, 1)
                         else:
                             scroll(K_Keys["ArrowUp"])
@@ -455,19 +455,19 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
                         element_browser_coordinates["browser_window_rect"][2]:
                     while element_browser_coordinates["html_web_element"][2] >= \
                             element_browser_coordinates["browser_window_rect"][2]:
-                        if self.touch:
-                            scroll_with_touch(False, 1)
+                        if isinstance(self.touch, Touchscreen):
+                            scroll_with_touch(True, 1)
                         else:
                             scroll(K_Keys["ArrowDown"])
                         if not has_page_offset_changed():
                             return True
                         element_browser_coordinates = self.get_element_window_location_screen_offsets(html_web_element)
-                elif element_browser_coordinates["html_web_element"][2] < \
+                elif element_browser_coordinates["html_web_element"][1] < \
                         element_browser_coordinates["browser_window_rect"][1]:
-                    while element_browser_coordinates["html_web_element"][2] <= \
+                    while element_browser_coordinates["html_web_element"][1] <= \
                             element_browser_coordinates["browser_window_rect"][1]:
-                        if self.touch:
-                            scroll_with_touch(True, 1)
+                        if isinstance(self.touch, Touchscreen):
+                            scroll_with_touch(False, 1)
                         else:
                             scroll(K_Keys["ArrowUp"])
                         if not has_page_offset_changed():
@@ -515,7 +515,7 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
         def offset_adjuster(offset_to_adjust_to, html_web_element):
             element_coordinates = self.get_element_location_window_offset(html_web_element)
             if offset_to_adjust_to > element_coordinates["y_offset"]:
-                if self.touch:
+                if isinstance(self.touch, Touchscreen):
                     while offset_to_adjust_to >= element_coordinates["y_offset"]:
                         if not has_page_offset_changed():
                             return True
@@ -537,7 +537,7 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
                     if rand.random() > 0.5:
                         random_miscellaneous_key_presses(0.75)
             elif offset_to_adjust_to < element_coordinates["y_offset"]:
-                if self.touch:
+                if isinstance(self.touch, Touchscreen):
                     while offset_to_adjust_to <= element_coordinates["y_offset"]:
                         if not has_page_offset_changed():
                             return True
@@ -762,8 +762,9 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
             self.bring_window_to_front()
             link_to_follow = links_to_follow[rand.randint(0, len(links_to_follow) - 1)]
             self.move_pointing_device_to_element(link_to_follow)
-            if self.touch:
-                print("tapping")
+            time.sleep(rand.uniform(0.2, 0.8))
+            if isinstance(self.touch, Touchscreen):
+                time.sleep(rand.uniform(0.3, 0.5))
                 element_location_and_dimensions = self.get_element_location_window_offset(link_to_follow)
                 self.touch.tap(element_location_and_dimensions["x_offset"] +
                                rand.uniform(0, link_to_follow.rect["width"]),
@@ -920,13 +921,13 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
         """
         if simulate_human_behaviour:
             self.scroll_element_into_vertical_view(html_web_element, element_scroll_to=1)
-            element_screen_position = self.get_element_window_location_screen_offsets(html_web_element)
-            el_pos = dict(area_x=element_screen_position["html_web_element"][0],
-                          area_y=element_screen_position["html_web_element"][1],
-                          area_width=html_web_element.rect["width"],
-                          area_height=html_web_element.rect["height"])
+            if not isinstance(self.touch, Touchscreen):
+                element_screen_position = self.get_element_window_location_screen_offsets(html_web_element)
+                el_pos = dict(area_x=element_screen_position["html_web_element"][0],
+                              area_y=element_screen_position["html_web_element"][1],
+                              area_width=html_web_element.rect["width"],
+                              area_height=html_web_element.rect["height"])
 
-            if not self.touch:
                 self.simulate_human_mouse_move_behavior_to_area(el_pos["area_x"]+1, el_pos["area_y"]+1,
                                                                 el_pos["area_width"]-2, el_pos["area_height"]-2,
                                                                 x_coordinates_offset_percentage=rand.randint(0, 100),
@@ -1011,7 +1012,7 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
     def open_web_browser(self):
         open_browser_in_full_screen = True
         window_size = (bot_constants.SCREEN_WIDTH, bot_constants.SCREEN_HEIGHT)
-        if rand.random() < 0.05:
+        if rand.random() < 0.05 and self.identity.device_type == "is_pc":
             open_browser_in_full_screen = False
             window_size = utils.fetch_random_window_size_relative_to_screen(
                 bot_constants.SCREEN_WIDTH, bot_constants.SCREEN_HEIGHT)

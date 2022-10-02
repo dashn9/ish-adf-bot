@@ -262,7 +262,7 @@ class Touchscreen:
         #))
 
         touch_points = [{"x": round(x), "y": round(y)}]
-        print("tap: ",touch_points)
+        print("tapped screen @:",touch_points)
         self.webdriver.execute_cdp_cmd('Input.dispatchTouchEvent', dict(
             type='touchStart',
             touchPoints=touch_points
