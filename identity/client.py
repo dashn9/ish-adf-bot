@@ -194,8 +194,8 @@ class Identity:
             raise ValueError("vpn client has to match either nordvpn or openvpn")
 
         bash_command = f"sudo openvpn --config {config_dir + vpn_file_name}" \
-                       f" --auth-user-pass ./identity/account_details.temp.conf --server-poll-timeout " \
-                       f"{bot_constants.OVPN_MAX_WAIT_TIME_TILL_IP_IMPROVISE}"
+                       f" --auth-user-pass ./identity/account_details.temp.conf --auth-nocache --server-poll-timeout " \
+                       f"{bot_constants.OVPN_MAX_WAIT_TIME_TILL_IP_IMPROVISE} &"
 
         temp_acc_file = open("./identity/account_details.temp.conf", "w")
         temp_acc_file.write(vpn_account["USERNAME"] + "\n" + vpn_account["PASSWORD"])
@@ -203,6 +203,7 @@ class Identity:
         print(f"Connecting To OpenVPN({vpn_client}) Server On File: {vpn_file_name}")
         ovpn_process = subprocess.Popen(bash_command, stdout=subprocess.PIPE,
                                         stderr=subprocess.PIPE, shell=True)
+
 
         for line in ovpn_process.stdout:
             line = line.decode()
