@@ -147,7 +147,8 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
             if is_small_distance:
                 x_coordinates_to_move_to = int(x_coordinates_to_move_to)
                 y_coordinates_to_move_to = int(y_coordinates_to_move_to)
-                human_curve = HumanCurve(pyautogui.position(), (x_coordinates_to_move_to, y_coordinates_to_move_to))
+                human_curve = HumanCurve(pyautogui.position(), (x_coordinates_to_move_to, y_coordinates_to_move_to),
+                                         targetPoints=50)
                 human_curve.points = human_curve.generateCurve(offsetBoundaryX=0, offsetBoundaryY=0, \
                                                                leftBoundary=x_coordinates_to_move_to,
                                                                rightBoundary=x_coordinates_to_move_to + 1, \
@@ -222,7 +223,8 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
                 x_coordinates_to_move_to = int(x_coordinates_to_move_to)
                 y_coordinates_to_move_to = int(y_coordinates_to_move_to)
 
-                human_curve = HumanCurve(pyautogui.position(), (x_coordinates_to_move_to, y_coordinates_to_move_to))
+                human_curve = HumanCurve(pyautogui.position(), (x_coordinates_to_move_to, y_coordinates_to_move_to),
+                                         targetPoints=50)
                 human_curve.points = human_curve.generateCurve(offsetBoundaryX=0, offsetBoundaryY=0, \
                                                                leftBoundary=x_coordinates_to_move_to,
                                                                rightBoundary=x_coordinates_to_move_to + 1, \
@@ -670,7 +672,7 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
         if mode == "arrow_keys":
             multiplier = 1
             if owing_misc_time >= 1:
-                multiplier = 2.3
+                multiplier = 2.6
             self.read_with_arrow_keys(html_web_element, px_to_adjust_by * multiplier, K_Keys["ArrowDown"], True)
         elif mode == "wheel":
             self.mouse.mouse_wheel(*pyautogui.position(), px_to_adjust_by, deltaY=self.identity.mouse_delta_y)
@@ -683,7 +685,7 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
             if "present_mouse_points" in kwargs:
                 multiplier = 1
                 if owing_misc_time >= 1:
-                    multiplier = 3
+                    multiplier = 2.2
                 mouse_x, mouse_y = pyautogui.position()
                 mouse_x += utils.fetch_percentage_value(browser_inner_size["height"], rand.randint(-1, 1))
                 mouse_y += ((px_to_adjust_by*multiplier / self.web_browser_driver.execute_script(
@@ -844,11 +846,11 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
                 mode = "touch"
             elif isinstance(self.mouse, Mouse):
                 mode = "wheel"
-                if rand.random() < 0.55 and WebBot.active_on_mouse_movement.value < 0:
+                if rand.random() < 0.75 and WebBot.active_on_mouse_movement.value < 0:
                     WebBot.active_on_mouse_movement.value = self.bot_process_id
                     mode = "mouse_to_scrollbar"
                     self.bring_window_to_front()
-            elif rand.random() < 0.55 and WebBot.active_on_mouse_movement.value < 0:
+            elif rand.random() < 0.75 and WebBot.active_on_mouse_movement.value < 0:
                 WebBot.active_on_mouse_movement.value = self.bot_process_id
                 mode = "mouse_to_scrollbar"
                 self.bring_window_to_front()

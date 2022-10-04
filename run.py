@@ -49,7 +49,6 @@ if not boc.SCREEN_HEIGHT:
           " Set An ENV Variable SCREEN_HEIGHT")
     exit()
 while True:
-
     identity = Identity()
     identity.auto_initiate_identity("scr", [boc.SCREEN_WIDTH, boc.SCREEN_HEIGHT])
     try:
@@ -72,7 +71,7 @@ while True:
                 web_bot.time_activated = time.time()
                 web_bot.web_browser_driver.get(page_info.get("page_url"))
                 time.sleep(random.uniform(0, 2))
-                if web_bot.identity.device_type == "is_pc" and random.random() < 0.6:
+                if web_bot.identity.device_type == "is_pc" and random.random() < 0.2:
                     web_bot.move_mouse_to_random_area_on_screen()
                 web_bot.read_element_content(web_bot.web_browser_driver.find_element(page_content_element_type,
                                                                                      page_content_element_name))
@@ -111,7 +110,6 @@ while True:
 
         active_bot_processes = []
         WebBot.active_on_mouse_movement.value = -498
-        identity.disconnect_all_vpn()
         print("Successfully Completed Activity For Identity:", identity.id)
     except Exception as err:
         print("Something Went Wrong, Most Probably Server Refuses To Provide Identity, "

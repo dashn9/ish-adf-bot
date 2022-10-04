@@ -8,6 +8,7 @@ from constants import bot_constants
 from bots import utils
 
 class Identity:
+    ovpn_process = None
     def __init__(self, id=None, device_type="", hardware="", user_agent_os="", platform="",
                  canvas_fp_offset=None, audio_context_fp_offset=None, font_fp_offset=None, webgl_fp_offset=None,
                  hardware_concurrency=None, memory=None, has_mouse=None, has_battery=None, has_touch=None,
@@ -168,23 +169,29 @@ class Identity:
             return None
 
     def disconnect_all_vpn(self):
-        print("Closing Existing Openvpn Connections")
-        ovpn_kill_command = 'sudo killall openvpn'
-        try:
-            ovpn_kill_process = subprocess.Popen(ovpn_kill_command.split(), stdout=subprocess.PIPE,
-                                               stderr=subprocess.PIPE)
-            ovpn_kill_process.wait(10)
+        if Identity.ovpn_process is not None:
+            print("Closing Program Openvpn Connection")
+            Identity.ovpn_process.kill()
             self.is_vpn_connected = False
-        except:
-            pass
+        else:
+            print("Closing All Existing Openvpn Connections")
+            ovpn_kill_command = 'sudo killall openvpn'
+            try:
+                ovpn_kill_process = subprocess.Popen(ovpn_kill_command.split(), stdout=subprocess.PIPE,
+                                                   stderr=subprocess.PIPE)
+                ovpn_kill_process.wait(10)
+                self.is_vpn_connected = False
+            except:
+                pass
 
     def connect_vpn(self, vpn_client, vpn_file_name, **kwargs):
-        if self.is_vpn_connected:
-            self.disconnect_all_vpn()
         if "id" in kwargs.keys() and "username" in kwargs.keys() and "password" in kwargs.keys():
             vpn_account = {"ID": kwargs["id"], "USERNAME": kwargs["username"], "PASSWORD": kwargs["password"]}
         else:
             vpn_account = self.data_controller.fetch_vpn_account_details(vpn_client)
+
+        if self.is_vpn_connected:
+            self.disconnect_all_vpn()
 
         if vpn_client == "nordvpn":
             config_dir = bot_constants.NORDVPN_OVPN_FILE_PATH
@@ -194,18 +201,17 @@ class Identity:
             raise ValueError("vpn client has to match either nordvpn or openvpn")
 
         bash_command = f"sudo openvpn --config {config_dir + vpn_file_name}" \
-                       f" --auth-user-pass ./identity/account_details.temp.conf --auth-nocache --server-poll-timeout " \
-                       f"{bot_constants.OVPN_MAX_WAIT_TIME_TILL_IP_IMPROVISE} &"
+                       f" --auth-user-pass {bot_constants.FULL_DIRECTORY_PATH}/identity/account_details.temp.conf " \
+                       f"--auth-nocache --server-poll-timeout {bot_constants.OVPN_MAX_WAIT_TIME_TILL_IP_IMPROVISE}"
 
-        temp_acc_file = open("./identity/account_details.temp.conf", "w")
+        temp_acc_file = open(f"{bot_constants.FULL_DIRECTORY_PATH}/identity/account_details.temp.conf", "w")
         temp_acc_file.write(vpn_account["USERNAME"] + "\n" + vpn_account["PASSWORD"])
         temp_acc_file.close()
         print(f"Connecting To OpenVPN({vpn_client}) Server On File: {vpn_file_name}")
-        ovpn_process = subprocess.Popen(bash_command, stdout=subprocess.PIPE,
+        Identity.ovpn_process = subprocess.Popen("exec "+bash_command, stdout=subprocess.PIPE,
                                         stderr=subprocess.PIPE, shell=True)
 
-
-        for line in ovpn_process.stdout:
+        for line in Identity.ovpn_process.stdout:
             line = line.decode()
 
             if "AUTH_FAILED" in line:
@@ -246,3 +252,13 @@ class Identity:
                 print("Fetching New Account And Reconnecting")
                 self.connect_vpn(vpn_client, vpn_file_name)
                 break
+        if not self.is_vpn_connected:
+            print("VPN Could Not Prove Connected For Some Other Reason, Switching VPN File And Reconnecting")
+            time.sleep(0.8)
+            self.improvised_public_ip = True
+            config_file = utils.fetch_random_file_name_from_directory(config_dir, "ovpn")
+            self.connect_vpn(vpn_client, config_file, id=vpn_account["ID"], username=vpn_account["USERNAME"],
+                             password=vpn_account["PASSWORD"])
+            return False
+        else:
+            return True
