@@ -1014,7 +1014,7 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
     def open_web_browser(self):
         open_browser_in_full_screen = True
         window_size = (bot_constants.SCREEN_WIDTH, bot_constants.SCREEN_HEIGHT)
-        if rand.random() < 0.05 and self.identity.device_type == "is_pc":
+        if rand.random() < 0.08 and self.identity.device_type == "is_pc":
             open_browser_in_full_screen = False
             window_size = utils.fetch_random_window_size_relative_to_screen(
                 bot_constants.SCREEN_WIDTH, bot_constants.SCREEN_HEIGHT)
@@ -1062,6 +1062,7 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
         if self.identity.has_touch == "has_touch":
             self.touch = Touchscreen(self.web_browser_driver, self.keyboard)
         self.web_browser_driver.implicitly_wait(bot_constants.IMPLICITLY_WAIT_TIME)
+        self.web_browser_driver.set_window_position(0, 0)
         if open_browser_in_full_screen:
             self.web_browser_driver.maximize_window()
         else:
