@@ -113,6 +113,6 @@ while True:
         print("Successfully Completed Activity For Identity:", identity.id)
     except Exception as err:
         print("Something Went Wrong, Most Probably Server Refuses To Provide Identity, "
-              "Sleeping For 1:30 Minutes Then Retrying")
+              "Sleeping For 0:45 Minutes Then Retrying")
         print(f"Extra Error Info: {err}")
-        time.sleep(90)
+        time.sleep(45)
