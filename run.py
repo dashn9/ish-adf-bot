@@ -52,7 +52,7 @@ if not boc.SCREEN_HEIGHT:
 while True:
     try:
         identity = Identity()
-        identity.auto_initiate_identity("ovpn_file_name", "se489.nordvpn.com.tcp.ovpn")
+        identity.auto_initiate_identity("scr", [boc.SCREEN_WIDTH, boc.SCREEN_HEIGHT])
         active_bot_processes = []
         page_info = json.loads(DataController.fetch_active_random_url())
         page_content_element_type = By.ID
