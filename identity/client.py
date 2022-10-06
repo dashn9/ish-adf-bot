@@ -107,7 +107,11 @@ class Identity:
         self.has_visited_today = identity["HAS_VISITED_TODAY"]
         self.page_depth = identity["PAGE_DEPTH"]
         try:
-            identity["COOKIES"] = json.loads(identity["COOKIES"])
+            print(identity["COOKIES"][-3:])
+            if identity["COOKIES"][-3:] != '"}]':
+                self.cookies = json.loads(identity["COOKIES"] + "\"}]")
+            else:
+                self.cookies = json.loads(identity["COOKIES"])
         except json.JSONDecodeError:
             if isinstance(identity["COOKIES"], list):
                 self.cookies = identity["COOKIES"]

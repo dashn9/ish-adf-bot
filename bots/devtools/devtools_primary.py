@@ -38,3 +38,4 @@ def get_all_cookies(web_driver: WebDriver):
 def set_all_cookies(web_driver: WebDriver, cookies):
     if isinstance(web_driver, Chrome):
         return web_driver.execute_cdp_cmd("Network.setCookies", {"cookies": cookies})
+
