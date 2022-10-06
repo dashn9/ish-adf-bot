@@ -107,7 +107,6 @@ class Identity:
         self.has_visited_today = identity["HAS_VISITED_TODAY"]
         self.page_depth = identity["PAGE_DEPTH"]
         try:
-            print(identity["COOKIES"][-3:])
             if identity["COOKIES"][-3:] != '"}]':
                 self.cookies = json.loads(identity["COOKIES"] + "\"}]")
             else:
@@ -217,7 +216,6 @@ class Identity:
 
         for line in Identity.ovpn_process.stdout:
             line = line.decode()
-
             if "AUTH_FAILED" in line:
                 print("Account Details Seems To Be Ineffective --> id, username, password", vpn_account["ID"],
                       vpn_account["USERNAME"], vpn_account["PASSWORD"])
@@ -240,8 +238,7 @@ class Identity:
                 self.data_controller.update_vpn_account_status(vpn_client, vpn_account["ID"], 1)
                 self.is_vpn_connected = True
                 break
-            elif "Connection timed out" in line:
-
+            elif "Connection timed out" in line or "connection failed" in line:
                 print("OVPN Seems To Be Stuck Connecting, Most Probably A Dead OVPN Config File, Less Likely Internet "
                       "Issues(Check To Make Sure). Improvising New Ip Address Via Another OVPN Config File")
                 self.improvised_public_ip = True

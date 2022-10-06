@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 import getopt
 import os
 import random
@@ -51,7 +52,7 @@ if not boc.SCREEN_HEIGHT:
 while True:
     try:
         identity = Identity()
-        identity.auto_initiate_identity("scr", [boc.SCREEN_WIDTH, boc.SCREEN_HEIGHT])
+        identity.auto_initiate_identity("ovpn_file_name", "se489.nordvpn.com.tcp.ovpn")
         active_bot_processes = []
         page_info = json.loads(DataController.fetch_active_random_url())
         page_content_element_type = By.ID
@@ -113,6 +114,11 @@ while True:
         print("Successfully Completed Activity For Identity:", identity.id)
     except Exception as err:
         print("Something Went Wrong, Most Probably Server Refuses To Provide Identity, "
-              "Sleeping For 0:45 Minutes Then Retrying")
+              "Sleeping For 0:40 Minutes Then Restarting Script")
         print(f"Extra Error Info: {err}")
-        time.sleep(45)
+        time.sleep(40)
+        try:
+            os.execv(sys.argv[0], sys.argv)
+            quit()
+        except:
+            pass
