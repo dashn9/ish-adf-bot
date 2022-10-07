@@ -214,8 +214,10 @@ class Identity:
         Identity.ovpn_process = subprocess.Popen("exec "+bash_command, stdout=subprocess.PIPE,
                                         stderr=subprocess.PIPE, shell=True)
 
+        line_count = 0
         for line in Identity.ovpn_process.stdout:
             line = line.decode()
+            line_count += 1
             if "AUTH_FAILED" in line:
                 print("Account Details Seems To Be Ineffective --> id, username, password", vpn_account["ID"],
                       vpn_account["USERNAME"], vpn_account["PASSWORD"])
@@ -253,6 +255,11 @@ class Identity:
                 print("Fetching New Account And Reconnecting")
                 self.connect_vpn(vpn_client, vpn_file_name)
                 break
+
+            elif line_count >= 130:
+                print("OVPN Connection Is Most Likely Stuck On Connecting With No Effective Logic To Analyze Results, "
+                      "Raising Error")
+                raise TimeoutError("VPN Connection Most Likely Stuck ON Loop")
         if not self.is_vpn_connected:
             print("VPN Could Not Prove Connected For Some Other Reason, Switching VPN File And Reconnecting")
             time.sleep(0.8)

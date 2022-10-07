@@ -114,9 +114,9 @@ while True:
         print("Successfully Completed Activity For Identity:", identity.id)
     except Exception as err:
         print("Something Went Wrong, Most Probably Server Refuses To Provide Identity, "
-              "Sleeping For 0:40 Minutes Then Restarting Script")
+              "Sleeping For 0:30 Minutes Then Restarting Script")
         print(f"Extra Error Info: {err}")
-        time.sleep(40)
+        time.sleep(30)
         try:
             os.execv(sys.argv[0], sys.argv)
             quit()
