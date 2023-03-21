@@ -17,8 +17,9 @@ def activate_all_focus(web_driver: WebDriver):
 def change_user_agent(web_driver: WebDriver, user_agent, platform="Win32", language=['en-US', 'en']):
     if isinstance(web_driver, Chrome):
         web_driver.execute_cdp_cmd("Emulation.setUserAgentOverride",
-                                    {'userAgent': user_agent, 'platform': platform, 'language': language})
-
+                                   {'userAgent': user_agent, 'language': language, 'platform': platform})
+        web_driver.execute_cdp_cmd("Network.setUserAgentOverride",
+                                   {'userAgent': user_agent, 'language': language, 'platform': platform})
 
 def set_hardware_concurrency(web_driver: WebDriver, hc=4):
     if isinstance(web_driver, Chrome):
@@ -29,11 +30,13 @@ def set_timezone(web_driver: WebDriver, timezone="Etc/GMT"):
     if isinstance(web_driver, Chrome):
         web_driver.execute_cdp_cmd("Emulation.setTimezoneOverride", {"timezoneId": timezone})
 
-
 def get_all_cookies(web_driver: WebDriver):
     if isinstance(web_driver, Chrome):
         return web_driver.execute_cdp_cmd("Network.getAllCookies", {})["cookies"]
 
+def clear_all_cookies(web_driver: WebDriver):
+    if isinstance(web_driver, Chrome):
+        return web_driver.execute_cdp_cmd("Network.clearBrowserCookies", {})
 
 def set_all_cookies(web_driver: WebDriver, cookies):
     if isinstance(web_driver, Chrome):

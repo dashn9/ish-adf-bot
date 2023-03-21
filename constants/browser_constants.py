@@ -14,3 +14,13 @@ FIREFOX_ID = 2
 # Browser Binaries/Executables Locations
 CHROME_BINARY_LOCATION = r"/bin/google-chrome-stable"
 FIREFOX_BINARY_LOCATION = r"/opt/firefox/firefox"
+
+# Ad Values
+AD_PROVIDERS = ["propeller_ads"]
+# Attribute And Name Of Class
+AD_ATTR = ["class"]
+AD_ATTR_NAME = "image-block"
+# Attribute And Name Of Button To Close Class
+AD_CLOSE_ATTR = ["class"]
+AD_CLOSE_ATTR_NAME = ["btoa"]
+

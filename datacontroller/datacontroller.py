@@ -1,5 +1,6 @@
 import json
 import requests
+import subprocess
 
 
 class DataController:
@@ -11,53 +12,73 @@ class DataController:
         self.server_api_addr = "http://34.226.239.19/api/"
 
     def fetch_an_identity(self, method, value):
+        session = requests.session()
         if isinstance(value, list):
             value = json.dumps(value)
         req_url = f"get_a_bot_identity.php?method={method}&value={value}"
-        identity = requests.get(self.server_api_addr + req_url, timeout=DataController.timeout)
+        identity = session.get(self.server_api_addr + req_url, timeout=DataController.timeout)
         identity.close()
         if identity.text == "void":
             return False
         return identity.json()
 
-    def fetch_timezone(self, identity_id):
+    def fetch_timezone(self, identity_id, proxy=None, use_curl=True):
+        session = requests.session()
         req_url = "fetch_update_timezone.php"
         if identity_id:
             identity_id = str(identity_id)
             req_url = req_url + "?id=" + identity_id
-        identity_timezone = requests.get(self.server_api_addr + req_url, timeout=DataController.timeout)
-        identity_timezone.close()
-        return identity_timezone.json()
+            if proxy:
+                session.proxies = {
+                    'http': 'http://' + proxy,
+                    'https': 'http://' + proxy
+                }
+            identity_timezone = session.get("https://finnsec.us/api/" + req_url, timeout=DataController.timeout,
+                                            verify=False)
+            print(identity_timezone.content)
+            identity_timezone.close()
+            return identity_timezone.json()
 
-    def fetch_geolocation_data(self):
+    def fetch_geolocation_data(self, proxy=None):
+        session = requests.session()
         api_endpoint = "http://ip-api.com/json?fields=34652445"
-        ip_geolocation = requests.get(api_endpoint, timeout=DataController.timeout)
+        if proxy:
+            session.proxies = {
+                "http": "http://"+proxy,
+                "https": "https://"+proxy
+            }
+        ip_geolocation = session.get(api_endpoint, timeout=DataController.timeout)
         return ip_geolocation.json()
 
     def identity_visited_webpage(self, identity_id, page_id):
         pass
 
     def update_cookies(self, uid, cookies):
+        session = requests.session()
         if isinstance(cookies, list):
             cookies = json.dumps(cookies)
-        req_url = "update_cookies_for_identity.php?identity_id=" + str(uid) + "&cookies=" + cookies
-        cookies_update = requests.get(self.server_api_addr + req_url, timeout=DataController.timeout)
+        req_url = "update_cookies_for_identity.php"
+        cookies_update = session.post(self.server_api_addr + req_url, data={"identity_id": str(uid), "cookies": cookies},
+                                      timeout=DataController.timeout)
+        print("cookie update: " + cookies_update.text)
         cookies_update.close()
 
     def fetch_vpn_account_details(self, vpn_client):
+        session = requests.session()
         req_url = "get_a_vpn_account.php?vpn_client="+vpn_client
-        vpn_account = requests.get(self.server_api_addr+req_url, timeout=DataController.timeout)
+        vpn_account = session.get(self.server_api_addr+req_url, timeout=DataController.timeout)
         vpn_account.close()
         return vpn_account.json()
 
     def update_vpn_account_status(self, vpn_client, vpn_account_id, vpn_account_status):
+        session = requests.session()
         auth_status = "AUTH_VALID"
         vpn_account_id = str(vpn_account_id)
         if vpn_account_status == 0:
             auth_status = "AUTH_INVALID"
         req_url = "update_vpn_account.php?vpn_client=" + vpn_client +\
             "&account_id=" + vpn_account_id + "&account_status=" + auth_status
-        vpn_account_update = requests.get(self.server_api_addr + req_url, timeout=DataController.timeout)
+        vpn_account_update = session.get(self.server_api_addr + req_url, timeout=DataController.timeout)
         vpn_account_update.close()
         if vpn_account_update.text == "successful":
             print(f"Successfully Updated {vpn_client} Account ID: {vpn_account_id}")
@@ -67,6 +88,7 @@ class DataController:
 
     @staticmethod
     def fetch_active_random_url():
+        session = requests.session()
         req_url = "fetch_active_urls.php?amount=rand"
-        page_details = requests.get(DataController.server_api_addr + req_url, timeout=DataController.timeout)
+        page_details = session.get(DataController.server_api_addr + req_url, timeout=DataController.timeout)
         return page_details.text

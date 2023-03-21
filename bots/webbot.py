@@ -2,12 +2,14 @@
 
 # Standard Library Imports
 import ctypes
+import random
 import re
 import pytweening
 import random as rand
 from threading import Thread
 from multiprocessing import Value
-
+import requests_cache as cached_requests
+import requests as main_requests
 # External Python Packages
 import time
 
@@ -18,8 +20,10 @@ from seleniumwire.thirdparty.mitmproxy.net.http import encoding
 from selenium.webdriver.remote import webdriver as remote_webdriver
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
-
+from selenium.common.exceptions import TimeoutException
 import pyautogui
 
 from pyclick import HumanClicker, HumanCurve
@@ -39,7 +43,8 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
             self, identity=None,
             browser_to_use_id=browser_constants.CHROME_ID,
             driver_path=f"{bot_constants.FULL_DIRECTORY_PATH}/SeleniumWebDrivers/Chrome/chromedriver",
-            bot_process_id=None
+            bot_process_id=None,
+            no_of_clicks=0
     ):
         """
         :param url: List of urls as List or a Single url String To Visit
@@ -80,6 +85,21 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
         self.human_clicker = HumanClicker()
         self.last_document_offsets = [0, 0]
         self.referer_use_times = 0
+        self.no_of_clicks = no_of_clicks
+        self.probability_of_click = 0.45
+        self.main_page_handle = None
+        self.current_tab_length = 1
+        self.cached_requests_session = cached_requests.CachedSession(bot_constants.FULL_DIRECTORY_PATH + '/requests_cache')
+        self.requests_session = main_requests.Session()
+        self.total_request_size = 0
+        self.uncached_response_size = 0
+        self.cached_response_size = 0
+        self.url_through_proxy_response_size = 0
+        self.urls_cached = set()
+        self.urls_through_proxy = set()
+        self.proxy=None
+        self.to_click_ad = False
+        self.ad_with_keyword_wait_counter = 0
 
         # pyclick
         self.human_clicker = HumanClicker()
@@ -143,7 +163,7 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
             self.human_clicker = HumanClicker()
 
             human_curve = None
-            duration = rand.uniform(0.2, 2)
+            duration = rand.uniform(0.2, 1.2)
             if is_small_distance:
                 x_coordinates_to_move_to = int(x_coordinates_to_move_to)
                 y_coordinates_to_move_to = int(y_coordinates_to_move_to)
@@ -173,7 +193,9 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
             return {'x': int(x_coordinates_to_move_to), 'y': int(y_coordinates_to_move_to)}
 
         if move_to_new_thread:
-            return Thread(target=move_operations).start()
+            t = Thread(target=move_operations)
+            t.daemon = True
+            return t.start()
         else:
             return move_operations()
 
@@ -218,7 +240,7 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
 
             self.human_clicker = HumanClicker()
             human_curve = None
-            duration = rand.uniform(0.2, 2)
+            duration = rand.uniform(0.2, 1.2)
             if is_small_distance:
                 x_coordinates_to_move_to = int(x_coordinates_to_move_to)
                 y_coordinates_to_move_to = int(y_coordinates_to_move_to)
@@ -252,7 +274,9 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
             return {'x': int(x_coordinates_to_move_to), 'y': int(y_coordinates_to_move_to)}
 
         if move_to_new_thread:
-            return Thread(target=move_operations).start()
+            t = Thread(target=move_operations)
+            t.daemon = True
+            return t.start()
         else:
             return move_operations()
 
@@ -365,6 +389,10 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
                     browser_window_rect.get("x"), browser_window_rect.get("y"), browser_window_rect_bottom)}
 
     def get_document_offset_from_screen(self):
+        """
+        This method calculates the dimensions of the document page of a browser relative to the screen
+        :return: A dictionary holding document dimensions
+        """
         browser_inner_size = self.get_browser_inner_size()
         browser_window_rect = self.web_browser_driver.get_window_rect()
         return dict(y=browser_window_rect["y"] + (browser_window_rect["height"] - browser_inner_size["height"]),
@@ -521,7 +549,7 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
                     while offset_to_adjust_to >= element_coordinates["y_offset"]:
                         if not has_page_offset_changed():
                             return True
-                        scroll_with_touch(False, 0.2)
+                        scroll_with_touch(False, 0.5)
                         element_coordinates = self.get_element_location_window_offset(html_web_element)
                 else:
                     while offset_to_adjust_to >= element_coordinates["y_offset"]:
@@ -543,7 +571,7 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
                     while offset_to_adjust_to <= element_coordinates["y_offset"]:
                         if not has_page_offset_changed():
                             return True
-                        scroll_with_touch(True, 0.2)
+                        scroll_with_touch(True, 0.5)
                         element_coordinates = self.get_element_location_window_offset(html_web_element)
                 else:
                     while offset_to_adjust_to <= element_coordinates["y_offset"]:
@@ -597,11 +625,16 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
                                      is_asychronous=False,
                                      counter=0):
         pyautogui.mouseDown()
+        while self.revert_to_main_page():
+            pyautogui.mouseUp()
+            pyautogui.mouseDown()
+
         self.simulate_human_mouse_move_behavior_to_point(
             coordinates_offset_overshoot['x'], coordinates_offset_overshoot['y'],
             coordinates_offset_overshoot['x_offset_percentage'], coordinates_offset_overshoot['y_offset_percentage'],
             coordinates_offset_overshoot['max_overshoot'], coordinates_offset_overshoot['probability_of_overshoot'],
             True, is_asychronous)
+        pyautogui.mouseUp()
         return counter
 
     def read_with_touch(self, px_to_adjust_by, duration, force_screen_reset=False):
@@ -656,9 +689,130 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
         if not duration:
             duration = rand.uniform(0.1, 2)
         self.touch.simulate_human_touch_movement_with_mouse((x_start, y_start), (x_end, y_end), duration)
+        self.smart_click_trigger((x_start, y_start), self.identity.device_type)
+        self.revert_to_main_page()
+
+    def smart_ad_click(self):
+        if self.to_click_ad:
+            try:
+                ads_dimensions = self.locate_ad_elements(ads_elements_type=self.ad_links_type,
+                                                         ads_elements_name=self.ad_links_name, duration_to_look_for=0.5)
+                if not isinstance(self.ad_keywords, list) or self.ad_with_keyword_wait_counter >= 2:
+                    print(f"Bot Process Id {self.bot_process_id} <:::> Keywords won't be used as basis for ad click")
+                    self.ad_click(rand.choice(ads_dimensions))
+                    self.to_click_ad = False
+                else:
+                    for ad_dimensions in ads_dimensions:
+                        for keyword in self.ad_keywords:
+                            if keyword in ad_dimensions["text_content"]:
+                                self.ad_click(ad_dimensions)
+                                self.to_click_ad = False
+                                print(f"Bot Process Id {self.bot_process_id} <:::> Keyword was used as a base to click an ad")
+                                break
+                        else:
+                            continue
+                        break
+                if self.to_click_ad:
+                    self.ad_with_keyword_wait_counter += 1
+                    print(f"Bot Process Id {self.bot_process_id} <:::> Ad with any of keywords wasn't found, Try again")
+            except TimeoutException:
+                print(f"Bot Process Id {self.bot_process_id} <:::> No ads found, Try again")
+
+    def ad_click(self, ad_dimensions: dict):
+        if self.identity.device_type == "is_pc":
+            previous_mouse_pos = pyautogui.position()
+            self.simulate_human_mouse_move_behavior_to_area(ad_dimensions["x"], ad_dimensions["y"],
+                                                            ad_dimensions["width"], ad_dimensions["height"],
+                                                            x_coordinates_offset_percentage=rand.randint(0, 100),
+                                                            y_coordinates_offset_percentage=rand.randint(0, 100),
+                                                            max_overshoot=35,
+                                                            probability_of_overshoot=round(rand.random(), 2))
+            pyautogui.click()
+            self.revert_to_main_page()
+            self.simulate_human_mouse_move_behavior_to_point(previous_mouse_pos[0], previous_mouse_pos[1])
+        elif self.identity.device_type == "is_smartphone":
+            self.touch.tap(ad_dimensions["x"] +
+                           rand.uniform(0, ad_dimensions["width"]),
+                           ad_dimensions["y"] +
+                           rand.uniform(0, ad_dimensions["height"])
+                           )
+            self.revert_to_main_page()
+
+
+    def locate_ad_elements(self, ads_elements_type, ads_elements_name: str, duration_to_look_for=55):
+        def iframe_check():
+            wait = WebDriverWait(self.web_browser_driver, duration_to_look_for)
+            iframe = wait.until(EC.presence_of_element_located((By.TAG_NAME, "iframe")))
+            if self.identity.device_type == "is_smartphone":
+                iframe_offset = self.get_element_location_window_offset(iframe)
+            else:
+                iframe_offset = self.get_element_window_location_screen_offsets(iframe)["html_web_element"]
+            self.web_browser_driver.switch_to.frame(iframe)
+
+            ads_elements = wait.until(
+                EC.presence_of_all_elements_located((ads_elements_type, ads_elements_name)))
+            ads_elements_rect = []
+            for ad_element in ads_elements:
+                rect = ad_element.rect.copy()
+                if self.identity.device_type == "is_smartphone":
+                    rect["x"] = iframe_offset["x_offset"] + rect["x"]
+                    rect["y"] = iframe_offset["y_offset"] + rect["y"]
+                else:
+                    rect["x"] = iframe_offset[0] + rect["x"]
+                    rect["y"] = iframe_offset[1] + rect["y"]
+                rect["text_content"] = ad_element.text
+                ads_elements_rect.append(rect)
+            self.web_browser_driver.switch_to.default_content()
+            return ads_elements_rect
+        if ads_elements_type == "xpath":
+            ads_elements_type = By.XPATH
+        elif ads_elements_type == "class":
+            ads_elements_type = By.CLASS_NAME
+        elif ads_elements_type == "id":
+            ads_elements_type = By.ID
+        else:
+            print(f"Bot Process Id {self.bot_process_id} <:::> The ads type you are trying to locate is not supported")
+            return
+        if ads_elements_name.startswith("//iframe"):
+            ads_elements_name = ads_elements_name[8:]
+            if iframe_check():
+                time.sleep(1)
+                return iframe_check()
+
+    def click_trigger(self, x_coord=50, y_coord=50, device_type="is_pc"):
+        if device_type == "is_smartphone":
+            self.touch.tap(x_coord, y_coord)
+            return True
+        elif device_type == "is_pc":
+            pyautogui.click()
+            return True
+        else:
+            print(f"Bot Process Id {self.bot_process_id} <:::> The device type you are attempting to click on is unknown")
+            return False
+
+    def smart_click_trigger(self, coords=(100, 100), device_type="is_pc"):
+        if self.no_of_clicks > 0:
+            if rand.uniform(0, 1) <= self.probability_of_click:
+                self.probability_of_click -= utils.fetch_percentage_value(self.probability_of_click, 15)
+                self.no_of_clicks -= 1
+                self.click_trigger(coords[0], coords[1], device_type)
+                print(f"Bot Process Id {self.bot_process_id} <:::> Click was triggered successfully")
+                return True
+            else:
+                self.probability_of_click += utils.fetch_percentage_value(self.probability_of_click, 15)
+                return False
+        return False
+
+    def set_ad_behaviour_environment(self, ad_links_type, ad_links_name, maximum_no_of_ads=1, ad_keywords=None):
+        self.to_click_ad = True
+        self.ad_links_type = ad_links_type
+        self.ad_links_name = ad_links_name
+        self.maximum_no_of_ads = maximum_no_of_ads
+        self.ad_keywords = ad_keywords
 
     def looper(self, read_time, direction_to_move, html_web_element, total_px_to_adjust_by,
                rem_px_to_adjust_by, rem_read_time, owing_misc_time, mode="arrow_keys", **kwargs):
+        self.smart_ad_click()
         element_coordinates = self.get_element_location_window_offset(html_web_element)
         browser_inner_size = self.get_browser_inner_size()
         if rand.randint(0, 1):
@@ -677,7 +831,7 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
         elif mode == "wheel":
             self.mouse.mouse_wheel(*pyautogui.position(), px_to_adjust_by, deltaY=self.identity.mouse_delta_y)
         elif mode == "touch":
-            read_duration = 2
+            read_duration = 2.5
             if owing_misc_time >= 1:
                 read_duration = round(rand.uniform(0.1, 0.3), 2)
             self.read_with_touch(px_to_adjust_by, read_duration)
@@ -687,7 +841,7 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
                 if owing_misc_time >= 1:
                     multiplier = 2.2
                 mouse_x, mouse_y = pyautogui.position()
-                mouse_x += utils.fetch_percentage_value(browser_inner_size["height"], rand.randint(-1, 1))
+                mouse_x += utils.fetch_percentage_value(browser_inner_size["height"], rand.randint(0, 1))
                 mouse_y += ((px_to_adjust_by*multiplier / self.web_browser_driver.execute_script(
                     "return document.body.getBoundingClientRect().height")) * browser_inner_size["height"])
                 kwargs["present_mouse_points"]["x"] = mouse_x
@@ -740,6 +894,7 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
         rem_read_time -= seconds_to_hang_for
         # print(f"Bot Process Id {self.bot_process_id} <:::> Advancing In Read --> Reading Element(Bottom: {element_coordinates['bottom']})")
 
+        print("secs track", seconds_to_hang_for, rem_read_time, owing_misc_time)
         time.sleep(round(seconds_to_hang_for, 2))
         if rem_px_to_adjust_by > 0 and element_coordinates.get("bottom") > \
                 (browser_inner_size.get("height") + utils.fetch_percentage_value(browser_inner_size.get("height"), 40)):
@@ -768,13 +923,23 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
             if isinstance(self.touch, Touchscreen):
                 time.sleep(rand.uniform(0.3, 0.5))
                 element_location_and_dimensions = self.get_element_location_window_offset(link_to_follow)
+                # Do click continually until page remained unchanged after click
                 self.touch.tap(element_location_and_dimensions["x_offset"] +
                                rand.uniform(0, link_to_follow.rect["width"]),
                                element_location_and_dimensions["y_offset"] +
                                rand.uniform(0, link_to_follow.rect["height"])
                                )
+                while self.revert_to_main_page():
+                    self.touch.tap(element_location_and_dimensions["x_offset"] +
+                                   rand.uniform(0, link_to_follow.rect["width"]),
+                                   element_location_and_dimensions["y_offset"] +
+                                   rand.uniform(0, link_to_follow.rect["height"])
+                                   )
             else:
+                # Do click continually until page remained unchanged after click
                 pyautogui.click()
+                while self.revert_to_main_page():
+                    pyautogui.click()
             print(f"Bot Process Id {self.bot_process_id} <:::> Done Attempting To Open A Link In Related Articles")
             time.sleep(0.3)
             WebBot.active_on_mouse_movement.value = -self.bot_process_id if self.bot_process_id != 0 else -500
@@ -846,11 +1011,11 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
                 mode = "touch"
             elif isinstance(self.mouse, Mouse):
                 mode = "wheel"
-                if rand.random() < 0.75 and WebBot.active_on_mouse_movement.value < 0:
+                if rand.random() < 0.85 and WebBot.active_on_mouse_movement.value < 0:
                     WebBot.active_on_mouse_movement.value = self.bot_process_id
                     mode = "mouse_to_scrollbar"
                     self.bring_window_to_front()
-            elif rand.random() < 0.75 and WebBot.active_on_mouse_movement.value < 0:
+            elif rand.random() < 0.88 and WebBot.active_on_mouse_movement.value < 0:
                 WebBot.active_on_mouse_movement.value = self.bot_process_id
                 mode = "mouse_to_scrollbar"
                 self.bring_window_to_front()
@@ -873,12 +1038,18 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
         self.web_browser_driver.switch_to.window(self.web_browser_driver.current_window_handle)
 
     def move_mouse_to_fool_exit_point(self):
+        """
+        Attempts to move mouse towards the browser exit button
+        :return: Boolean
+        """
         if WebBot.active_on_mouse_movement.value < 0:
             WebBot.active_on_mouse_movement.value = self.bot_process_id
             self.bring_window_to_front()
             self.simulate_human_mouse_move_behavior_to_point(rand.randint(0, bot_constants.SCREEN_WIDTH), 4)
             time.sleep(0.5)
             WebBot.active_on_mouse_movement.value = -self.bot_process_id if self.bot_process_id != 0 else -500
+            return True
+        return False
 
     def move_mouse_to_random_area_on_screen(self):
         if WebBot.active_on_mouse_movement.value < 0:
@@ -945,6 +1116,72 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
             request.headers.add_header("Referer", self.identity.referer)
             self.referer_use_times += 1
 
+    def track_request_size(self, request):
+        print(f"Request url: {request.url}[{request.method}]")
+        request_size = len(request.body or '') / 1024
+        self.total_request_size += request_size
+
+    def track_response_size(self, request, response):
+        print(f"Response url: {request.url}[{response.status_code}]")
+        if request.url in self.urls_through_proxy:
+            self.url_through_proxy_response_size += len(response.body or '') / 1024
+            self.urls_through_proxy.remove(request.url)
+        elif request.url not in self.urls_cached:
+            self.uncached_response_size += len(response.body or '') / 1024
+        else:
+            print(f'Bot Process Id {self.bot_process_id} <:::> {request.url} is cached')
+            self.urls_cached.remove(request.url)
+            self.cached_response_size += len(response.body or '') / 1024
+
+    def print_total_usage(self):
+        print(f'Bot Process Id {self.bot_process_id} <:::> Total request size: {self.total_request_size:.2f} KB')
+        print(f'Bot Process Id {self.bot_process_id} <:::> Total uncached response size: {self.uncached_response_size:.2f} KB')
+        print(f'Bot Process Id {self.bot_process_id} <:::> Total proxy response size: {self.url_through_proxy_response_size:.2f} KB')
+        print(f'Bot Process Id {self.bot_process_id} <:::> Total cached response size: {self.cached_response_size:.2f} KB')
+        print(f'Bot Process Id {self.bot_process_id} <:::> Total data transferred: '
+              f'{self.total_request_size + self.uncached_response_size + self.url_through_proxy_response_size:.2f} KB')
+
+    def response_interceptor(self, request: request.Request, response: request.Response):
+        if self.terminate_unecessary_redirects(request, response):
+            return
+        self.track_response_size(request, response)
+        self.print_total_usage()
+
+        self.inject_js_to_spoof_fingerprintable_objects_on_website_server_response(request, response)
+
+    def terminate_unecessary_requests(self, request):
+        if request.url.endswith((".crx", "crx3")):
+            request.abort()
+            return True
+        return False
+
+    def terminate_unecessary_redirects(self, request, response):
+        to_terminate_by_host = ["rndhaunteran.com", "woafoame.net", "twnt1.rdtk.io"]
+        if any(host in request.url for host in to_terminate_by_host) and response.status_code in [301, 302]:
+            request.abort()
+            return True
+
+    def request_interceptor(self, request: request.Request):
+        if self.terminate_unecessary_requests(request):
+            return
+        self.track_request_size(request)
+        self.print_total_usage()
+        self.inject_referer_into_header(request)
+        if utils.url_ends_with(request.url, [".html", ".js", ".css", ".jpg", ".jpeg", ".png", ".gif", ".svg", ".woff",
+                                             ".woff2", ".ttf", ".ico", ".webm", ".ogg", ".wav", ".mp3", ".mp4"]):
+            response = self.cached_requests_session.request(url=request.url, headers=request.headers, allow_redirects=False,
+                method=request.method, data=request.body, verify=False)
+            if response.from_cache:
+                self.urls_cached.add(request.url)
+        else:
+            print(f'Bot Process Id {self.bot_process_id} <:::> {request.url} is passing through the proxy')
+            response = self.requests_session.request(url=request.url, headers=request.headers, allow_redirects=False,
+                method=request.method, data=request.body, proxies=self.proxy, verify=False)
+            self.urls_through_proxy.add(request.url)
+
+        response.body = response.content
+        request.response = response
+
     def inject_js_to_spoof_fingerprintable_objects_on_website_server_response(
             self, request: request.Request, response: request.Response):
         """
@@ -973,6 +1210,7 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
                                           self.identity.gpu_renderer), timezone=self.identity.timezone,
                             font_width_offset=self.identity.font_fp_offset[0],
                             font_height_offset=self.identity.font_fp_offset[1],
+                            platform=self.identity.platform,
                             hardware_specs={"hardware_concurrency": self.identity.hardware_concurrency,
                                             "memory": self.identity.memory},
                             has_battery=has_battery, referer=self.identity.referer)
@@ -986,7 +1224,7 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
                             else:
                                 body = utils.insert_text_into_string_reg(
                                     body, fingerprintables_spoof_code, r"(<script>)|(<script .*?>)", True)
-                            body = body.encode()
+                            body = body.encode('utf-8')
                             body = encoding.encode(body, response.headers.get('Content-Encoding', 'identity'))
                             if "content-length" in response.headers:
                                 response.headers.replace_header("content-length", str(len(body)))
@@ -1001,33 +1239,55 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
         time.sleep(sleep_time)
         if hasattr(self, "web_browser_driver"):
             if time.time() - self.time_activated > bot_constants.BOT_MAX_ALIVE_TIME + rand.uniform(-6.5, 6.5):
-                print(f"{self.identity.id} On Process {self.bot_process_id} Could Not Perform "
+                print(f"Identity: {self.identity.id} On Process: {self.bot_process_id} Could Not Perform "
                       f"Activity Within Set Time, Exiting Session...")
-                print(f"Bot Process Id {self.bot_process_id} <:::> Updating Cookies To Cloud")
-                self.update_cookies_to_cloud()
-                self.web_browser_driver.quit()
-                del self.web_browser_driver
-                del self
+                try:
+                    print(f"Bot Process Id {self.bot_process_id} <:::> Updating Cookies To Cloud")
+                    self.update_cookies_to_cloud()
+                    self.web_browser_driver.quit()
+                except Exception:
+                    pass
             else:
                 self.quit_browser_after_max_alive(sleep_time=5)
 
-    def open_web_browser(self):
+    def open_web_browser(self, use_proxy=False):
         open_browser_in_full_screen = True
         window_size = (bot_constants.SCREEN_WIDTH, bot_constants.SCREEN_HEIGHT)
+        # An 8% chance and device is pc that randomly resize the web browser in a manner that is unobstructive
         if rand.random() < 0.08 and self.identity.device_type == "is_pc":
             open_browser_in_full_screen = False
             window_size = utils.fetch_random_window_size_relative_to_screen(
                 bot_constants.SCREEN_WIDTH, bot_constants.SCREEN_HEIGHT)
+        # Opens a chrome browser
         if self.browser_to_use_id == browser_constants.CHROME_ID:
             print(f"Bot Process Id {self.bot_process_id} <:::> Opening Chrome Browser")
             browser_options = webdriver.ChromeOptions()
+            # browser_options.add_argument(f'--disk-cache-dir={bot_constants.FULL_DIRECTORY_PATH}/chrome_cache')
+            browser_options.add_argument('--disable-background-networking')
+            browser_options.add_argument('--disable-background-timer-throttling')
+            browser_options.add_argument('--disable-backgrounding-occluded-windows')
+            browser_options.add_argument('--enable-logging=0')
+            browser_options.add_argument('--disable-remote-fonts')
+            browser_options.add_argument("--disable-extensions")
+            browser_options.add_argument('--disable-gpu')
+            #browser_options.add_argument('--disable-dev-shm-usage')
+            #browser_options.add_argument('--disable-setuid-sandbox')
+            #browser_options.add_argument('--no-sandbox')
+            #browser_options.add_argument('--dns-prefetch-disable')
+            #browser_options.add_argument('--blink-settings=imagesEnabled=false')
+            #browser_options.add_argument('--disable-plugin-discovery')
+            if self.identity.user_agent:
+                browser_options.add_argument(f"--user-agent={self.identity.user_agent}")
             browser_options.binary_location = browser_constants.CHROME_BINARY_LOCATION
             if open_browser_in_full_screen:
                 browser_options.add_argument("--start-maximized")
             else:
                 browser_options.add_argument(f"--window-size={window_size[0]},{window_size[1]}")
+            sw_options = {
+            }
             self.web_browser_driver = sw_uc.Chrome(
-                driver_executable_path=self.driver_path, options=browser_options)
+                driver_executable_path=self.driver_path, options=browser_options, seleniumwire_options=sw_options)
+            # Opens a firefox browser
         elif self.browser_to_use_id == browser_constants.FIREFOX_ID:
             browser_options = webdriver.FirefoxOptions()
             browser_options.binary_location = browser_constants.FIREFOX_BINARY_LOCATION
@@ -1038,6 +1298,7 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
                 desired_capabilities=DesiredCapabilities.FIREFOX)
         print(f"Bot Process Id {self.bot_process_id} <:::> Web Browser Opened")
         print(f"Bot Process Id {self.bot_process_id} <:::> Activating Browser Based On Device Type")
+        # If device to emulate is a smartphone, set chrome to mobile mode
         if self.identity.device_type == "is_smartphone":
             print(f"Bot Process Id {self.bot_process_id} <:::> Device Name:", self.identity.hardware)
             devtools_primary.activate_mobile(self.web_browser_driver,
@@ -1047,15 +1308,21 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
                                                   {"type": "portraitPrimary", "angle": 0},
                                               "mobile": True})
         print(f"Bot Process Id {self.bot_process_id} <:::> Setting Page To Always Be In Focus")
+        # Sets Browser to always be active
         devtools_primary.activate_all_focus(self.web_browser_driver)
         print(f"Bot Process Id {self.bot_process_id} <:::> Setting Cookies From Identity")
+        # Delete existing cookies
+        devtools_primary.clear_all_cookies(self.web_browser_driver)
+        # Sets cookies from identity
         devtools_primary.set_all_cookies(self.web_browser_driver, self.identity.cookies)
+        # If identity has a user agent, change browser user agent to identity's
         if self.identity.user_agent:
-            print(f"Bot Process Id {self.bot_process_id} <:::> Setting User Agent From Identity")
+            print(f"Bot Process Id {self.bot_process_id} <:::> Setting User Agent: {self.identity.user_agent} From Identity")
             devtools_primary.change_user_agent(
                 self.web_browser_driver,
                 self.identity.user_agent, self.identity.platform)
         print(f"Bot Process Id {self.bot_process_id} <:::> Setting Timezone From Identity")
+        # Set Timezone
         devtools_primary.set_timezone(self.web_browser_driver, self.identity.timezone[0])
         self.browser_action_chains = ActionChains(self.web_browser_driver)
         self.keyboard = Keyboard(self.web_browser_driver)
@@ -1068,11 +1335,64 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
         else:
             self.web_browser_driver.set_window_position(0, 0)
             self.web_browser_driver.set_window_size(*window_size)
-        self.web_browser_driver.request_interceptor = self.inject_referer_into_header
+        self.web_browser_driver.request_interceptor = self.request_interceptor
         self.web_browser_driver.response_interceptor = \
-            self.inject_js_to_spoof_fingerprintable_objects_on_website_server_response
-        Thread(target=self.quit_browser_after_max_alive).start()
+            self.response_interceptor
+        # set current page handle
+        self.main_page_handle = self.web_browser_driver.current_window_handle
+        t = Thread(target=self.quit_browser_after_max_alive)
+        t.daemon = True
+        t.start()
+        if use_proxy:
+            proxy_path = self.identity.resolve_proxy_url(self.identity.proxy_geo)
+            print(f"Bot Process Id {self.bot_process_id} <:::> Adding a proxy option for this session on this proxy"
+                  f" path: {proxy_path}")
+            self.proxy = {
+                'http': 'http://' + proxy_path,
+                'https': 'http://' + proxy_path,
+                'no_proxy': 'localhost,127.0.0.1,gstatic.com,www.gstatic.com,update.googleapis.com,'
+                            'chromeupdate.download,*.1e100.net,*.googleusercontent.com,*.your-server.de,igmp.mcast.net'
+            }
 
+
+    def wait_for_element_visible(self, locator):
+        """
+        Waits for an element to be visible on the page
+        :param locator: tuple of (By, locator) used to identify the element
+        :return: the WebElement when it is visible
+        """
+        wait = WebDriverWait(self.web_browser_driver, 10)
+        return wait.until(EC.visibility_of_element_located(locator))
+
+    def revert_to_main_page(self, recurse=False, time_interval_to_check=0.4):
+        """
+        Returns page to main if changed
+        :param time_interval_to_check: number of seconds to wait for before checking, set to zero if wanted instantly
+        :return: True if page changed, else false
+        """
+        time.sleep(time_interval_to_check)
+        # Switch to the new window and capture its handle
+        if self.current_tab_length != len(self.web_browser_driver.window_handles):
+            self.web_browser_driver.switch_to.window(self.main_page_handle)
+            self.current_tab_length = len(self.web_browser_driver.window_handles)
+            if recurse:
+                self.revert_to_main_page(recurse, time_interval_to_check)
+            return True
+        if recurse:
+            self.revert_to_main_page(recurse, time_interval_to_check)
+        return False
+
+    def revert_to_main_page_if_ever_changed(self):
+        """
+        Create Thread object to constantly check if page changed
+        :return: Thread object
+        """
+        t = Thread(target=self.revert_to_main_page, args=(True,))
+        t.daemon = True
+        return t.start()
+
+    def close_ad(self):
+        pass
 
     def fetch_all_cookies(self):
         return devtools_primary.get_all_cookies(self.web_browser_driver)

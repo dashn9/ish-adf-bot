@@ -6,6 +6,7 @@ def return_fingerprintables_spoof_js_code(
         offset_color=None, offset_color_value: Union[int, float, tuple] = 0,
         audio_context_offset: float = 0.0, font_width_offset: int=0,
         font_height_offset: int=0, webgl_offsets: tuple = (0.234567654, 0.05),
+        platform = None,
         webgl_params: tuple=("Google Inc. (Intel)", 15, 12, 14, 14, 13, 4, 4, 4, 4, 3, 3, 3, 3, 6, 11, 12, 12,
                              "Intel(R) HD Graphics"), timezone=["Etc/GMT", 0, "AM Coordinated Time"],
                               hardware_specs={"hardware_concurrency":8, "memory": 8}, has_battery=False, referer=""):
@@ -74,7 +75,7 @@ def return_fingerprintables_spoof_js_code(
             Object.defineProperty(Navigator.prototype, \"deviceMemory\", {\n \
                 \"value\":" + str(hardware_specs["memory"]) + " \n \
             }); \n \
-            if(\"" + str(referer) + "\"){\n \
+            if(\"" + referer + "\"){\n \
                 Object.defineProperty(Document.prototype, \"referrer\", {\n \
                     \"value\":\"" + str(referer) + "\"\n \
                 });\n \
@@ -84,6 +85,11 @@ def return_fingerprintables_spoof_js_code(
                     \"value\": false\n \
                 }); \n\
             }\n\
+            if(\"" + platform + "\" && navigator.platform != \"" + platform + "\"){\n \
+                Object.defineProperty(Navigator.prototype, \"platform\", {\n \
+                    \"value\":\"" + platform + "\"\n \
+                });\n \
+            }\n \
         }\n \
         var font_inject = function() {\n\
             var rand = {\n\
@@ -495,3 +501,9 @@ def fetch_random_window_size_relative_to_screen(screen_width, screen_height):
     dimensions_to_use = (screen_width - fetch_percentage_value(screen_width, random.uniform(6, 30)),
                          screen_height - fetch_percentage_value(screen_height, random.uniform(6, 30)))
     return dimensions_to_use
+
+def url_ends_with(string, endings):
+    for ending in endings:
+        if string.endswith(ending) or (ending+"?" in string):
+            return True
+    return False

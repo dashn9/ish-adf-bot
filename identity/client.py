@@ -13,8 +13,9 @@ class Identity:
                  canvas_fp_offset=None, audio_context_fp_offset=None, font_fp_offset=None, webgl_fp_offset=None,
                  hardware_concurrency=None, memory=None, has_mouse=None, has_battery=None, has_touch=None,
                  browser_name="", browser_version="", screen_resolution=None, gpu_vendor="", gpu_renderer="",
-                 vpn_client="", ovpn_file_name="", referer="", reading_speed=None, timezone=None,
-                 mouse_delta_y=None, cookies=list()):
+                 proxy_client="", proxy_geo="", referer="", reading_speed=None, timezone=None,
+                 mouse_delta_y=None, ad_click_probability=0.2, ad_keywords=None, ad_keywords_click_probability=0.2,
+                 cookies=list()):
         self.identity_raw = None
         self.id = id
         self.device_type = device_type
@@ -41,8 +42,8 @@ class Identity:
             self.screen_height = 1080
         self.gpu_vendor = gpu_vendor
         self.gpu_renderer = gpu_renderer
-        self.vpn_client = vpn_client
-        self.ovpn_file_name = ovpn_file_name
+        self.proxy_client = proxy_client
+        self.proxy_geo = proxy_geo
         self.referer = referer
         self.referrals = None
         self.reading_speed = reading_speed
@@ -50,9 +51,12 @@ class Identity:
         self.timezone = timezone
         self.mouse_delta_y = mouse_delta_y
         self.cookies = cookies
-        self.improvised_public_ip = False
+        self.improvised_public_ip = True
         self.has_visited_today = 0
         self.page_depth = 0.3
+        self.ad_click_probability = ad_click_probability
+        self.ad_keywords = ad_keywords
+        self.ad_keywords_click_probability = ad_keywords_click_probability
 
         self.data_controller = DataController()
 
@@ -96,8 +100,8 @@ class Identity:
             self.screen_height = 1080
         self.gpu_vendor = identity["GPU_VENDOR"]
         self.gpu_renderer = identity["GPU_RENDERER"]
-        self.vpn_client = identity["VPN_CLIENT"]
-        self.ovpn_file_name = identity["OVPN_FILE_NAME"]
+        self.proxy_client = identity["PROXY_CLIENT"]
+        self.proxy_geo = identity["PROXY_GEO"]
         identity["REFERRALS"] = json.loads(identity["REFERRALS"].replace("'", "\""))
         self.referrals = identity["REFERRALS"]
         self.referer = None
@@ -107,41 +111,47 @@ class Identity:
         self.has_visited_today = identity["HAS_VISITED_TODAY"]
         self.page_depth = identity["PAGE_DEPTH"]
         try:
-            if identity["COOKIES"][-3:] != '"}]':
-                self.cookies = json.loads(identity["COOKIES"] + "\"}]")
-            else:
-                self.cookies = json.loads(identity["COOKIES"])
+            if identity["COOKIES"]:
+                if identity["COOKIES"][-3:] != '"}]':
+                    self.cookies = json.loads(identity["COOKIES"] + "\"}]")
+                else:
+                    self.cookies = json.loads(identity["COOKIES"])
         except json.JSONDecodeError:
             if isinstance(identity["COOKIES"], list):
                 self.cookies = identity["COOKIES"]
             else:
                 self.cookies = list()
+        self.ad_click_probability = identity["AD_CLICK_PROBABILITY"]
+        self.ad_keywords = identity["AD_KEYWORDS"]
+        self.ad_keywords_click_probability = identity["AD_KEYWORDS_CLICK_PROBABILITY"]
         self.identity_raw = identity
 
     def auto_initiate_identity(self, method, method_value):
         self.resolve_identity_from_cloud(method, method_value)
         self.resolve_user_agent(self.browser_name, self.user_agent_os, self.browser_version)
-        self.connect_vpn(self.vpn_client, self.ovpn_file_name)
         self.resolve_timezone()
+        # self.connect_vpn(self.vpn_client, self.ovpn_file_name)
         self.resolve_referer()
 
     def resolve_timezone(self):
         if self.improvised_public_ip:
-            geolocation = self.data_controller.fetch_geolocation_data()
+            geolocation = self.data_controller.fetch_geolocation_data(self.resolve_proxy_url(self.proxy_geo, self.proxy_client))
+
             self.timezone = [geolocation["timezone"], geolocation["offset"] / 60, geolocation["continent"] + " " +
                              geolocation["city"] + " Standard Time"]
-        elif not self.identity_raw["TIMEZONE_ID"] and self.identity_raw["TIMEZONE_ID"] != None:
+        elif self.identity_raw["TIMEZONE_ID"]:
             self.timezone = [self.identity_raw["TIMEZONE_ID"], self.identity_raw["TIMEZONE_OFFSET"],
                              self.identity_raw["TIMEZONE_FULL_NAME"]]
         else:
             print("Resolving Timezone From Cloud")
-            identity_timezone = self.data_controller.fetch_timezone(self.id)
+            identity_timezone = self.data_controller.fetch_timezone(self.id, self.resolve_proxy_url(self.proxy_geo, self.proxy_client))
             self.timezone = [identity_timezone["TIMEZONE_ID"], identity_timezone["TIMEZONE_OFFSET"],
                              identity_timezone["TIMEZONE_FULL_NAME"]]
+            print("geo location: ", identity_timezone)
             print("Successfully Resolved Timezone")
 
     def resolve_referer(self):
-        self.referer = self.referrals[random.randint(0, len(self.referrals) - 1)]
+        self.referer = random.choice(self.referrals)
 
     def update_cookies(self, cookies=None):
         if not cookies:
@@ -186,6 +196,20 @@ class Identity:
                 self.is_vpn_connected = False
             except:
                 pass
+
+    def resolve_proxy_url(self, geo_target, proxy_name="smartproxy.com"):
+        if proxy_name == "smartproxy.com":
+            if geo_target:
+                proxy_url = bot_constants.PROXY_STICKY_TEMPLATE.replace("<geo_target_area>", bot_constants.PROXY_GEO_TARGET_AREA)
+                proxy_url = proxy_url.replace("<port>", str(bot_constants.PROXY_PORT))
+                proxy_url = proxy_url.replace("<user>", bot_constants.PROXY_USERNAME)
+                proxy_url = proxy_url.replace("<geo_target>", geo_target)
+                proxy_url = proxy_url.replace("<ss_duration>", str(bot_constants.PROXY_SESSION_DURATION))
+                proxy_url = proxy_url.replace("<pass>", bot_constants.PROXY_PASSWORD)
+                return proxy_url
+            else:
+                return bot_constants.PROXY_RANDOM_TEMPLATE
+        return False
 
     def connect_vpn(self, vpn_client, vpn_file_name, **kwargs):
         if "id" in kwargs.keys() and "username" in kwargs.keys() and "password" in kwargs.keys():
@@ -240,7 +264,7 @@ class Identity:
                 self.data_controller.update_vpn_account_status(vpn_client, vpn_account["ID"], 1)
                 self.is_vpn_connected = True
                 break
-            elif "Connection timed out" in line or "connection failed" in line:
+            elif "Connection timed out" in line or "connection failed" in line or "connection-reset" in line:
                 print("OVPN Seems To Be Stuck Connecting, Most Probably A Dead OVPN Config File, Less Likely Internet "
                       "Issues(Check To Make Sure). Improvising New Ip Address Via Another OVPN Config File")
                 self.improvised_public_ip = True
@@ -256,7 +280,7 @@ class Identity:
                 self.connect_vpn(vpn_client, vpn_file_name)
                 break
 
-            elif line_count >= 130:
+            elif line_count >= 70:
                 print("OVPN Connection Is Most Likely Stuck On Connecting With No Effective Logic To Analyze Results, "
                       "Raising Error")
                 raise TimeoutError("VPN Connection Most Likely Stuck ON Loop")
