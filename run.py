@@ -179,6 +179,6 @@ WebBot.active_on_mouse_movement.value = -498
 print("Successfully Completed Activity For Identity:", identity.id)
 if run_infinitely:
     print("Attempting to rerun operations")
-    os.execv(sys.executable, ['python'] + sys.argv)
+    os.execv(sys.executable, ['python3.9'] + sys.argv)
 else:
     exit()

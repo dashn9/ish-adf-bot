@@ -1169,8 +1169,8 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
         self.inject_referer_into_header(request)
         if utils.url_ends_with(request.url, [".html", ".js", ".css", ".jpg", ".jpeg", ".png", ".gif", ".svg", ".woff",
                                              ".woff2", ".ttf", ".ico", ".webm", ".ogg", ".wav", ".mp3", ".mp4"]):
-            response = self.cached_requests_session.request(url=request.url, headers=request.headers, allow_redirects=False,
-                method=request.method, data=request.body, verify=False)
+            response = self.cached_requests_session.request(url=request.url, verify=False, headers=request.headers,
+                allow_redirects=False, method=request.method, data=request.body)
             if response.from_cache:
                 self.urls_cached.add(request.url)
         else:
