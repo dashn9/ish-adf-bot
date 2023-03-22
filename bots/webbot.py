@@ -6,6 +6,7 @@ import random
 import re
 import pytweening
 import random as rand
+from requests.exceptions import SSLError
 from threading import Thread
 from multiprocessing import Value
 import requests_cache as cached_requests
@@ -894,7 +895,6 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
         rem_read_time -= seconds_to_hang_for
         # print(f"Bot Process Id {self.bot_process_id} <:::> Advancing In Read --> Reading Element(Bottom: {element_coordinates['bottom']})")
 
-        print("secs track", seconds_to_hang_for, rem_read_time, owing_misc_time)
         time.sleep(round(seconds_to_hang_for, 2))
         if rem_px_to_adjust_by > 0 and element_coordinates.get("bottom") > \
                 (browser_inner_size.get("height") + utils.fetch_percentage_value(browser_inner_size.get("height"), 40)):
@@ -1169,14 +1169,23 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
         self.inject_referer_into_header(request)
         if utils.url_ends_with(request.url, [".html", ".js", ".css", ".jpg", ".jpeg", ".png", ".gif", ".svg", ".woff",
                                              ".woff2", ".ttf", ".ico", ".webm", ".ogg", ".wav", ".mp3", ".mp4"]):
-            response = self.cached_requests_session.request(url=request.url, verify=False, headers=request.headers,
-                allow_redirects=False, method=request.method, data=request.body)
-            if response.from_cache:
-                self.urls_cached.add(request.url)
+            try:
+                response = self.cached_requests_session.request(url=request.url, verify=False, headers=request.headers,
+                    allow_redirects=False, method=request.method, data=request.body)
+                if response.from_cache:
+                    self.urls_cached.add(request.url)
+            except SSLError:
+                print(f'Bot Process Id {self.bot_process_id} <:::> {request.url} would not be able to go through the cacher as a result of an ssl error')
+                return
         else:
             print(f'Bot Process Id {self.bot_process_id} <:::> {request.url} is passing through the proxy')
-            response = self.requests_session.request(url=request.url, headers=request.headers, allow_redirects=False,
-                method=request.method, data=request.body, proxies=self.proxy, verify=False)
+            try:
+                response = self.requests_session.request(url=request.url, verify=False, headers=request.headers,
+                    allow_redirects=False, method=request.method, data=request.body, proxies=self.proxy)
+            except SSLError:
+                print(f'Bot Process Id {self.bot_process_id} <:::> {request.url} generated an ssl error, it won\'t go through proxy')
+                return
+
             self.urls_through_proxy.add(request.url)
 
         response.body = response.content

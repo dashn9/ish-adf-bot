@@ -19,7 +19,7 @@ boc.FULL_DIRECTORY_PATH = os.path.dirname(os.path.realpath(__file__))
 brc.FULL_DIRECTORY_PATH = os.path.dirname(os.path.realpath(__file__))
 
 config = configparser.ConfigParser()
-config.read(boc.FULL_DIRECTORY_PATH+"/config.ini")
+config.read(boc.FULL_DIRECTORY_PATH + "/config.ini")
 
 run_infinitely = False
 if "OPTIONS" in config:
@@ -123,44 +123,42 @@ if page_info.get("related_articles_elements_type") == "id":
 
 
 def run_bot(identity, process_id):
-    try:
-        web_bot = WebBot(identity=identity, browser_to_use_id=brc.CHROME_ID,
-                         driver_path=boc.FULL_DIRECTORY_PATH + boc.WEB_DRIVERS_BASE_LOCATION + boc.WEB_DRIVERS_CHROME_LOCATION +
-                                     boc.CHROME_WEBDRIVER, bot_process_id=process_id, no_of_clicks=page_info["page_clicks"])
-        web_bot.open_web_browser(use_proxy=True)
-        web_bot.time_activated = time.time()
-        web_bot.web_browser_driver.get(page_info.get("page_url"))
-        if random.random() <= identity.ad_click_probability:
-            if random.random() >= identity.ad_keywords_click_probability:
-                identity.ad_keywords = None
-            web_bot.set_ad_behaviour_environment(ad_links_type=page_info["ad_link_elements_type"], ad_links_name=page_info["ad_link_elements_name"],
-                                                 maximum_no_of_ads=page_info["maximum_no_of_ads"], ad_keywords=identity.ad_keywords)
-        time.sleep(random.uniform(0, 1))
-        if web_bot.identity.device_type == "is_pc" and random.random() < 0.2:
-            web_bot.move_mouse_to_random_area_on_screen()
-        web_bot.read_element_content(web_bot.web_browser_driver.find_element(page_content_element_type,
-                                                                             page_content_element_name))
-        if page_info.get("related_articles_elements_type") and page_info.get("related_articles_elements_name"):
-            while random.random() < identity.page_depth:
-                web_bot.time_activated = time.time()
-                web_bot.no_of_clicks = page_info.get("page_clicks")
-                web_bot.open_link_in_related_articles_section(web_bot.web_browser_driver.find_elements(
-                    related_articles_elements_type, related_articles_elements_name))
+    web_bot = WebBot(identity=identity, browser_to_use_id=brc.CHROME_ID,
+                     driver_path=boc.FULL_DIRECTORY_PATH + boc.WEB_DRIVERS_BASE_LOCATION + boc.WEB_DRIVERS_CHROME_LOCATION +
+                                 boc.CHROME_WEBDRIVER, bot_process_id=process_id, no_of_clicks=page_info["page_clicks"])
+    web_bot.open_web_browser(use_proxy=True)
+    web_bot.time_activated = time.time()
+    web_bot.web_browser_driver.get(page_info.get("page_url"))
+    if random.random() <= identity.ad_click_probability:
+        if random.random() >= identity.ad_keywords_click_probability:
+            identity.ad_keywords = None
+        web_bot.set_ad_behaviour_environment(ad_links_type=page_info["ad_link_elements_type"],
+                                             ad_links_name=page_info["ad_link_elements_name"],
+                                             maximum_no_of_ads=page_info["maximum_no_of_ads"],
+                                             ad_keywords=identity.ad_keywords)
+    time.sleep(random.uniform(0, 1))
+    if web_bot.identity.device_type == "is_pc" and random.random() < 0.2:
+        web_bot.move_mouse_to_random_area_on_screen()
+    web_bot.read_element_content(web_bot.web_browser_driver.find_element(page_content_element_type,
+                                                                         page_content_element_name))
+    if page_info.get("related_articles_elements_type") and page_info.get("related_articles_elements_name"):
+        while random.random() < identity.page_depth:
+            web_bot.time_activated = time.time()
+            web_bot.no_of_clicks = page_info.get("page_clicks")
+            web_bot.open_link_in_related_articles_section(web_bot.web_browser_driver.find_elements(
+                related_articles_elements_type, related_articles_elements_name))
 
-                web_bot.read_element_content(web_bot.web_browser_driver.find_element(page_content_element_type,
-                                                                                     page_content_element_name))
-                identity.page_depth = identity.page_depth / 2
-        if web_bot.identity.device_type == "is_pc":
-            web_bot.move_mouse_to_fool_exit_point()
+            web_bot.read_element_content(web_bot.web_browser_driver.find_element(page_content_element_type,
+                                                                                 page_content_element_name))
+            identity.page_depth = identity.page_depth / 2
+    if web_bot.identity.device_type == "is_pc":
+        web_bot.move_mouse_to_fool_exit_point()
 
-        try:
-            print("Updating Cookies To Cloud")
-            web_bot.update_cookies_to_cloud()
-            web_bot.web_browser_driver.quit()
-        except Exception:
-            pass
-    except Exception:
-        pass
+    print("Updating Cookies To Cloud")
+    web_bot.update_cookies_to_cloud()
+    web_bot.web_browser_driver.quit()
+
+
 no_of_bots = 1
 if no_of_bots == 1:
     run_bot(identity, 0)
@@ -179,6 +177,6 @@ WebBot.active_on_mouse_movement.value = -498
 print("Successfully Completed Activity For Identity:", identity.id)
 if run_infinitely:
     print("Attempting to rerun operations")
-    os.execv(sys.executable, ['python3.9'] + sys.argv)
+    os.execv(sys.executable, ['python3.10'] + sys.argv)
 else:
     exit()
