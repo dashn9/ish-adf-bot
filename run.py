@@ -8,6 +8,7 @@ import json
 import configparser
 
 from selenium.webdriver.common.by import By
+from urllib3.exceptions import MaxRetryError, NewConnectionError, ProtocolError
 
 from bots.webbot import WebBot
 from identity.client import Identity
@@ -127,37 +128,46 @@ def run_bot(identity, process_id):
                      driver_path=boc.FULL_DIRECTORY_PATH + boc.WEB_DRIVERS_BASE_LOCATION + boc.WEB_DRIVERS_CHROME_LOCATION +
                                  boc.CHROME_WEBDRIVER, bot_process_id=process_id, no_of_clicks=page_info["page_clicks"])
     web_bot.open_web_browser(use_proxy=True)
-    web_bot.time_activated = time.time()
-    web_bot.web_browser_driver.get(page_info.get("page_url"))
-    if random.random() <= identity.ad_click_probability:
-        if random.random() >= identity.ad_keywords_click_probability:
-            identity.ad_keywords = None
-        web_bot.set_ad_behaviour_environment(ad_links_type=page_info["ad_link_elements_type"],
-                                             ad_links_name=page_info["ad_link_elements_name"],
-                                             maximum_no_of_ads=page_info["maximum_no_of_ads"],
-                                             ad_keywords=identity.ad_keywords)
-    time.sleep(random.uniform(0, 1))
-    if web_bot.identity.device_type == "is_pc" and random.random() < 0.2:
-        web_bot.move_mouse_to_random_area_on_screen()
-    web_bot.read_element_content(web_bot.web_browser_driver.find_element(page_content_element_type,
-                                                                         page_content_element_name))
-    if page_info.get("related_articles_elements_type") and page_info.get("related_articles_elements_name"):
-        while random.random() < identity.page_depth:
-            web_bot.time_activated = time.time()
-            web_bot.no_of_clicks = page_info.get("page_clicks")
-            web_bot.open_link_in_related_articles_section(web_bot.web_browser_driver.find_elements(
-                related_articles_elements_type, related_articles_elements_name))
+    try:
+        web_bot.time_activated = time.time()
+        web_bot.web_browser_driver.get(page_info.get("page_url"))
+        if random.random() <= identity.ad_click_probability:
+            if random.random() >= identity.ad_keywords_click_probability:
+                identity.ad_keywords = None
+            web_bot.set_ad_behaviour_environment(ad_links_type=page_info["ad_link_elements_type"],
+                                                 ad_links_name=page_info["ad_link_elements_name"],
+                                                 maximum_no_of_ads=page_info["maximum_no_of_ads"],
+                                                 ad_keywords=identity.ad_keywords)
+        time.sleep(random.uniform(0, 1))
+        if web_bot.identity.device_type == "is_pc" and random.random() < 0.2:
+            web_bot.move_mouse_to_random_area_on_screen()
+        web_bot.read_element_content(web_bot.web_browser_driver.find_element(page_content_element_type,
+                                                                             page_content_element_name))
+        if page_info.get("related_articles_elements_type") and page_info.get("related_articles_elements_name"):
+            while random.random() < identity.page_depth:
+                web_bot.time_activated = time.time()
+                web_bot.no_of_clicks = page_info.get("page_clicks")
+                web_bot.open_link_in_related_articles_section(web_bot.web_browser_driver.find_elements(
+                    related_articles_elements_type, related_articles_elements_name))
 
-            web_bot.read_element_content(web_bot.web_browser_driver.find_element(page_content_element_type,
-                                                                                 page_content_element_name))
-            identity.page_depth = identity.page_depth / 2
-    if web_bot.identity.device_type == "is_pc":
-        web_bot.move_mouse_to_fool_exit_point()
+                web_bot.read_element_content(web_bot.web_browser_driver.find_element(page_content_element_type,
+                                                                                     page_content_element_name))
+                identity.page_depth = identity.page_depth / 2
+        if web_bot.identity.device_type == "is_pc":
+            web_bot.move_mouse_to_fool_exit_point()
 
-    print("Updating Cookies To Cloud")
-    web_bot.update_cookies_to_cloud()
-    web_bot.web_browser_driver.quit()
+        try:
+            if web_bot.web_browser_driver.session_id:
+                print("Updating Cookies To Cloud")
+                web_bot.update_cookies_to_cloud()
+                web_bot.web_browser_driver.quit()
+        except ConnectionRefusedError:
+            print("Most likely the Cookie Update job has been done by the daemon responsible for keeping reading "
+                  "activity on time as a ConnectionRefusedError popped up")
 
+    # These errors occurs when the browser session is terminated and webbot isn't aware
+    except (NewConnectionError, ConnectionRefusedError, MaxRetryError, ConnectionResetError, ProtocolError):
+        web_bot.web_browser_driver.quit()
 
 no_of_bots = 1
 if no_of_bots == 1:

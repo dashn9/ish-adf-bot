@@ -2,7 +2,6 @@
 
 # Standard Library Imports
 import ctypes
-import random
 import re
 import pytweening
 import random as rand
@@ -24,7 +23,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
-from selenium.common.exceptions import TimeoutException
+from selenium.common.exceptions import TimeoutException, StaleElementReferenceException
 import pyautogui
 
 from pyclick import HumanClicker, HumanCurve
@@ -698,7 +697,7 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
             try:
                 ads_dimensions = self.locate_ad_elements(ads_elements_type=self.ad_links_type,
                                                          ads_elements_name=self.ad_links_name, duration_to_look_for=0.5)
-                if not isinstance(self.ad_keywords, list) or self.ad_with_keyword_wait_counter >= 2:
+                if not isinstance(self.ad_keywords, list) or self.ad_with_keyword_wait_counter >= 1:
                     print(f"Bot Process Id {self.bot_process_id} <:::> Keywords won't be used as basis for ad click")
                     self.ad_click(rand.choice(ads_dimensions))
                     self.to_click_ad = False
@@ -922,19 +921,25 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
             time.sleep(rand.uniform(0.2, 0.8))
             if isinstance(self.touch, Touchscreen):
                 time.sleep(rand.uniform(0.3, 0.5))
-                element_location_and_dimensions = self.get_element_location_window_offset(link_to_follow)
-                # Do click continually until page remained unchanged after click
-                self.touch.tap(element_location_and_dimensions["x_offset"] +
-                               rand.uniform(0, link_to_follow.rect["width"]),
-                               element_location_and_dimensions["y_offset"] +
-                               rand.uniform(0, link_to_follow.rect["height"])
-                               )
-                while self.revert_to_main_page():
+                try:
+                    element_location_and_dimensions = self.get_element_location_window_offset(link_to_follow)
+                    # Do click continually until page remained unchanged after click
                     self.touch.tap(element_location_and_dimensions["x_offset"] +
                                    rand.uniform(0, link_to_follow.rect["width"]),
                                    element_location_and_dimensions["y_offset"] +
                                    rand.uniform(0, link_to_follow.rect["height"])
                                    )
+                    while self.revert_to_main_page():
+                        self.touch.tap(element_location_and_dimensions["x_offset"] +
+                                       rand.uniform(0, link_to_follow.rect["width"]),
+                                       element_location_and_dimensions["y_offset"] +
+                                       rand.uniform(0, link_to_follow.rect["height"])
+                                       )
+                except StaleElementReferenceException:
+                    print(f"Bot Process Id {self.bot_process_id} <:::> An attempt to click on a link in the related "
+                          f"article section cause a StaleElementReference error. This is most likely the result of "
+                          f"external interaction with the browser that forced a new tab to open without script "
+                          f"awareness")
             else:
                 # Do click continually until page remained unchanged after click
                 pyautogui.click()
@@ -1243,7 +1248,7 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
                 pass
             self.identity.referrer = ""
         return False
-    
+
     def quit_browser_after_max_alive(self, sleep_time=bot_constants.BOT_MIN_ALIVE_TIME):
         time.sleep(sleep_time)
         if hasattr(self, "web_browser_driver"):
@@ -1251,11 +1256,12 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
                 print(f"Identity: {self.identity.id} On Process: {self.bot_process_id} Could Not Perform "
                       f"Activity Within Set Time, Exiting Session...")
                 try:
-                    print(f"Bot Process Id {self.bot_process_id} <:::> Updating Cookies To Cloud")
-                    self.update_cookies_to_cloud()
-                    self.web_browser_driver.quit()
-                except Exception:
-                    pass
+                    if self.web_browser_driver.session_id:
+                        print(f"Bot Process Id {self.bot_process_id} <:::> Updating Cookies To Cloud")
+                        self.update_cookies_to_cloud()
+                        self.web_browser_driver.quit()
+                except ConnectionRefusedError:
+                    print("A connection refused error occurred, this would likely be as a result of a dead browser session")
             else:
                 self.quit_browser_after_max_alive(sleep_time=5)
 
