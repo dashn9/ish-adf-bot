@@ -5,7 +5,7 @@ import ctypes
 import re
 import pytweening
 import random as rand
-from requests.exceptions import SSLError
+from requests.exceptions import SSLError, ProxyError
 from threading import Thread
 from multiprocessing import Value
 import requests_cache as cached_requests
@@ -86,7 +86,7 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
         self.last_document_offsets = [0, 0]
         self.referer_use_times = 0
         self.no_of_clicks = no_of_clicks
-        self.probability_of_click = 0.45
+        self.probability_of_click = 0.5
         self.main_page_handle = None
         self.current_tab_length = 1
         self.cached_requests_session = cached_requests.CachedSession(bot_constants.FULL_DIRECTORY_PATH + '/requests_cache')
@@ -1186,9 +1186,9 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
             print(f'Bot Process Id {self.bot_process_id} <:::> {request.url} is passing through the proxy')
             try:
                 response = self.requests_session.request(url=request.url, verify=False, headers=request.headers,
-                    allow_redirects=False, method=request.method, data=request.body, proxies=self.proxy)
-            except SSLError:
-                print(f'Bot Process Id {self.bot_process_id} <:::> {request.url} generated an ssl error, it won\'t go through proxy')
+                    allow_redirects=False, method=request.method, data=request.body)
+            except (SSLError, ProxyError):
+                print(f'Bot Process Id {self.bot_process_id} <:::> {request.url} generated an ssl or proxy error, it won\'t go through proxy')
                 return
 
             self.urls_through_proxy.add(request.url)
@@ -1344,7 +1344,7 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
         if self.identity.has_touch == "has_touch":
             self.touch = Touchscreen(self.web_browser_driver, self.keyboard)
         self.web_browser_driver.implicitly_wait(bot_constants.IMPLICITLY_WAIT_TIME)
-        self.web_browser_driver.set_window_position(0, 0)
+        # self.web_browser_driver.set_window_position(0, 0)
         if open_browser_in_full_screen:
             self.web_browser_driver.maximize_window()
         else:
@@ -1362,7 +1362,7 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
             proxy_path = self.identity.resolve_proxy_url(self.identity.proxy_geo)
             print(f"Bot Process Id {self.bot_process_id} <:::> Adding a proxy option for this session on this proxy"
                   f" path: {proxy_path}")
-            self.proxy = {
+            self.requests_session.proxies = {
                 'http': 'http://' + proxy_path,
                 'https': 'http://' + proxy_path,
                 'no_proxy': 'localhost,127.0.0.1,gstatic.com,www.gstatic.com,update.googleapis.com,'

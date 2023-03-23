@@ -1,5 +1,6 @@
 import json
 import random
+import string
 import subprocess
 import time
 
@@ -197,6 +198,11 @@ class Identity:
             except:
                 pass
 
+    def generate_unique_lowercase_numbers_characters(self, length=12):
+        chars = string.ascii_lowercase + string.digits
+        random.seed()
+        return ''.join(random.choice(chars) for _ in range(length))
+
     def resolve_proxy_url(self, geo_target, proxy_name="smartproxy.com"):
         if proxy_name == "smartproxy.com":
             if geo_target:
@@ -205,6 +211,7 @@ class Identity:
                 proxy_url = proxy_url.replace("<user>", bot_constants.PROXY_USERNAME)
                 proxy_url = proxy_url.replace("<geo_target>", geo_target)
                 proxy_url = proxy_url.replace("<ss_duration>", str(bot_constants.PROXY_SESSION_DURATION))
+                proxy_url = proxy_url.replace("<ss_string>", self.generate_unique_lowercase_numbers_characters())
                 proxy_url = proxy_url.replace("<pass>", bot_constants.PROXY_PASSWORD)
                 return proxy_url
             else:

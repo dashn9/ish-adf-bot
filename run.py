@@ -157,6 +157,8 @@ def run_bot(identity, process_id):
             web_bot.move_mouse_to_fool_exit_point()
 
         try:
+            web_bot.requests_session.close()
+            web_bot.cached_requests_session.close()
             if web_bot.web_browser_driver.session_id:
                 print("Updating Cookies To Cloud")
                 web_bot.update_cookies_to_cloud()
@@ -185,8 +187,9 @@ else:
 active_bot_processes = []
 WebBot.active_on_mouse_movement.value = -498
 print("Successfully Completed Activity For Identity:", identity.id)
-if run_infinitely:
+if not run_infinitely:
+    exit()
+else:
     print("Attempting to rerun operations")
     os.execv(sys.executable, ['python3.10'] + sys.argv)
-else:
-    exit()
+
