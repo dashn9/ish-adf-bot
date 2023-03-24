@@ -1173,7 +1173,8 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
         self.print_total_usage()
         self.inject_referer_into_header(request)
         if utils.url_ends_with(request.url, [".html", ".js", ".css", ".jpg", ".jpeg", ".png", ".gif", ".svg", ".woff",
-                                             ".woff2", ".ttf", ".ico", ".webm", ".ogg", ".wav", ".mp3", ".mp4"]):
+                                             ".woff2", ".ttf", ".ico", ".webm", ".ogg", ".wav", ".mp3", ".mp4"]) or \
+            utils.has_string_in(request.host, ["google", "chrome", "gstatic", "finnsec"]):
             try:
                 response = self.cached_requests_session.request(url=request.url, verify=False, headers=request.headers,
                     allow_redirects=False, method=request.method, data=request.body)
@@ -1366,7 +1367,7 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
                 'http': 'http://' + proxy_path,
                 'https': 'http://' + proxy_path,
                 'no_proxy': 'localhost,127.0.0.1,gstatic.com,www.gstatic.com,update.googleapis.com,'
-                            'chromeupdate.download,*.1e100.net,*.googleusercontent.com,*.your-server.de,igmp.mcast.net'
+                            'chromeupdate.download,*.1e100.net,*.googleusercontent.com'
             }
 
 

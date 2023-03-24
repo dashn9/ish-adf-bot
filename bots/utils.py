@@ -507,3 +507,9 @@ def url_ends_with(string, endings):
         if string.endswith(ending) or (ending+"?" in string):
             return True
     return False
+
+def has_string_in(string_to_test, strings_against):
+    for string_against in strings_against:
+        if string_against in string_to_test:
+            return True
+    return False
