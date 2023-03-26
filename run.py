@@ -6,6 +6,9 @@ import time
 import multiprocessing
 import json
 import configparser
+from selenium.common import StaleElementReferenceException
+
+from requests import ReadTimeout
 
 from selenium.webdriver.common.by import By
 from urllib3.exceptions import MaxRetryError, NewConnectionError, ProtocolError
@@ -168,7 +171,8 @@ def run_bot(identity, process_id):
                   "activity on time as a ConnectionRefusedError popped up")
 
     # These errors occurs when the browser session is terminated and webbot isn't aware
-    except (NewConnectionError, ConnectionRefusedError, MaxRetryError, ConnectionResetError, ProtocolError):
+    except (NewConnectionError, ConnectionRefusedError, MaxRetryError, ConnectionResetError, ProtocolError, ReadTimeout,
+            StaleElementReferenceException):
         web_bot.web_browser_driver.quit()
 
 no_of_bots = 1
