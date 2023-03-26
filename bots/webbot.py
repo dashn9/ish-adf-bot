@@ -697,6 +697,9 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
             try:
                 ads_dimensions = self.locate_ad_elements(ads_elements_type=self.ad_links_type,
                                                          ads_elements_name=self.ad_links_name, duration_to_look_for=0.5)
+                if not ads_dimensions:
+                    return
+
                 if not isinstance(self.ad_keywords, list) or self.ad_with_keyword_wait_counter >= 2:
                     print(f"Bot Process Id {self.bot_process_id} <:::> Keywords won't be used as basis for ad click")
                     self.ad_click(rand.choice(ads_dimensions))
@@ -748,13 +751,15 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
             else:
                 iframe_offset = self.get_element_window_location_screen_offsets(iframe)["html_web_element"]
             self.web_browser_driver.switch_to.frame(iframe)
+            ads_elements = None
             try:
                 ads_elements = wait.until(
                     EC.presence_of_all_elements_located((ads_elements_type, ads_elements_name)))
             except TimeoutException:
                 print(f"Bot Process Id {self.bot_process_id} <:::> Element parent body was found but ads were not present")
                 self.web_browser_driver.switch_to.default_content()
-
+            if not ads_elements:
+                return
             ads_elements_rect = []
             for ad_element in ads_elements:
                 rect = ad_element.rect.copy()
