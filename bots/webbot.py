@@ -692,7 +692,8 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
         self.smart_click_trigger((x_start, y_start), self.identity.device_type)
         self.revert_to_main_page()
 
-    def smart_ad_click(self):
+    def smart_ad_click(self, switch_focus_to_new_tab=True):
+        ad_click_success = False
         if self.to_click_ad:
             try:
                 ads_dimensions = self.locate_ad_elements(ads_elements_type=self.ad_links_type,
@@ -702,13 +703,15 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
 
                 if not isinstance(self.ad_keywords, list) or self.ad_with_keyword_wait_counter >= 2:
                     print(f"Bot Process Id {self.bot_process_id} <:::> Keywords won't be used as basis for ad click")
-                    self.ad_click(rand.choice(ads_dimensions))
+                    if self.ad_click(rand.choice(ads_dimensions)):
+                        ad_click_success = True
                     self.to_click_ad = False
                 else:
                     for ad_dimensions in ads_dimensions:
                         for keyword in self.ad_keywords:
                             if keyword in ad_dimensions["text_content"]:
-                                self.ad_click(ad_dimensions)
+                                if self.ad_click(ad_dimensions):
+                                    ad_click_success = True
                                 self.to_click_ad = False
                                 print(f"Bot Process Id {self.bot_process_id} <:::> Keyword was used as a base to click an ad")
                                 break
@@ -718,10 +721,17 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
                 if self.to_click_ad:
                     self.ad_with_keyword_wait_counter += 1
                     print(f"Bot Process Id {self.bot_process_id} <:::> Ad with any of keywords wasn't found, Try again")
+                if ad_click_success and switch_focus_to_new_tab:
+                    self.web_browser_driver.switch_to.window(
+                        self.web_browser_driver.window_handles[-1])
+                    if self.identity.device_type == "is_smartphone":
+                        time.sleep(0.2)
+                        self.activate_mobile()
+                return ad_click_success
             except TimeoutException:
                 print(f"Bot Process Id {self.bot_process_id} <:::> No ads found, Try again")
 
-    def ad_click(self, ad_dimensions: dict):
+    def ad_click(self, ad_dimensions: dict, revert_back=False):
         if self.identity.device_type == "is_pc":
             previous_mouse_pos = pyautogui.position()
             self.simulate_human_mouse_move_behavior_to_area(ad_dimensions["x"], ad_dimensions["y"],
@@ -731,16 +741,19 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
                                                             max_overshoot=35,
                                                             probability_of_overshoot=round(rand.random(), 2))
             pyautogui.click()
-            self.revert_to_main_page()
+            if not revert_back:
+                self.revert_to_main_page()
             self.simulate_human_mouse_move_behavior_to_point(previous_mouse_pos[0], previous_mouse_pos[1])
+            return True
         elif self.identity.device_type == "is_smartphone":
             self.touch.tap(ad_dimensions["x"] +
                            rand.uniform(0, ad_dimensions["width"]),
                            ad_dimensions["y"] +
                            rand.uniform(0, ad_dimensions["height"])
                            )
-            self.revert_to_main_page()
-
+            return True
+            if not revert_back:
+                self.revert_to_main_page()
 
     def locate_ad_elements(self, ads_elements_type, ads_elements_name: str, duration_to_look_for=55):
         def iframe_check():
@@ -821,7 +834,8 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
 
     def looper(self, read_time, direction_to_move, html_web_element, total_px_to_adjust_by,
                rem_px_to_adjust_by, rem_read_time, owing_misc_time, mode="arrow_keys", **kwargs):
-        self.smart_ad_click()
+        if self.smart_ad_click():
+            return "ad_clicked"
         element_coordinates = self.get_element_location_window_offset(html_web_element)
         browser_inner_size = self.get_browser_inner_size()
         if rand.randint(0, 1):
@@ -906,7 +920,7 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
         time.sleep(round(seconds_to_hang_for, 2))
         if rem_px_to_adjust_by > 0 and element_coordinates.get("bottom") > \
                 (browser_inner_size.get("height") + utils.fetch_percentage_value(browser_inner_size.get("height"), 40)):
-            self.looper(read_time, direction_to_move, html_web_element, total_px_to_adjust_by,
+            return self.looper(read_time, direction_to_move, html_web_element, total_px_to_adjust_by,
                         rem_px_to_adjust_by, rem_read_time, owing_misc_time, mode, **kwargs)
         else:
             return True
@@ -984,8 +998,8 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
             rem_px_to_adjust_by = total_px_to_adjust_by
             rem_read_time = read_time
             owing_misc_time = 0
-            self.looper(read_time, direction_to_move, html_web_element, total_px_to_adjust_by,
-                        rem_px_to_adjust_by, rem_read_time, owing_misc_time, mode)
+            return self.looper(read_time, direction_to_move, html_web_element, total_px_to_adjust_by,
+                                rem_px_to_adjust_by, rem_read_time, owing_misc_time, mode)
 
         seconds_to_read = self.calculate_and_generate_page_read_time(html_web_element, self.identity.reading_speed,
                                                                      self.identity.article_read_time_offset)
@@ -1025,11 +1039,11 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
                 mode = "touch"
             elif isinstance(self.mouse, Mouse):
                 mode = "wheel"
-                if rand.random() < 0.85 and WebBot.active_on_mouse_movement.value < 0:
+                if rand.random() < 0.55 and WebBot.active_on_mouse_movement.value < 0:
                     WebBot.active_on_mouse_movement.value = self.bot_process_id
                     mode = "mouse_to_scrollbar"
                     self.bring_window_to_front()
-            elif rand.random() < 0.88 and WebBot.active_on_mouse_movement.value < 0:
+            elif rand.random() < 0.58 and WebBot.active_on_mouse_movement.value < 0:
                 WebBot.active_on_mouse_movement.value = self.bot_process_id
                 mode = "mouse_to_scrollbar"
                 self.bring_window_to_front()
@@ -1041,7 +1055,11 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
                 remaining_reading_content_percentage -= next_read_sequence_percentage
             print(f"Bot Process Id {self.bot_process_id} <:::> Navigation Mode -->", mode)
 
-            read(next_read_sequence_time, True, html_web_element, mode, next_read_sequence_percentage)
+            if read(next_read_sequence_time, True, html_web_element, mode, next_read_sequence_percentage) == \
+                "ad_clicked":
+                print(
+                    f"BOT PROCESS ID {self.bot_process_id} <:::> AD WAS CLICKED, STOPPED READING ARTICLE")
+                return "ad_clicked"
         if mode == "mouse_to_scrollbar":
             pyautogui.mouseUp()
             WebBot.active_on_mouse_movement.value = -self.bot_process_id if self.bot_process_id != 0 else -500
@@ -1183,7 +1201,8 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
         self.inject_referer_into_header(request)
         if utils.url_ends_with(request.url, [".html", ".js", ".css", ".jpg", ".jpeg", ".png", ".gif", ".svg", ".woff",
                                              ".woff2", ".ttf", ".ico", ".webm", ".ogg", ".wav", ".mp3", ".mp4"]) or \
-            utils.has_string_in(request.host, ["google", "chrome", "gstatic", "finnsec"]):
+            utils.has_string_in(request.host, ["googleapis", "chrome", "google", "gstatic",
+                                               "gvt1", browser_constants.SITE_DOMAIN]):
             try:
                 response = self.cached_requests_session.request(url=request.url, verify=False, headers=request.headers,
                     allow_redirects=False, method=request.method, data=request.body)
@@ -1312,6 +1331,7 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
             }
             self.web_browser_driver = sw_uc.Chrome(
                 driver_executable_path=self.driver_path, options=browser_options, seleniumwire_options=sw_options)
+
             # Opens a firefox browser
         elif self.browser_to_use_id == browser_constants.FIREFOX_ID:
             browser_options = webdriver.FirefoxOptions()
@@ -1326,12 +1346,7 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
         # If device to emulate is a smartphone, set chrome to mobile mode
         if self.identity.device_type == "is_smartphone":
             print(f"Bot Process Id {self.bot_process_id} <:::> Device Name:", self.identity.hardware)
-            devtools_primary.activate_mobile(self.web_browser_driver,
-                                             {"width": self.identity.screen_width,
-                                              "height": self.identity.screen_height, "deviceScaleFactor":
-                                                  self.identity.screen_resolution[4], "screenOrientation":
-                                                  {"type": "portraitPrimary", "angle": 0},
-                                              "mobile": True})
+            self.activate_mobile()
         print(f"Bot Process Id {self.bot_process_id} <:::> Setting Page To Always Be In Focus")
         # Sets Browser to always be active
         devtools_primary.activate_all_focus(self.web_browser_driver)
@@ -1407,6 +1422,13 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
             self.revert_to_main_page(recurse, time_interval_to_check)
         return False
 
+    def activate_mobile(self):
+        devtools_primary.activate_mobile(self.web_browser_driver,
+                                         {"width": self.identity.screen_width,
+                                          "height": self.identity.screen_height, "deviceScaleFactor":
+                                              self.identity.screen_resolution[4], "screenOrientation":
+                                              {"type": "portraitPrimary", "angle": 0},
+                                          "mobile": True})
     def revert_to_main_page_if_ever_changed(self):
         """
         Create Thread object to constantly check if page changed

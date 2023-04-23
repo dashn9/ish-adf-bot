@@ -6,7 +6,10 @@ import time
 import multiprocessing
 import json
 import configparser
-from selenium.common import StaleElementReferenceException
+import traceback
+from selenium.common import StaleElementReferenceException, TimeoutException
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
 from requests import ReadTimeout
 
@@ -26,6 +29,7 @@ config = configparser.ConfigParser()
 config.read(boc.FULL_DIRECTORY_PATH + "/config.ini")
 
 run_infinitely = False
+debug = True
 if "OPTIONS" in config:
     options = config["OPTIONS"]
     boc.NORDVPN_OVPN_FILE_PATH = options.get("nordvpn-ovpn-files-path", boc.NORDVPN_OVPN_FILE_PATH)
@@ -33,6 +37,7 @@ if "OPTIONS" in config:
     boc.SCREEN_WIDTH = options.getint("screen-width", boc.SCREEN_WIDTH)
     boc.SCREEN_HEIGHT = options.getint("screen-height", boc.SCREEN_HEIGHT)
     boc.UP_TASKBAR_HEIGHT = options.getint("up-taskbar-height", boc.UP_TASKBAR_HEIGHT)
+    debug = options.getboolean("debug", True)
 
 if "WAIT_CONDITIONS" in config:
     options = config["OPTIONS"]
@@ -85,10 +90,11 @@ if "BROWSER" in config:
     brc.CHROME_BINARY_LOCATION = browser.get("chrome-binary-location", brc.CHROME_BINARY_LOCATION)
     brc.FIREFOX_BINARY_LOCATION = browser.get("firefox-binary-location", brc.FIREFOX_BINARY_LOCATION)
 
-if "ADS" in config:
-    ads = config["ADS"]
+if "SITE" in config:
+    ads = config["SITE"]
 
-    brc.AD_PROVIDERS = ads.get("providers", brc.AD_PROVIDERS).split(",")
+    brc.SITE_DOMAIN = ads.get("site-domain", brc.SITE_DOMAIN)
+    brc.AD_PROVIDERS = ads.get("ad-providers", brc.AD_PROVIDERS).split(",")
     brc.AD_ATTR = ads.get("attr", brc.AD_ATTR)
     brc.AD_ATTR_NAME = ads.get("attr-name", brc.AD_ATTR_NAME)
     brc.AD_CLOSE_ATTR = ads.get("close-attr", brc.AD_CLOSE_ATTR)
@@ -144,18 +150,35 @@ def run_bot(identity, process_id):
         time.sleep(random.uniform(0, 1))
         if web_bot.identity.device_type == "is_pc" and random.random() < 0.2:
             web_bot.move_mouse_to_random_area_on_screen()
-        web_bot.read_element_content(web_bot.web_browser_driver.find_element(page_content_element_type,
-                                                                             page_content_element_name))
-        if page_info.get("related_articles_elements_type") and page_info.get("related_articles_elements_name"):
-            while random.random() < identity.page_depth:
-                web_bot.time_activated = time.time()
-                web_bot.no_of_clicks = page_info.get("page_clicks")
-                web_bot.open_link_in_related_articles_section(web_bot.web_browser_driver.find_elements(
-                    related_articles_elements_type, related_articles_elements_name))
+        if web_bot.read_element_content(web_bot.web_browser_driver.find_element(page_content_element_type,
+                                                                             page_content_element_name)) == \
+            "ad_clicked":
+            web_bot.time_activated = time.time()
+            try:
+                body_element = WebDriverWait(web_bot.web_browser_driver, 4).until(
+                    EC.presence_of_element_located((By.TAG_NAME, "body"))
+                )
+                web_bot.read_element_content(body_element)
+                while random.random() < identity.page_depth:
+                    web_bot.time_activated = time.time()
+                    web_bot.open_link_in_related_articles_section(body_element)
+                    body_element = WebDriverWait(web_bot.web_browser_driver, 4).until(
+                        EC.presence_of_element_located((By.TAG_NAME, "body"))
+                    )
+                    web_bot.read_element_content(body_element)
+            except TimeoutException:
+                print("Body Element Of The Ad Page Could Not Be Found Or Not Loaded On Time")
+        else:
+            if page_info.get("related_articles_elements_type") and page_info.get("related_articles_elements_name"):
+                while random.random() < identity.page_depth:
+                    web_bot.time_activated = time.time()
+                    web_bot.no_of_clicks = page_info.get("page_clicks")
+                    web_bot.open_link_in_related_articles_section(web_bot.web_browser_driver.find_elements(
+                        related_articles_elements_type, related_articles_elements_name))
 
-                web_bot.read_element_content(web_bot.web_browser_driver.find_element(page_content_element_type,
-                                                                                     page_content_element_name))
-                identity.page_depth = identity.page_depth / 2
+                    web_bot.read_element_content(web_bot.web_browser_driver.find_element(page_content_element_type,
+                                                                                         page_content_element_name))
+                    identity.page_depth = identity.page_depth / 2
         if web_bot.identity.device_type == "is_pc":
             web_bot.move_mouse_to_fool_exit_point()
 
@@ -173,6 +196,9 @@ def run_bot(identity, process_id):
     # These errors occurs when the browser session is terminated and webbot isn't aware
     except (NewConnectionError, ConnectionRefusedError, MaxRetryError, ConnectionResetError, ProtocolError, ReadTimeout,
             StaleElementReferenceException):
+        if debug:
+            print(traceback.format_exc())
+            print("The Error Above Was Handled, But Printed For Debugging Purpose")
         web_bot.web_browser_driver.quit()
 
 no_of_bots = 1

@@ -280,7 +280,7 @@ class Touchscreen:
         target_points = round(utils.calculate_needed_points_from_coords_distance(
             coords_distance, (latency_range[0] + latency_range[1]) / 2, duration
         ))
-        human_curve = HumanCurve(start_point, end_point, targetPoints=target_points)
+        human_curve = HumanCurve(start_point, end_point, targetPoints=max(target_points, 2))
         if start_point[0] > end_point[0]:
             left_boundary = end_point[0]
             right_boundary = start_point[0]
