@@ -128,8 +128,13 @@ related_articles_elements_type = By.CLASS_NAME
 related_articles_elements_name = page_info.get("related_articles_elements_name")
 if page_info.get("page_content_element_type") == "class":
     page_content_element_type = By.CLASS_NAME
+elif page_info.get("page_content_element_type") == "tag_name":
+    page_content_element_type = By.TAG_NAME
+
 if page_info.get("related_articles_elements_type") == "id":
     related_articles_elements_type = By.ID
+elif page_info.get("related_articles_elements_type") == "tag_name":
+    related_articles_elements_type = By.TAG_NAME
 
 
 def run_bot(identity, process_id):
@@ -155,6 +160,7 @@ def run_bot(identity, process_id):
             "ad_clicked":
             web_bot.time_activated = time.time()
             try:
+                time.sleep(random.uniform(0.7, 1.5))
                 body_element = WebDriverWait(web_bot.web_browser_driver, 4).until(
                     EC.presence_of_element_located((By.TAG_NAME, "body"))
                 )
@@ -163,7 +169,7 @@ def run_bot(identity, process_id):
                     web_bot.time_activated = time.time()
                     web_bot.open_link_in_related_articles_section(body_element)
                     body_element = WebDriverWait(web_bot.web_browser_driver, 4).until(
-                        EC.presence_of_element_located((By.TAG_NAME, "body"))
+                        EC.presence_of_all_elements_located((By.TAG_NAME, "body"))
                     )
                     web_bot.read_element_content(body_element)
             except TimeoutException:

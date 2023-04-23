@@ -87,7 +87,6 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
         self.referer_use_times = 0
         self.no_of_clicks = no_of_clicks
         self.probability_of_click = 0.45
-        self.main_page_handle = None
         self.current_tab_length = 1
         self.cached_requests_session = cached_requests.CachedSession(bot_constants.FULL_DIRECTORY_PATH + '/requests_cache')
         self.requests_session = main_requests.Session()
@@ -1378,8 +1377,6 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
         self.web_browser_driver.request_interceptor = self.request_interceptor
         self.web_browser_driver.response_interceptor = \
             self.response_interceptor
-        # set current page handle
-        self.main_page_handle = self.web_browser_driver.current_window_handle
         t = Thread(target=self.quit_browser_after_max_alive)
         t.daemon = True
         t.start()
@@ -1413,7 +1410,7 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
         time.sleep(time_interval_to_check)
         # Switch to the new window and capture its handle
         if self.current_tab_length != len(self.web_browser_driver.window_handles):
-            self.web_browser_driver.switch_to.window(self.main_page_handle)
+            self.web_browser_driver.switch_to.window(self.web_browser_driver.current_window_handle)
             self.current_tab_length = len(self.web_browser_driver.window_handles)
             if recurse:
                 self.revert_to_main_page(recurse, time_interval_to_check)
