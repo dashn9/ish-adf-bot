@@ -169,8 +169,9 @@ def run_bot(identity, process_id):
                     web_bot.time_activated = time.time()
                     web_bot.open_link_in_related_articles_section(body_element)
                     body_element = WebDriverWait(web_bot.web_browser_driver, 4).until(
-                        EC.presence_of_all_elements_located((By.TAG_NAME, "body"))
+                        EC.presence_of_element_located((By.TAG_NAME, "body"))
                     )
+                    body_element = [body_element]
                     web_bot.read_element_content(body_element)
             except TimeoutException:
                 print("Body Element Of The Ad Page Could Not Be Found Or Not Loaded On Time")
