@@ -1,6 +1,7 @@
 import json
 import requests
 import subprocess
+from requests.exceptions import ProxyError
 
 
 class DataController:
@@ -22,22 +23,27 @@ class DataController:
             return False
         return identity.json()
 
-    def fetch_timezone(self, identity_id, proxy=None, use_curl=True):
-        session = requests.session()
-        req_url = "fetch_update_timezone.php"
-        if identity_id:
-            identity_id = str(identity_id)
-            req_url = req_url + "?id=" + identity_id
-            if proxy:
-                session.proxies = {
-                    'http': 'http://' + proxy,
-                    'https': 'http://' + proxy
-                }
-            identity_timezone = session.get("https://finnsec.us/api/" + req_url, timeout=DataController.timeout,
-                                            verify=False)
-            session.get("http://api.proxyrack.net/release")
-            identity_timezone.close()
-            return identity_timezone.json()
+    def fetch_timezone(self, identity_id, proxy=None, retries=0):
+        try:
+            session = requests.session()
+            req_url = "fetch_update_timezone.php"
+            if identity_id:
+                identity_id = str(identity_id)
+                req_url = req_url + "?id=" + identity_id
+                if proxy:
+                    session.proxies = {
+                        'http': 'http://' + proxy,
+                        'https': 'http://' + proxy
+                    }
+                identity_timezone = session.get("https://finnsec.us/api/" + req_url, timeout=DataController.timeout,
+                                                verify=False)
+                session.get("http://api.proxyrack.net/release")
+                identity_timezone.close()
+                return identity_timezone.json()
+        except ProxyError:
+            if retries <= 2:
+                retries += 1
+                return self.fetch_timezone(identity_id, proxy, retries)
 
     def fetch_geolocation_data(self, proxy=None):
         session = requests.session()
