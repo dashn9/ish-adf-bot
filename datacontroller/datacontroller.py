@@ -35,7 +35,7 @@ class DataController:
                 }
             identity_timezone = session.get("https://finnsec.us/api/" + req_url, timeout=DataController.timeout,
                                             verify=False)
-            print(identity_timezone.content)
+            session.get("http://api.proxyrack.net/release")
             identity_timezone.close()
             return identity_timezone.json()
 

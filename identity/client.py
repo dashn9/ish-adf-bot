@@ -14,7 +14,7 @@ class Identity:
                  canvas_fp_offset=None, audio_context_fp_offset=None, font_fp_offset=None, webgl_fp_offset=None,
                  hardware_concurrency=None, memory=None, has_mouse=None, has_battery=None, has_touch=None,
                  browser_name="", browser_version="", screen_resolution=None, gpu_vendor="", gpu_renderer="",
-                 proxy_client="", proxy_geo="", referer="", reading_speed=None, timezone=None,
+                 proxy_client="", proxy_geo="", referer="", reading_speed=None, timezone=None, languages=["en-US", "en"],
                  mouse_delta_y=None, ad_click_probability=0.2, ad_keywords=None, ad_keywords_click_probability=0.2,
                  cookies=list()):
         self.identity_raw = None
@@ -50,9 +50,10 @@ class Identity:
         self.reading_speed = reading_speed
         self.user_agent = None
         self.timezone = timezone
+        self.languages = languages
         self.mouse_delta_y = mouse_delta_y
         self.cookies = cookies
-        self.improvised_public_ip = True
+        self.improvised_public_ip = False
         self.has_visited_today = 0
         self.page_depth = 0.3
         self.ad_click_probability = ad_click_probability
@@ -108,6 +109,7 @@ class Identity:
         self.referer = None
         self.reading_speed = identity["READING_SPEED"]
         self.user_agent = None
+        self.languages = json.loads(identity["LANGUAGE"].replace("'", "\""))
         self.mouse_delta_y = identity["MOUSE_DELTA_Y"]
         self.has_visited_today = identity["HAS_VISITED_TODAY"]
         self.page_depth = identity["PAGE_DEPTH"]
@@ -203,8 +205,8 @@ class Identity:
         random.seed()
         return ''.join(random.choice(chars) for _ in range(length))
 
-    def resolve_proxy_url(self, geo_target, proxy_name="smartproxy.com"):
-        if proxy_name == "smartproxy.com":
+    def resolve_proxy_url(self, geo_target, proxy_name="proxyrack.com"):
+        if proxy_name in ["smartproxy.com", "proxyrack.com"]:
             if geo_target:
                 proxy_url = bot_constants.PROXY_STICKY_TEMPLATE.replace("<geo_target_area>", bot_constants.PROXY_GEO_TARGET_AREA)
                 proxy_url = proxy_url.replace("<port>", str(bot_constants.PROXY_PORT))

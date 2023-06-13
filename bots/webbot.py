@@ -1,10 +1,16 @@
 # With Great Power Comes Great Responsibility
 
 # Standard Library Imports
+import os
 import ctypes
+import random
 import re
 import pytweening
 import random as rand
+import json
+import tempfile
+from functools import reduce
+
 from requests.exceptions import SSLError, ProxyError
 from threading import Thread
 from multiprocessing import Value
@@ -13,7 +19,7 @@ import requests as main_requests
 # External Python Packages
 import time
 
-import seleniumwire.undetected_chromedriver as sw_uc
+import seleniumwire.undetected_chromedriver.v2 as sw_uc
 from seleniumwire import webdriver, request
 from seleniumwire.utils import decode
 from seleniumwire.thirdparty.mitmproxy.net.http import encoding
@@ -39,6 +45,7 @@ from identity.client import Identity
 
 class WebBot:  # A powerful WebBot designed to visit and perform activities on given url/s
     active_on_mouse_movement = Value(ctypes.c_int, -1)
+
     def __init__(
             self, identity=None,
             browser_to_use_id=browser_constants.CHROME_ID,
@@ -88,7 +95,8 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
         self.no_of_clicks = no_of_clicks
         self.probability_of_click = 0.45
         self.current_tab_length = 1
-        self.cached_requests_session = cached_requests.CachedSession(bot_constants.FULL_DIRECTORY_PATH + '/requests_cache')
+        self.cached_requests_session = cached_requests.CachedSession(
+            bot_constants.FULL_DIRECTORY_PATH + '/requests_cache')
         self.requests_session = main_requests.Session()
         self.total_request_size = 0
         self.uncached_response_size = 0
@@ -96,7 +104,7 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
         self.url_through_proxy_response_size = 0
         self.urls_cached = set()
         self.urls_through_proxy = set()
-        self.proxy=None
+        self.proxy = None
         self.to_click_ad = False
         self.ad_with_keyword_wait_counter = 0
 
@@ -141,6 +149,7 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
             x_coordinates = screen_size[0] - 2
         if y_coordinates >= screen_size[1]:
             y_coordinates = screen_size[1] - 2
+
         def move_operations():
             x_coordinates_to_move_to, y_coordinates_to_move_to = x_coordinates, y_coordinates
 
@@ -148,8 +157,10 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
             if (x_coordinates_offset_percentage > 0 and y_coordinates_offset_percentage > 0 and
                     area_width > 1 and area_height > 1):
                 # Calculate Offsets Based On Percentages
-                x_coordinates_to_move_to = (area_width * x_coordinates_offset_percentage / 100) + x_coordinates_to_move_to
-                y_coordinates_to_move_to = (area_height * y_coordinates_offset_percentage / 100) + y_coordinates_to_move_to
+                x_coordinates_to_move_to = (
+                                                   area_width * x_coordinates_offset_percentage / 100) + x_coordinates_to_move_to
+                y_coordinates_to_move_to = (
+                                                   area_height * y_coordinates_offset_percentage / 100) + y_coordinates_to_move_to
 
                 # If x_coordinates To Click On, Extends Beyond Width Bounds, Set To Bounds Point
                 if x_coordinates_to_move_to < x_coordinates or x_coordinates_to_move_to > x_coordinates + area_width:
@@ -188,7 +199,8 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
             self.human_clicker.move((int(x_coordinates_to_move_to), int(y_coordinates_to_move_to)),
                                     humanCurve=human_curve, duration=duration)
 
-            print(f"Bot Process Id {self.bot_process_id} <:::> Mouse Moved To Area Point: ", x_coordinates_to_move_to, y_coordinates_to_move_to)
+            print(f"Bot Process Id {self.bot_process_id} <:::> Mouse Moved To Area Point: ", x_coordinates_to_move_to,
+                  y_coordinates_to_move_to)
             return {'x': int(x_coordinates_to_move_to), 'y': int(y_coordinates_to_move_to)}
 
         if move_to_new_thread:
@@ -226,6 +238,7 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
             x_coordinates = screen_size[0] - 2
         if y_coordinates >= screen_size[1]:
             y_coordinates = screen_size[1] - 2
+
         def move_operations():
             x_coordinates_to_move_to, y_coordinates_to_move_to = x_coordinates, y_coordinates
 
@@ -269,7 +282,8 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
                                     humanCurve=human_curve,
                                     duration=duration)
 
-            print(f"Bot Process Id {self.bot_process_id} <:::> Mouse Moved To: ", x_coordinates_to_move_to, y_coordinates_to_move_to)
+            print(f"Bot Process Id {self.bot_process_id} <:::> Mouse Moved To: ", x_coordinates_to_move_to,
+                  y_coordinates_to_move_to)
             return {'x': int(x_coordinates_to_move_to), 'y': int(y_coordinates_to_move_to)}
 
         if move_to_new_thread:
@@ -312,15 +326,14 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
         scroll_bar_x_position = browser_window_body_size.get("width")
         scroll_bar_y_position = utils.fetch_percentage_value(
             browser_inner_size.get("height"),
-            utils.fetch_value_percentage(browser_window_body_size.get("height"), window_page_y_offset)) +\
-                bot_constants.UP_TASKBAR_HEIGHT
+            utils.fetch_value_percentage(browser_window_body_size.get("height"), window_page_y_offset)) + \
+                                bot_constants.UP_TASKBAR_HEIGHT
 
         scroll_bar_width = browser_inner_size.get("width") - browser_window_body_size.get("width")
 
         if 0 <= scroll_bar_width >= 18:
             scroll_bar_x_position += (scroll_bar_width - 14)
             scroll_bar_width = 14
-
 
         scroll_bar_height = utils.fetch_percentage_value(
             browser_inner_size.get("height"),
@@ -426,6 +439,7 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
         :param simulate_human_behaviour: If Argument Is True, Method Will Attempt To Simulate Human Interaction Scroll
         :return: Return True When Scroll Is Complete
         """
+
         def has_page_offset_changed():
             document_offsets = self.get_window_document_offsets()
             document_offsets = [document_offsets["x_offset"], document_offsets["y_offset"]]
@@ -509,7 +523,8 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
     def send_mouse_to_scrollbar(self, is_asychronous=False):
         scroll_bar = self.get_scroll_bar_coordinates(2)
         return self.simulate_human_mouse_move_behavior_to_area(
-            scroll_bar['x_pos'] + 2, scroll_bar['y_pos'] + 2, scroll_bar['width'], scroll_bar['height'], rand.randint(0, 100),
+            scroll_bar['x_pos'] + 2, scroll_bar['y_pos'] + 2, scroll_bar['width'], scroll_bar['height'],
+            rand.randint(0, 100),
             rand.randint(0, 100), 30, rand.uniform(0.4, 1.0),
             is_asychronous)
 
@@ -603,30 +618,44 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
     def read_with_arrow_keys(self, html_web_element, boundary, key=K_Keys["ArrowDown"], direction_to_move=True):
         self.keyboard.down_persistent(key)
         element_coordinates = self.get_element_location_window_offset(html_web_element)
+        old_element_coordinates = element_coordinates
         boundary = element_coordinates.get("y_offset") - boundary
+        offset_same_count = 0
 
         if direction_to_move:
             while element_coordinates.get("y_offset") >= boundary:
+                old_element_coordinates = self.get_element_location_window_offset(html_web_element)
                 time.sleep(0.1)
                 element_coordinates = self.get_element_location_window_offset(html_web_element)
 
+                if offset_same_count > 1:
+                    break
+                if element_coordinates.get("y_offset") == old_element_coordinates.get("y_offset"):
+                    offset_same_count += 1
+
         elif not direction_to_move:
-            while element_coordinates.get("y_offset") <= boundary:
+            while boundary >= element_coordinates.get("y_offset"):
+                old_element_coordinates = self.get_element_location_window_offset(html_web_element)
                 time.sleep(0.1)
                 element_coordinates = self.get_element_location_window_offset(html_web_element)
+
+                if offset_same_count > 1:
+                    break
+                if element_coordinates.get("y_offset") == old_element_coordinates.get("y_offset"):
+                    offset_same_count += 1
         self.keyboard.up(key)
         return True
 
     def read_with_mouse_to_scrollbar(self,
-                                     coordinates_offset_overshoot={'x': 0, 'y': 0, 'x_offset_percentage': 0,
-                                                                   'y_offset_percentage': 0,
-                                                                   'max_overshoot': 0, 'probability_of_overshoot': 0},
-                                     is_asychronous=False,
-                                     counter=0):
+                                     coordinates_offset_overshoot=dict(x=0, y=0, x_offset_percentage=0,
+                                                                       y_offset_percentage=0, max_overshoot=0,
+                                                                       probability_of_overshoot=0),
+                                     is_asychronous=False, counter=0):
         pyautogui.mouseDown()
-        while self.revert_to_main_page():
-            pyautogui.mouseUp()
-            pyautogui.mouseDown()
+        if self.no_of_clicks > 0:
+            while self.revert_to_main_page():
+                pyautogui.mouseUp()
+                pyautogui.mouseDown()
 
         self.simulate_human_mouse_move_behavior_to_point(
             coordinates_offset_overshoot['x'], coordinates_offset_overshoot['y'],
@@ -636,7 +665,7 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
         pyautogui.mouseUp()
         return counter
 
-    def read_with_touch(self, px_to_adjust_by, duration, force_screen_reset=False):
+    def read_with_touch(self, px_to_adjust_by, duration=rand.uniform(0.1, 2), force_screen_reset=False):
         # A List Containing The Browser's Page 9-Ways Splitted Dimension In The Following Format
         # [[(x, y, width, height) x3] x3]
         generated_page_boundaries = []
@@ -679,14 +708,11 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
         y_end = round(y_start - px_to_adjust_by)
         x_end = round(x_start + utils.fetch_percentage_value(x_start, rand.uniform(-4, 4)))
 
-        window_document = self.get_document_offset_from_screen()
         x_start = x_start if x_start >= 0 else 0
         y_start = y_start if y_start >= 0 else 0
         x_end = x_end if x_end >= 0 else 0
         y_end = y_end if y_end >= 0 else 0
 
-        if not duration:
-            duration = rand.uniform(0.1, 2)
         self.touch.simulate_human_touch_movement_with_mouse((x_start, y_start), (x_end, y_end), duration)
         self.smart_click_trigger((x_start, y_start), self.identity.device_type)
         self.revert_to_main_page()
@@ -702,6 +728,8 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
 
                 if not isinstance(self.ad_keywords, list) or self.ad_with_keyword_wait_counter >= 2:
                     print(f"Bot Process Id {self.bot_process_id} <:::> Keywords won't be used as basis for ad click")
+                    # Reseting time activated before loading, so ad page has more time to load
+                    self.time_activated = time.time()
                     if self.ad_click(rand.choice(ads_dimensions)):
                         ad_click_success = True
                     self.to_click_ad = False
@@ -709,10 +737,13 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
                     for ad_dimensions in ads_dimensions:
                         for keyword in self.ad_keywords:
                             if keyword in ad_dimensions["text_content"]:
+                                # Reseting time activated before loading, so ad page has more time to load
+                                self.time_activated = time.time()
                                 if self.ad_click(ad_dimensions):
                                     ad_click_success = True
                                 self.to_click_ad = False
-                                print(f"Bot Process Id {self.bot_process_id} <:::> Keyword was used as a base to click an ad")
+                                print(
+                                    f"Bot Process Id {self.bot_process_id} <:::> Keyword was used as a base to click an ad")
                                 break
                         else:
                             continue
@@ -754,7 +785,7 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
             if not revert_back:
                 self.revert_to_main_page()
 
-    def locate_ad_elements(self, ads_elements_type, ads_elements_name: str, duration_to_look_for=55):
+    def locate_ad_elements(self, ads_elements_type, ads_elements_name: str, duration_to_look_for=2):
         def iframe_check():
             wait = WebDriverWait(self.web_browser_driver, duration_to_look_for)
             iframe = wait.until(EC.presence_of_element_located((By.TAG_NAME, "iframe")))
@@ -768,7 +799,8 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
                 ads_elements = wait.until(
                     EC.presence_of_all_elements_located((ads_elements_type, ads_elements_name)))
             except TimeoutException:
-                print(f"Bot Process Id {self.bot_process_id} <:::> Element parent body was found but ads were not present")
+                print(
+                    f"Bot Process Id {self.bot_process_id} <:::> Element parent body was found but ads were not present")
                 self.web_browser_driver.switch_to.default_content()
             if not ads_elements:
                 return
@@ -785,6 +817,7 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
                 ads_elements_rect.append(rect)
             self.web_browser_driver.switch_to.default_content()
             return ads_elements_rect
+
         if ads_elements_type == "xpath":
             ads_elements_type = By.XPATH
         elif ads_elements_type == "class":
@@ -808,7 +841,8 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
             pyautogui.click()
             return True
         else:
-            print(f"Bot Process Id {self.bot_process_id} <:::> The device type you are attempting to click on is unknown")
+            print(
+                f"Bot Process Id {self.bot_process_id} <:::> The device type you are attempting to click on is unknown")
             return False
 
     def smart_click_trigger(self, coords=(100, 100), device_type="is_pc"):
@@ -831,46 +865,43 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
         self.maximum_no_of_ads = maximum_no_of_ads
         self.ad_keywords = ad_keywords
 
-    def looper(self, read_time, direction_to_move, html_web_element, total_px_to_adjust_by,
-               rem_px_to_adjust_by, rem_read_time, owing_misc_time, mode="arrow_keys", **kwargs):
-        if self.smart_ad_click():
-            return "ad_clicked"
-        element_coordinates = self.get_element_location_window_offset(html_web_element)
-        browser_inner_size = self.get_browser_inner_size()
-        if rand.randint(0, 1):
-            px_to_adjust_by = rand.randint(1, round(browser_inner_size.get("height") / 1.5))
-        else:
-            px_to_adjust_by = rand.randint(1, round(self.web_browser_driver.get_window_rect().get("height") / 2))
-        element_base_offset = element_coordinates.get("y_offset")
-        # Update Misc Time
-        misc_time = time.time()
-
+    def read_by_mode(self, html_web_element: remote_webdriver.WebElement, px_to_adjust_by, mode="arrow_keys",
+                     direction=True, **kwargs):
+        px_to_adjust_by = max(px_to_adjust_by, 10)
+        # Stamp the initial time before reading began
+        read_mode_time_used = time.time()
         if mode == "arrow_keys":
-            multiplier = 1
-            if owing_misc_time >= 1:
-                multiplier = 2.6
-            self.read_with_arrow_keys(html_web_element, px_to_adjust_by * multiplier, K_Keys["ArrowDown"], True)
+            key = K_Keys["ArrowDown"]
+            if not direction:
+                key = K_Keys["ArrowUp"]
+            self.read_with_arrow_keys(html_web_element, px_to_adjust_by, key, direction)
+            # Wait to complete scroll
+            time.sleep(0.12)
         elif mode == "wheel":
             self.mouse.mouse_wheel(*pyautogui.position(), px_to_adjust_by, deltaY=self.identity.mouse_delta_y)
         elif mode == "touch":
-            read_duration = 2.5
-            if owing_misc_time >= 1:
-                read_duration = round(rand.uniform(0.1, 0.3), 2)
-            self.read_with_touch(px_to_adjust_by, read_duration)
+            if not direction:
+                px_to_adjust_by *= -1
+            self.read_with_touch(px_to_adjust_by)
         elif mode == "mouse_to_scrollbar":
-            if "present_mouse_points" in kwargs:
-                multiplier = 1
-                if owing_misc_time >= 1:
-                    multiplier = 2.2
+            def read_with_mouse_to_scrollbar():
+                browser_inner_size_height = self.get_browser_inner_size()["height"]
                 mouse_x, mouse_y = pyautogui.position()
-                mouse_x += utils.fetch_percentage_value(browser_inner_size["height"], rand.randint(0, 1))
-                mouse_y += ((px_to_adjust_by*multiplier / self.web_browser_driver.execute_script(
-                    "return document.body.getBoundingClientRect().height")) * browser_inner_size["height"])
+                mouse_x += utils.fetch_percentage_value(browser_inner_size_height, rand.randint(0, 1))
+                px_to_adjust_mouse_y_by = max(((px_to_adjust_by / self.web_browser_driver.execute_script(
+                    "return document.body.getBoundingClientRect().height")) * browser_inner_size_height), 3)
+                if not direction:
+                    px_to_adjust_mouse_y_by *= -1
+                mouse_y += px_to_adjust_mouse_y_by
+                print("mouse_y ==>", mouse_y)
                 kwargs["present_mouse_points"]["x"] = mouse_x
                 kwargs["present_mouse_points"]["y"] = mouse_y
                 self.read_with_mouse_to_scrollbar(
                     {'x': mouse_x, 'y': mouse_y, 'x_offset_percentage': 0,
                      'y_offset_percentage': 0, 'max_overshoot': 0, 'probability_of_overshoot': 0})
+
+            if "present_mouse_points" in kwargs:
+                read_with_mouse_to_scrollbar()
             else:
                 present_mouse_points = self.send_mouse_to_scrollbar()
                 if not isinstance(present_mouse_points, dict):
@@ -878,51 +909,143 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
                         "Set Function Asychronous Parameter To False, If Expecting Dict Of Mouse Coordinates")
                 kwargs["present_mouse_points"] = present_mouse_points
                 time.sleep(rand.uniform(0, 1))
+                read_with_mouse_to_scrollbar()
+        kwargs["read_mode_time_used"] = time.time() - read_mode_time_used
+        return kwargs
 
-        # Wait So Browser Can Fully Complete Scroll
-        time.sleep(0.12)
+    def smart_human_like_content_navigator(self, read_time, html_web_element, total_px_to_adjust_by,
+                                           mode="arrow_keys", **kwargs):
+        # This is to make up for the edge case, in the event there is no reason to simulate a read
+        if total_px_to_adjust_by <= 0:
+            time.sleep(read_time)
+            return True
+        # Stamping the initial time before content will be read or adjusted by with px_to_adjust_by
+        read_mode_initial_time_stamp = time.time()
+
+        if self.smart_ad_click():
+            return "ad_clicked"
+
+        element_coordinates = self.get_element_location_window_offset(html_web_element)
+        browser_inner_size = self.get_browser_inner_size()
+
+        element_base_offset = element_coordinates.get("y_offset")
+
+        # The number of seconds to spend on each px
+        avg_time_per_px = read_time / total_px_to_adjust_by
+
+        px_adjusted_by = kwargs.get("px_adjusted_by", 0)
+        if px_adjusted_by > total_px_to_adjust_by:
+            px_adjusted_by = total_px_to_adjust_by
+        read_mode_time_used = kwargs.get("read_mode_time_used", 0)
+        time_allocated_to_px_adjusted_by = min(avg_time_per_px * px_adjusted_by, read_time)
+        time_allocated_time_used_margin = time_allocated_to_px_adjusted_by - read_mode_time_used
+
+        #print("px adjusted by ===>", px_adjusted_by)
+        #print("total px to adjust by ===>", total_px_to_adjust_by)
+        #print("read time ===>", read_time)
+        #print("time expected to have used based on px adjusted ==>", time_allocated_to_px_adjusted_by)
+        #print("time expected time used margin ==>", time_allocated_time_used_margin)
+
+        time_to_pause_activity = 0
+        # if the margin between time allocated and time used to read is lesser than 0, do not wait and amplify
+        # px_to_adjust_by
+        if time_allocated_time_used_margin <= 0:
+            # Unlike calculation used for px_to_adjust_by below,amplify by setting destination to the lower ends of page
+            px_to_adjust_by = round(rand.uniform(
+                browser_inner_size.get("height") / 1.4, browser_inner_size.get("height")))
+
+            # Makes sure px_to_adjust_by is never greater than rem_px_to_adjust_by or total_px_to_adjust_by to try and
+            # put a lid on overshooting
+            if kwargs.get("rem_px_to_adjust_by", total_px_to_adjust_by) < px_to_adjust_by:
+                px_to_adjust_by = kwargs.get("rem_px_to_adjust_by", total_px_to_adjust_by)
+        else:
+            # Use Portion of The Browser Inner Size to Determine How Long to Adjust PX by, and if the remaining px to
+            # adjust by is lesser than the browser inner size to use, use it so the navigation doesn't scroll the
+            # element out of desired offset
+            px_to_adjust_by = round(rand.uniform(
+                1, browser_inner_size.get("height") / 1.4))
+
+            # Makes sure px_to_adjust_by is never greater than rem_px_to_adjust_by or total_px_to_adjust_by to try and
+            # put a lid on overshooting
+            if kwargs.get("rem_px_to_adjust_by", total_px_to_adjust_by) < px_to_adjust_by:
+                px_to_adjust_by = kwargs.get("rem_px_to_adjust_by", total_px_to_adjust_by)
+
+            # This is the time activity will be suspended for as thou it's trying to human read the content
+            time_to_pause_activity = time_allocated_time_used_margin
+
+            # navigate up as thou looking for forgotten content, feature to reinforce human reading behaviour
+            if rand.random() < 0.2:
+                # Humans might wait at very different durations before scrolling up to check for some content-text,
+                # the sleep below attempts to simulate that by taking no more than a minimal amount which would
+                # inavertly affect the read_mode_time_used
+                time_to_randomly_wait_before_scrolling_up = random.uniform(0.01, time_to_pause_activity * 0.17)
+                time.sleep(time_to_randomly_wait_before_scrolling_up)
+
+                px_to_move_by = browser_inner_size.get("height") * rand.uniform(0.15, 0.35)
+
+                kwargs["read_by_mode_data"] = self.read_by_mode(html_web_element, px_to_move_by, mode, False,
+                                                                **kwargs.get("read_by_mode_data", {}))
+
+                # modifying time_to_pause_activity on how long to wait for after navigating up. expected mean time to
+                # be around 45% which averagely should not be more than half of time_to_pause_activity
+                time_to_pause_activity = utils.fetch_percentage_value(
+                    time_to_pause_activity, rand.uniform(35, 55) - (
+                            + (kwargs["read_by_mode_data"]["read_mode_time_used"])
+                            + time_to_randomly_wait_before_scrolling_up / 2))
+
+            #    print("Time to pause activity one ==>", time_to_pause_activity)
+                time.sleep(max(0, time_to_pause_activity))
+
+                # Attempt to return page to original point before going up
+                kwargs["read_by_mode_data"] = self.read_by_mode(html_web_element, px_to_move_by, mode, True,
+                                                                **kwargs.get("read_by_mode_data", {}))
+
+                # Recalibrate time_to_pause_activity and deduct time used navigating down
+                time_to_pause_activity = time_allocated_time_used_margin - (
+                        time_to_pause_activity + kwargs["read_by_mode_data"]["read_mode_time_used"] +
+                        time_to_randomly_wait_before_scrolling_up / 2)
+
+            #    print("Time to pause activity two ==>", time_to_pause_activity)
+
+                # Finally sleep for the remaining time if remaining
+                time.sleep(max(0, time_to_pause_activity))
+            else:
+                time.sleep(time_to_pause_activity)
+
+        # Store read_by_mode data at each function iteration to be repassed, reason is for read_by_mode
+        # mouse_to_scrollbar mode
+        kwargs["read_by_mode_data"] = self.read_by_mode(html_web_element, px_to_adjust_by, mode, True,
+                                                        **kwargs.get("read_by_mode_data", {}))
+
+        # Recalculating read_mode_time_used to show time spent adjusting or navigating the content,
+        # recur time_allocated_time_used_margin to it if in deficit, so it doesn't forget it's behind if so,
+        # adding time_to_pause_activity to offset the time waited for and leave only read_mode_time_used
+        kwargs["read_mode_time_used"] = (time.time() - read_mode_initial_time_stamp) + time_to_pause_activity
+
+
+        # print("read mode duration ==>", read_mode_time_used)
 
         element_coordinates = self.get_element_location_window_offset(html_web_element)
         # Changing The Value Of px_to_adjust_by To The Amount Of px Actually Adjusted
-        px_to_adjust_by = (element_base_offset - element_coordinates.get("y_offset"))
+        kwargs["px_adjusted_by"] = (element_base_offset - element_coordinates.get("y_offset"))
+        # Calculating Remaining Px, making sure that it's not lesser than 0 at any given point
+        kwargs["rem_px_to_adjust_by"] = kwargs.get("rem_px_to_adjust_by", total_px_to_adjust_by) - px_adjusted_by
 
-        if px_to_adjust_by > rem_px_to_adjust_by:
-            px_to_adjust_by = rem_px_to_adjust_by
-            rem_px_to_adjust_by = 0
-        else:
-            rem_px_to_adjust_by -= px_to_adjust_by
+        # print("remaining px to adjust by ==>", kwargs["rem_px_to_adjust_by"])
 
-        percentage_of_seconds_to_hang_for = utils.fetch_value_percentage(total_px_to_adjust_by, px_to_adjust_by)
-
-        offset_percentage_of_seconds_to_hang_for = utils.fetch_percentage_value(
-            percentage_of_seconds_to_hang_for, 15)
-        offset_percentage_of_seconds_to_hang_for = rand.uniform(-offset_percentage_of_seconds_to_hang_for,
-                                                                offset_percentage_of_seconds_to_hang_for)
-
-        percentage_of_seconds_to_hang_for += offset_percentage_of_seconds_to_hang_for
-
-        seconds_to_hang_for = utils.fetch_percentage_value(
-            read_time, percentage_of_seconds_to_hang_for) - (time.time() - misc_time)
-
-        # If Miscelleanous Time Is Greater Than Seconds To Hang For, Do This
-        if seconds_to_hang_for - owing_misc_time < 0:
-            owing_misc_time -= seconds_to_hang_for
-            seconds_to_hang_for = 0
-        else:
-            # Restore Owing Misc Time If Deducted Debt Could Not Make Seconds To Hang For Lesser Than 0
-            seconds_to_hang_for -= owing_misc_time
-            owing_misc_time = 0
-
-        rem_read_time -= seconds_to_hang_for
-        # print(f"Bot Process Id {self.bot_process_id} <:::> Advancing In Read --> Reading Element(Bottom: {element_coordinates['bottom']})")
-
-        time.sleep(round(seconds_to_hang_for, 2))
-        if rem_px_to_adjust_by > 0 and element_coordinates.get("bottom") > \
-                (browser_inner_size.get("height") + utils.fetch_percentage_value(browser_inner_size.get("height"), 40)):
-            return self.looper(read_time, direction_to_move, html_web_element, total_px_to_adjust_by,
-                        rem_px_to_adjust_by, rem_read_time, owing_misc_time, mode, **kwargs)
-        else:
+        if kwargs["rem_px_to_adjust_by"] <= 0:
             return True
+
+        if kwargs.get("px_adjusted_at_0_count", 0) > 1:
+            return True
+
+        if px_adjusted_by == 0:
+            kwargs["px_adjusted_at_0_count"] = kwargs.get("px_adjusted_at_0_count", 0) + 1
+        else:
+            kwargs["px_adjusted_at_0_count"] = 0
+
+        return self.smart_human_like_content_navigator(read_time, html_web_element, total_px_to_adjust_by,
+                                                       mode, **kwargs)
 
     def open_link_in_related_articles_section(self, related_articles_sections: remote_webdriver.WebElement):
         links_to_follow = []
@@ -972,6 +1095,7 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
             WebBot.active_on_mouse_movement.value = -self.bot_process_id if self.bot_process_id != 0 else -500
             return True
         return False
+
     def read_element_content(self, html_web_element: remote_webdriver.WebElement):
         """
         This Method Scrolls The Web Page To Put Requested Web Element In View
@@ -979,8 +1103,10 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
         :return: Return True When Scroll Is Complete
         """
         time_started = time.time()
-        def read(read_time, direction_to_move, html_web_element: remote_webdriver.WebElement,
-                 mode, percentage_of_content_to_read=100):
+        # There is a potential that the browser inner size might not be fully deducted from the content height to read
+        # from. Therefore the remaining should be adjusted unto the rest
+        px_owing = -self.get_browser_inner_size()["height"]
+        def read(read_time, html_web_element: remote_webdriver.WebElement, mode, percentage_of_content_to_read=100):
             """
             Send Information To Looper To Read Content By Set Amount Of Content And Time
             :param read_time: Amount Of Time To Move Through Content
@@ -990,43 +1116,36 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
             :param percentage_of_content_to_read: Percentage Of Article Height To Stop At
             :return: True
             """
+            nonlocal px_owing
             # Get The Total Pixels To Move By Using The percentage_of_content_to_read On html_web_element Height
             total_px_to_adjust_by = utils.fetch_percentage_value(
-                html_web_element.rect.get("height"),
-                percentage_of_content_to_read)
-            rem_px_to_adjust_by = total_px_to_adjust_by
-            rem_read_time = read_time
-            owing_misc_time = 0
-            return self.looper(read_time, direction_to_move, html_web_element, total_px_to_adjust_by,
-                                rem_px_to_adjust_by, rem_read_time, owing_misc_time, mode)
+                html_web_element.rect["height"],
+                percentage_of_content_to_read) + px_owing
+            px_owing = min(0, total_px_to_adjust_by)
+            return self.smart_human_like_content_navigator(read_time, html_web_element, total_px_to_adjust_by, mode)
 
         seconds_to_read = self.calculate_and_generate_page_read_time(html_web_element, self.identity.reading_speed,
                                                                      self.identity.article_read_time_offset)
         content_read_percentage = rand.randint(85, 100)
-        print(f"Bot Process Id {self.bot_process_id} <:::> Percentage Of Content To Read And Seconds To Read For: ", content_read_percentage, seconds_to_read)
+        print(f"Bot Process Id {self.bot_process_id} <:::> Percentage Of Content To Read And Seconds To Read For: ",
+              content_read_percentage, seconds_to_read)
         self.scroll_element_into_vertical_view(html_web_element, element_scroll_to=0)
-
+        px_owing += self.get_element_location_window_offset(html_web_element).get("y_offset")
+        # This sleep is to simulate a pause at the beginning of the article
+        time.sleep(random.uniform(2.45, 5.24))
         remaining_reading_content_percentage = content_read_percentage
         browser_inner_size = self.get_browser_inner_size()
 
         mode = ""
         while remaining_reading_content_percentage > 0 and \
-                self.get_element_location_window_offset(html_web_element).get("bottom") > (
-                browser_inner_size.get("height") +
-                utils.fetch_percentage_value(browser_inner_size.get("height"), 40)):
-            next_read_sequence_percentage = rand.randint(1, remaining_reading_content_percentage)
-            # If Remaining Read Percentage is Lesser Than 6.
-            # Assign Remaining Reading Read Percentage To It
-            if remaining_reading_content_percentage < 50 and rand.random() < 0.15:
-                print(f"Bot Process Id {self.bot_process_id} <:::> Current Activity --> Scrolling To Random Point On Article")
-                random_max = 100 - remaining_reading_content_percentage
-                self.scroll_to_percentage_in_element(
-                    html_web_element, rand.uniform(1, random_max), rand.uniform(0.9, 2))
-
-            next_read_sequence_time = utils.fetch_percentage_value(
-                seconds_to_read, next_read_sequence_percentage + rand.uniform(0, 1.2))
-
-            print(f"Bot Process Id {self.bot_process_id} <:::> Remaining Content Percentage To Read -->", remaining_reading_content_percentage)
+                self.get_element_location_window_offset(html_web_element).get("bottom") > \
+                browser_inner_size.get("height"):
+            if remaining_reading_content_percentage < 50 and rand.random() < 0.08:
+                 print(
+                     f"Bot Process Id {self.bot_process_id} <:::> Current Activity --> Scrolling To Random Point On Article")
+                 random_max = 100 - remaining_reading_content_percentage
+                 self.scroll_to_percentage_in_element(
+                     html_web_element, rand.uniform(1, random_max), rand.uniform(0.9, 2))
 
             # Release Mouse Hold If Mode In Last Read Was Mouse To ScrollBar
             if mode == "mouse_to_scrollbar":
@@ -1042,27 +1161,34 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
                     WebBot.active_on_mouse_movement.value = self.bot_process_id
                     mode = "mouse_to_scrollbar"
                     self.bring_window_to_front()
-            elif rand.random() < 0.58 and WebBot.active_on_mouse_movement.value < 0:
+            elif rand.random() < 0.55 and WebBot.active_on_mouse_movement.value < 0:
                 WebBot.active_on_mouse_movement.value = self.bot_process_id
                 mode = "mouse_to_scrollbar"
                 self.bring_window_to_front()
 
-            if remaining_reading_content_percentage < 6:
+            if remaining_reading_content_percentage < 26:
                 next_read_sequence_percentage = remaining_reading_content_percentage
                 remaining_reading_content_percentage = 0
             else:
+                next_read_sequence_percentage = rand.randint(25, remaining_reading_content_percentage)
                 remaining_reading_content_percentage -= next_read_sequence_percentage
-            print(f"Bot Process Id {self.bot_process_id} <:::> Navigation Mode -->", mode)
 
-            if read(next_read_sequence_time, True, html_web_element, mode, next_read_sequence_percentage) == \
-                "ad_clicked":
+            next_read_sequence_time = utils.fetch_percentage_value(
+                seconds_to_read, next_read_sequence_percentage + rand.uniform(-1.2, 1.2))
+
+            print(f"Bot Process Id {self.bot_process_id} <:::> Navigation Mode -->", mode)
+            print(f"Bot Process Id {self.bot_process_id} <:::> Remaining Content Percentage To Read -->",
+                  remaining_reading_content_percentage)
+
+            if read(next_read_sequence_time, html_web_element, mode, next_read_sequence_percentage) == "ad_clicked":
                 print(
                     f"BOT PROCESS ID {self.bot_process_id} <:::> AD WAS CLICKED, STOPPED READING ARTICLE")
                 return "ad_clicked"
         if mode == "mouse_to_scrollbar":
             pyautogui.mouseUp()
             WebBot.active_on_mouse_movement.value = -self.bot_process_id if self.bot_process_id != 0 else -500
-        print(f"ARTICLE READ SESSION COMPLETED, BOT THREAD ID {self.bot_process_id} | TIME SPENT: {time.time() - time_started}")
+        print(
+            f"ARTICLE READ SESSION COMPLETED, BOT THREAD ID {self.bot_process_id} | TIME SPENT: {time.time() - time_started}")
         return True
 
     def bring_window_to_front(self):
@@ -1117,7 +1243,8 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
         # Convert To Seconds And Return
         return round(seconds_to_read)
 
-    def move_pointing_device_to_element(self, html_web_element: remote_webdriver.WebElement, simulate_human_behaviour=True):
+    def move_pointing_device_to_element(self, html_web_element: remote_webdriver.WebElement,
+                                        simulate_human_behaviour=True):
         """
         :param html_web_element: HTML Element to Move To
         :param simulate_human_behaviour: If Bool is True(Which is By Default) use pyAutoGUI to Simulate Human Behaviour
@@ -1132,8 +1259,8 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
                               area_width=html_web_element.rect["width"],
                               area_height=html_web_element.rect["height"])
 
-                self.simulate_human_mouse_move_behavior_to_area(el_pos["area_x"]+1, el_pos["area_y"]+1,
-                                                                el_pos["area_width"]-2, el_pos["area_height"]-2,
+                self.simulate_human_mouse_move_behavior_to_area(el_pos["area_x"] + 1, el_pos["area_y"] + 1,
+                                                                el_pos["area_width"] - 2, el_pos["area_height"] - 2,
                                                                 x_coordinates_offset_percentage=rand.randint(0, 100),
                                                                 y_coordinates_offset_percentage=rand.randint(0, 100),
                                                                 max_overshoot=35,
@@ -1166,9 +1293,12 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
 
     def print_total_usage(self):
         print(f'Bot Process Id {self.bot_process_id} <:::> Total request size: {self.total_request_size:.2f} KB')
-        print(f'Bot Process Id {self.bot_process_id} <:::> Total uncached response size: {self.uncached_response_size:.2f} KB')
-        print(f'Bot Process Id {self.bot_process_id} <:::> Total proxy response size: {self.url_through_proxy_response_size:.2f} KB')
-        print(f'Bot Process Id {self.bot_process_id} <:::> Total cached response size: {self.cached_response_size:.2f} KB')
+        print(
+            f'Bot Process Id {self.bot_process_id} <:::> Total uncached response size: {self.uncached_response_size:.2f} KB')
+        print(
+            f'Bot Process Id {self.bot_process_id} <:::> Total proxy response size: {self.url_through_proxy_response_size:.2f} KB')
+        print(
+            f'Bot Process Id {self.bot_process_id} <:::> Total cached response size: {self.cached_response_size:.2f} KB')
         print(f'Bot Process Id {self.bot_process_id} <:::> Total data transferred: '
               f'{self.total_request_size + self.uncached_response_size + self.url_through_proxy_response_size:.2f} KB')
 
@@ -1200,23 +1330,27 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
         self.inject_referer_into_header(request)
         if utils.url_ends_with(request.url, [".html", ".js", ".css", ".jpg", ".jpeg", ".png", ".gif", ".svg", ".woff",
                                              ".woff2", ".ttf", ".ico", ".webm", ".ogg", ".wav", ".mp3", ".mp4"]) or \
-            utils.has_string_in(request.host, ["googleapis", "chrome", "google", "gstatic",
-                                               "gvt1", browser_constants.SITE_DOMAIN]):
+                utils.has_string_in(request.host, ["googleapis", "chrome", "google", "gstatic",
+                                                   "gvt1", browser_constants.SITE_DOMAIN]):
             try:
                 response = self.cached_requests_session.request(url=request.url, verify=False, headers=request.headers,
-                    allow_redirects=False, method=request.method, data=request.body)
+                                                                allow_redirects=False, method=request.method,
+                                                                data=request.body)
                 if response.from_cache:
                     self.urls_cached.add(request.url)
             except SSLError:
-                print(f'Bot Process Id {self.bot_process_id} <:::> {request.url} would not be able to go through the cacher as a result of an ssl error')
+                print(
+                    f'Bot Process Id {self.bot_process_id} <:::> {request.url} would not be able to go through the cacher as a result of an ssl error')
                 return
         else:
             print(f'Bot Process Id {self.bot_process_id} <:::> {request.url} is passing through the proxy')
             try:
                 response = self.requests_session.request(url=request.url, verify=False, headers=request.headers,
-                    allow_redirects=False, method=request.method, data=request.body)
+                                                         allow_redirects=False, method=request.method,
+                                                         data=request.body)
             except (SSLError, ProxyError):
-                print(f'Bot Process Id {self.bot_process_id} <:::> {request.url} generated an ssl or proxy error, it won\'t go through proxy')
+                print(
+                    f'Bot Process Id {self.bot_process_id} <:::> {request.url} generated an ssl or proxy error, it won\'t go through proxy')
                 return
 
             self.urls_through_proxy.add(request.url)
@@ -1248,8 +1382,9 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
                         fingerprintables_spoof_code = utils.return_fingerprintables_spoof_js_code(
                             offset_color_value=tuple(self.identity.canvas_fp_offset),
                             audio_context_offset=self.identity.audio_context_fp_offset,
-                            webgl_params=(self.identity.gpu_vendor, 15, 12, 14, 14, 13, 4, 4, 4, 4, 3, 3, 3, 3, 6, 11, 12, 12,
-                                          self.identity.gpu_renderer), timezone=self.identity.timezone,
+                            webgl_params=(
+                                self.identity.gpu_vendor, 15, 12, 14, 14, 13, 4, 4, 4, 4, 3, 3, 3, 3, 6, 11, 12, 12,
+                                self.identity.gpu_renderer), timezone=self.identity.timezone,
                             font_width_offset=self.identity.font_fp_offset[0],
                             font_height_offset=self.identity.font_fp_offset[1],
                             platform=self.identity.platform,
@@ -1286,12 +1421,46 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
                 try:
                     if self.web_browser_driver.session_id:
                         print(f"Bot Process Id {self.bot_process_id} <:::> Updating Cookies To Cloud")
+                        self.release_proxies()
                         self.update_cookies_to_cloud()
                         self.web_browser_driver.quit()
                 except ConnectionRefusedError:
-                    print("A connection refused error occurred, this would likely be as a result of a dead browser session")
+                    print(
+                        "A connection refused error occurred, this would likely be as a result of a dead browser session")
             else:
                 self.quit_browser_after_max_alive(sleep_time=5)
+
+    @staticmethod
+    def _handle_prefs(options):
+        if prefs := options.experimental_options.get("prefs"):
+            # turn a (dotted key, value) into a proper nested dict
+            def undot_key(key, value):
+                if "." in key:
+                    key, rest = key.split(".", 1)
+                    value = undot_key(rest, value)
+                return {key: value}
+
+            # undot prefs dict keys
+            undot_prefs = reduce(
+                lambda d1, d2: {**d1, **d2},  # merge dicts
+                (undot_key(key, value) for key, value in prefs.items()),
+            )
+
+            # create an user_data_dir and add its path to the options
+            user_data_dir = os.path.normpath(tempfile.mkdtemp())
+            options.add_argument(f"--user-data-dir={user_data_dir}")
+
+            # create the preferences json file in its default directory
+            default_dir = os.path.join(user_data_dir, "Default")
+            os.mkdir(default_dir)
+
+            prefs_file = os.path.join(default_dir, "Preferences")
+            with open(prefs_file, encoding="latin1", mode="w") as f:
+                json.dump(undot_prefs, f)
+
+            # pylint: disable=protected-access
+            # remove the experimental_options to avoid an error
+            del options._experimental_options["prefs"]
 
     def open_web_browser(self, use_proxy=False):
         open_browser_in_full_screen = True
@@ -1313,12 +1482,14 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
             browser_options.add_argument('--disable-remote-fonts')
             browser_options.add_argument("--disable-extensions")
             browser_options.add_argument('--disable-gpu')
-            #browser_options.add_argument('--disable-dev-shm-usage')
-            #browser_options.add_argument('--disable-setuid-sandbox')
-            #browser_options.add_argument('--no-sandbox')
-            #browser_options.add_argument('--dns-prefetch-disable')
-            #browser_options.add_argument('--blink-settings=imagesEnabled=false')
-            #browser_options.add_argument('--disable-plugin-discovery')
+            browser_options.add_experimental_option('prefs', {'intl.accept_languages': ','.join(self.identity.languages)})
+            self._handle_prefs(browser_options)
+            # browser_options.add_argument('--disable-dev-shm-usage')
+            # browser_options.add_argument('--disable-setuid-sandbox')
+            # browser_options.add_argument('--no-sandbox')
+            # browser_options.add_argument('--dns-prefetch-disable')
+            # browser_options.add_argument('--blink-settings=imagesEnabled=false')
+            # browser_options.add_argument('--disable-plugin-discovery')
             if self.identity.user_agent:
                 browser_options.add_argument(f"--user-agent={self.identity.user_agent}")
             browser_options.binary_location = browser_constants.CHROME_BINARY_LOCATION
@@ -1356,7 +1527,8 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
         devtools_primary.set_all_cookies(self.web_browser_driver, self.identity.cookies)
         # If identity has a user agent, change browser user agent to identity's
         if self.identity.user_agent:
-            print(f"Bot Process Id {self.bot_process_id} <:::> Setting User Agent: {self.identity.user_agent} From Identity")
+            print(
+                f"Bot Process Id {self.bot_process_id} <:::> Setting User Agent: {self.identity.user_agent} From Identity")
             devtools_primary.change_user_agent(
                 self.web_browser_driver,
                 self.identity.user_agent, self.identity.platform)
@@ -1382,16 +1554,15 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
         t.start()
         if use_proxy:
             proxy_path = self.identity.resolve_proxy_url(self.identity.proxy_geo)
-            print(f"Bot Process Id {self.bot_process_id} <:::> Adding a proxy option for this session on this proxy"
-                  f" path: {proxy_path}")
-            self.requests_session.proxies = {
+            self.proxy = {
                 'http': 'http://' + proxy_path,
                 'https': 'http://' + proxy_path,
                 'no_proxy': 'localhost,127.0.0.1,gstatic.com,www.gstatic.com,update.googleapis.com,'
-                            'chromeupdate.download,*.1e100.net,*.googleusercontent.com'
+                            'chromeupdate.download,*.1e100.net,*.googleusercontent.com,*.gvt1.com,dl.google.com'
             }
-
-
+            print(f"Bot Process Id {self.bot_process_id} <:::> Adding a proxy option for this session on this proxy"
+                  f" path: {proxy_path}")
+            self.requests_session.proxies = self.proxy
     def wait_for_element_visible(self, locator):
         """
         Waits for an element to be visible on the page
@@ -1426,6 +1597,7 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
                                               self.identity.screen_resolution[4], "screenOrientation":
                                               {"type": "portraitPrimary", "angle": 0},
                                           "mobile": True})
+
     def revert_to_main_page_if_ever_changed(self):
         """
         Create Thread object to constantly check if page changed
@@ -1444,6 +1616,12 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
     def set_all_cookies(self, cookies):
         devtools_primary.set_all_cookies(cookies)
         return True
+
+    def release_proxies(self):
+        # release proxyrack sticky session
+        if self.identity.proxy_client == "proxyrack.com":
+            print(f"Bot Process Id {self.bot_process_id} <:::> Releasing proxyrack proxy session")
+            print(self.requests_session.get("http://api.proxyrack.net/release").json())
 
     def update_cookies_to_cloud(self):
         self.identity.update_cookies(self.fetch_all_cookies())
@@ -1485,7 +1663,8 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
                         self.opened_browser_urls[url_name] = url_id
                         print(self.opened_browser_urls)
                     else:
-                        print(f"Bot Process Id {self.bot_process_id} <:::> Unable To Open Url: " + url + ", With Name: " + url_name)
+                        print(
+                            f"Bot Process Id {self.bot_process_id} <:::> Unable To Open Url: " + url + ", With Name: " + url_name)
                     return True
         elif force_browser_diversion:
             """Create A Method That Checks All Other Opened Browsers To 
@@ -1496,4 +1675,5 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
         return False
 
     def __exit__(self):
-        print(f"Bot Process Id {self.bot_process_id} <:::> Cookies: ", devtools_primary.get_all_cookies(self.web_browser_driver))
+        print(f"Bot Process Id {self.bot_process_id} <:::> Cookies: ",
+              devtools_primary.get_all_cookies(self.web_browser_driver))

@@ -7,7 +7,8 @@ import multiprocessing
 import json
 import configparser
 import traceback
-from selenium.common import StaleElementReferenceException, TimeoutException
+from selenium.common.exceptions import TimeoutException, WebDriverException, StaleElementReferenceException, \
+    UnexpectedAlertPresentException
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
@@ -158,7 +159,6 @@ def run_bot(identity, process_id):
         if web_bot.read_element_content(web_bot.web_browser_driver.find_element(page_content_element_type,
                                                                              page_content_element_name)) == \
             "ad_clicked":
-            web_bot.time_activated = time.time()
             try:
                 time.sleep(random.uniform(0.7, 1.5))
                 body_element = WebDriverWait(web_bot.web_browser_driver, 4).until(
@@ -189,8 +189,9 @@ def run_bot(identity, process_id):
             web_bot.move_mouse_to_fool_exit_point()
 
         try:
-            web_bot.requests_session.close()
-            web_bot.cached_requests_session.close()
+            web_bot.release_proxies()
+            # web_bot.requests_session.close()
+            # web_bot.cached_requests_session.close()
             if web_bot.web_browser_driver.session_id:
                 print("Updating Cookies To Cloud")
                 web_bot.update_cookies_to_cloud()
@@ -201,7 +202,7 @@ def run_bot(identity, process_id):
 
     # These errors occurs when the browser session is terminated and webbot isn't aware
     except (NewConnectionError, ConnectionRefusedError, MaxRetryError, ConnectionResetError, ProtocolError, ReadTimeout,
-            StaleElementReferenceException):
+            StaleElementReferenceException, WebDriverException, TimeoutException, UnexpectedAlertPresentException):
         if debug:
             print(traceback.format_exc())
             print("The Error Above Was Handled, But Printed For Debugging Purpose")

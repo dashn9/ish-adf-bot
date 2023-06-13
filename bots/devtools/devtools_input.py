@@ -299,7 +299,7 @@ class Touchscreen:
                                            downBoundary=down_boundary, upBoundary=up_boundary + 1,
                                            distortionMean=0.2, distortionStdev=0.2, distortionFrequency=0.2,
                                            tweening=pytweening.linear, knotsCount=2,
-                                           targetPoints=target_points)
+                                           targetPoints=max(target_points, 2))
         generated_durations = utils.generate_uniform_numbers_to_specific_range_and_sum(
             latency_range, target_points, duration
         )
@@ -322,5 +322,9 @@ class Touchscreen:
                     type='touchEnd',
                     touchPoints=[],
                 ))
-            time.sleep(generated_durations[i])
+            # Makes sure i is not out of index
+            if i < len(generated_durations):
+                time.sleep(generated_durations[i])
+            else:
+                time.sleep(random.choice(generated_durations))
         return True
