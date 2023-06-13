@@ -150,7 +150,7 @@ class Identity:
         else:
             print("Resolving Timezone From Cloud")
             identity_timezone = self.data_controller.fetch_timezone(self.id, resolved_proxy_url)
-            if "TIMEZONE_ID" in identity_timezone.keys():
+            if identity_timezone and "TIMEZONE_ID" in identity_timezone.keys():
                 self.timezone = [identity_timezone["TIMEZONE_ID"], identity_timezone["TIMEZONE_OFFSET"],
                                  identity_timezone["TIMEZONE_FULL_NAME"]]
             else:
