@@ -54,7 +54,11 @@ class DataController:
                 "https": "https://"+proxy
             }
         ip_geolocation = session.get(api_endpoint, timeout=DataController.timeout)
-        return ip_geolocation.json()
+        if "Proxy Not Found" in ip_geolocation.text:
+            return False
+        else:
+            return ip_geolocation.json()
+
 
     def identity_visited_webpage(self, identity_id, page_id):
         pass

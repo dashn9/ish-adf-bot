@@ -4,6 +4,10 @@ import string
 import subprocess
 import time
 
+import urllib3.exceptions
+
+import requests.exceptions
+
 from datacontroller.datacontroller import DataController
 from constants import bot_constants
 from bots import utils
@@ -54,6 +58,7 @@ class Identity:
         self.mouse_delta_y = mouse_delta_y
         self.cookies = cookies
         self.improvised_public_ip = False
+        self.invalid_proxy = False
         self.has_visited_today = 0
         self.page_depth = 0.3
         self.ad_click_probability = ad_click_probability
@@ -138,7 +143,6 @@ class Identity:
 
     def resolve_timezone(self):
         resolved_proxy_url = self.resolve_proxy_url(self.proxy_geo, self.proxy_client)
-        print(resolved_proxy_url)
         if self.improvised_public_ip:
             geolocation = self.data_controller.fetch_geolocation_data(resolved_proxy_url)
 
@@ -156,8 +160,14 @@ class Identity:
             else:
                 print("An empty timezone was resolved from cloud - fixing")
                 geolocation = self.data_controller.fetch_geolocation_data(resolved_proxy_url)
-                self.timezone = [geolocation["timezone"], geolocation["offset"] / 60, geolocation["continent"] + " " +
-                                 geolocation["city"] + " Standard Time"]
+                if not geolocation:
+                    # This will occur if proxy could not be successfully connected with
+                    self.invalid_proxy = True
+                    print("invalid proxy")
+                    return
+                else:
+                    self.timezone = [geolocation["timezone"], geolocation["offset"] / 60, geolocation["continent"] + " " +
+                                     geolocation["city"] + " Standard Time"]
 
             print("geo location: ", identity_timezone)
             print("Successfully Resolved Timezone")

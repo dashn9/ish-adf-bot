@@ -210,13 +210,19 @@ def run_bot(identity, process_id):
 
 no_of_bots = 1
 if no_of_bots == 1:
-    run_bot(identity, 0)
+    if not identity.invalid_proxy:
+        run_bot(identity, 0)
+    else:
+        print(f"Identity(ID = {identity.id}) proxy is invalid. Restarting program")
 else:
     for i in range(no_of_bots):
-        print(f"Identity Successfully Initiated, Attaching Identity(ID = {identity.id}) To Bot process {i}")
-        bot_process = multiprocessing.Process(target=run_bot, args=(identity, i,), name=f"bot_process_{i}")
-        active_bot_processes.append(bot_process)
-        bot_process.start()
+        if not identity.invalid_proxy:
+            print(f"Identity Successfully Initiated, Attaching Identity(ID = {identity.id}) To Bot process {i}")
+            bot_process = multiprocessing.Process(target=run_bot, args=(identity, i,), name=f"bot_process_{i}")
+            active_bot_processes.append(bot_process)
+            bot_process.start()
+        else:
+            print(f"Identity(ID = {identity.id}) proxy is invalid. Restarting program")
 
     for bot_process in active_bot_processes:
         bot_process.join()
