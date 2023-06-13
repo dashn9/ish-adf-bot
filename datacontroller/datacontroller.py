@@ -40,7 +40,7 @@ class DataController:
                 session.get("http://api.proxyrack.net/release")
                 identity_timezone.close()
                 return identity_timezone.json()
-        except ProxyError:
+        except (ProxyError, json.JSONDecodeError):
             if retries <= 2:
                 retries += 1
                 return self.fetch_timezone(identity_id, proxy, retries)
@@ -57,7 +57,10 @@ class DataController:
         if "Proxy Not Found" in ip_geolocation.text:
             return False
         else:
-            return ip_geolocation.json()
+            try:
+                return ip_geolocation.json()
+            except (ProxyError, json.JSONDecodeError):
+                return False
 
 
     def identity_visited_webpage(self, identity_id, page_id):
