@@ -138,6 +138,7 @@ class Identity:
 
     def resolve_timezone(self):
         resolved_proxy_url = self.resolve_proxy_url(self.proxy_geo, self.proxy_client)
+        print(resolved_proxy_url)
         if self.improvised_public_ip:
             geolocation = self.data_controller.fetch_geolocation_data(resolved_proxy_url)
 
@@ -148,15 +149,16 @@ class Identity:
                              self.identity_raw["TIMEZONE_FULL_NAME"]]
         else:
             print("Resolving Timezone From Cloud")
-            identity_timezone = self.data_controller.fetch_timezone(self.id)
+            identity_timezone = self.data_controller.fetch_timezone(self.id, resolved_proxy_url)
             if "TIMEZONE_ID" in identity_timezone.keys():
                 self.timezone = [identity_timezone["TIMEZONE_ID"], identity_timezone["TIMEZONE_OFFSET"],
                                  identity_timezone["TIMEZONE_FULL_NAME"]]
             else:
-                print("Timezone wasn't able to be resolved from cloud")
+                print("An empty timezone was resolved from cloud - fixing")
                 geolocation = self.data_controller.fetch_geolocation_data(resolved_proxy_url)
                 self.timezone = [geolocation["timezone"], geolocation["offset"] / 60, geolocation["continent"] + " " +
                                  geolocation["city"] + " Standard Time"]
+
             print("geo location: ", identity_timezone)
             print("Successfully Resolved Timezone")
 
