@@ -190,8 +190,8 @@ def run_bot(identity, process_id):
 
         try:
             web_bot.release_proxies()
-            # web_bot.requests_session.close()
-            # web_bot.cached_requests_session.close()
+            web_bot.requests_session.close()
+            web_bot.cached_requests_session.close()
             if web_bot.web_browser_driver.session_id:
                 print("Updating Cookies To Cloud")
                 web_bot.update_cookies_to_cloud()
