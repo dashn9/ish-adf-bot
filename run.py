@@ -94,12 +94,11 @@ if "BROWSER" in config:
 if "SITE" in config:
     ads = config["SITE"]
 
-    brc.SITE_DOMAIN = ads.get("site-domain", brc.SITE_DOMAIN)
-    brc.AD_PROVIDERS = ads.get("ad-providers", brc.AD_PROVIDERS).split(",")
-    brc.AD_ATTR = ads.get("attr", brc.AD_ATTR)
-    brc.AD_ATTR_NAME = ads.get("attr-name", brc.AD_ATTR_NAME)
-    brc.AD_CLOSE_ATTR = ads.get("close-attr", brc.AD_CLOSE_ATTR)
-    brc.AD_CLOSE_ATTR_NAME = ads.get("close-attr-name", brc.AD_CLOSE_ATTR_NAME)
+    boc.PROXY_WHITELISTED_DOMAINS = ads.get("proxy-whitelisted-domains", boc.PROXY_WHITELISTED_DOMAINS).split(",")
+    boc.PROXY_blackLISTED_DOMAINS = ads.get("proxy-blacklisted-domains", boc.PROXY_BLACKLISTED_DOMAINS).split(",")
+    boc.PROXY_BLACKLISTED_EXTENSIONS = ads.get("proxy-blacklisted-extensions", boc.PROXY_BLACKLISTED_EXTENSIONS).split(",")
+    boc.ALLOW_URL_THROUGH_PROXY_IF_MATCHES_BROWSER_ACTIVE_URL = ads.getboolean(
+        "allow-url-through-proxy-if-matches-browser-active-url", boc.ALLOW_URL_THROUGH_PROXY_IF_MATCHES_BROWSER_ACTIVE_URL)
 
 if "IDENTITY" in config:
     idy = config["IDENTITY"]
@@ -137,6 +136,8 @@ if page_info.get("related_articles_elements_type") == "id":
 elif page_info.get("related_articles_elements_type") == "tag_name":
     related_articles_elements_type = By.TAG_NAME
 
+
+boc.PROXY_WHITELISTED_DOMAINS = page_info.get("proxy_domain_whitelists", "*")
 
 def run_bot(identity, process_id):
     web_bot = WebBot(identity=identity, browser_to_use_id=brc.CHROME_ID,

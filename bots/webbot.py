@@ -97,7 +97,8 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
         self.current_tab_length = 1
         self.cached_requests_session = cached_requests.CachedSession(
             bot_constants.FULL_DIRECTORY_PATH + '/requests_cache')
-        self.requests_session = main_requests.Session()
+        self.requests_session = cached_requests.CachedSession(
+            bot_constants.FULL_DIRECTORY_PATH + '/proxy_requests_cache', cache_control=True)
         self.total_request_size = 0
         self.uncached_response_size = 0
         self.cached_response_size = 0
@@ -940,11 +941,11 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
         time_allocated_to_px_adjusted_by = min(avg_time_per_px * px_adjusted_by, read_time)
         time_allocated_time_used_margin = time_allocated_to_px_adjusted_by - read_mode_time_used
 
-        #print("px adjusted by ===>", px_adjusted_by)
-        #print("total px to adjust by ===>", total_px_to_adjust_by)
-        #print("read time ===>", read_time)
-        #print("time expected to have used based on px adjusted ==>", time_allocated_to_px_adjusted_by)
-        #print("time expected time used margin ==>", time_allocated_time_used_margin)
+        # print("px adjusted by ===>", px_adjusted_by)
+        # print("total px to adjust by ===>", total_px_to_adjust_by)
+        # print("read time ===>", read_time)
+        # print("time expected to have used based on px adjusted ==>", time_allocated_to_px_adjusted_by)
+        # print("time expected time used margin ==>", time_allocated_time_used_margin)
 
         time_to_pause_activity = 0
         # if the margin between time allocated and time used to read is lesser than 0, do not wait and amplify
@@ -993,7 +994,7 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
                             + (kwargs["read_by_mode_data"]["read_mode_time_used"])
                             + time_to_randomly_wait_before_scrolling_up / 2))
 
-            #    print("Time to pause activity one ==>", time_to_pause_activity)
+                #    print("Time to pause activity one ==>", time_to_pause_activity)
                 time.sleep(max(0, time_to_pause_activity))
 
                 # Attempt to return page to original point before going up
@@ -1005,7 +1006,7 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
                         time_to_pause_activity + kwargs["read_by_mode_data"]["read_mode_time_used"] +
                         time_to_randomly_wait_before_scrolling_up / 2)
 
-            #    print("Time to pause activity two ==>", time_to_pause_activity)
+                #    print("Time to pause activity two ==>", time_to_pause_activity)
 
                 # Finally sleep for the remaining time if remaining
                 time.sleep(max(0, time_to_pause_activity))
@@ -1021,7 +1022,6 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
         # recur time_allocated_time_used_margin to it if in deficit, so it doesn't forget it's behind if so,
         # adding time_to_pause_activity to offset the time waited for and leave only read_mode_time_used
         kwargs["read_mode_time_used"] = (time.time() - read_mode_initial_time_stamp) + time_to_pause_activity
-
 
         # print("read mode duration ==>", read_mode_time_used)
 
@@ -1106,6 +1106,7 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
         # There is a potential that the browser inner size might not be fully deducted from the content height to read
         # from. Therefore the remaining should be adjusted unto the rest
         px_owing = -self.get_browser_inner_size()["height"]
+
         def read(read_time, html_web_element: remote_webdriver.WebElement, mode, percentage_of_content_to_read=100):
             """
             Send Information To Looper To Read Content By Set Amount Of Content And Time
@@ -1141,11 +1142,11 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
                 self.get_element_location_window_offset(html_web_element).get("bottom") > \
                 browser_inner_size.get("height"):
             if remaining_reading_content_percentage < 50 and rand.random() < 0.08:
-                 print(
-                     f"Bot Process Id {self.bot_process_id} <:::> Current Activity --> Scrolling To Random Point On Article")
-                 random_max = 100 - remaining_reading_content_percentage
-                 self.scroll_to_percentage_in_element(
-                     html_web_element, rand.uniform(1, random_max), rand.uniform(0.9, 2))
+                print(
+                    f"Bot Process Id {self.bot_process_id} <:::> Current Activity --> Scrolling To Random Point On Article")
+                random_max = 100 - remaining_reading_content_percentage
+                self.scroll_to_percentage_in_element(
+                    html_web_element, rand.uniform(1, random_max), rand.uniform(0.9, 2))
 
             # Release Mouse Hold If Mode In Last Read Was Mouse To ScrollBar
             if mode == "mouse_to_scrollbar":
@@ -1325,13 +1326,8 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
     def request_interceptor(self, request: request.Request):
         if self.terminate_unecessary_requests(request):
             return
-        self.track_request_size(request)
-        self.print_total_usage()
-        self.inject_referer_into_header(request)
-        if utils.url_ends_with(request.url, [".html", ".js", ".css", ".jpg", ".jpeg", ".png", ".gif", ".svg", ".woff",
-                                             ".woff2", ".ttf", ".ico", ".webm", ".ogg", ".wav", ".mp3", ".mp4"]) or \
-                utils.has_string_in(request.host, ["googleapis", "chrome", "google", "gstatic",
-                                                   "gvt1", browser_constants.SITE_DOMAIN]):
+
+        def network_through_no_proxy():
             try:
                 response = self.cached_requests_session.request(url=request.url, verify=False, headers=request.headers,
                                                                 allow_redirects=False, method=request.method,
@@ -1342,7 +1338,8 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
                 print(
                     f'Bot Process Id {self.bot_process_id} <:::> {request.url} would not be able to go through the cacher as a result of an ssl error')
                 return
-        else:
+
+        def network_through_proxy():
             print(f'Bot Process Id {self.bot_process_id} <:::> {request.url} is passing through the proxy')
             try:
                 response = self.requests_session.request(url=request.url, verify=False, headers=request.headers,
@@ -1354,9 +1351,25 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
                 return
 
             self.urls_through_proxy.add(request.url)
+            response.body = response.content
+            request.response = response
 
-        response.body = response.content
-        request.response = response
+        self.track_request_size(request)
+        self.print_total_usage()
+        self.inject_referer_into_header(request)
+        if bot_constants.PROXY_WHITELISTED_DOMAINS == "*":
+            if utils.url_ends_with(request.url, bot_constants.PROXY_BLACKLISTED_EXTENSIONS) or \
+                    utils.has_string_in(request.host, bot_constants.PROXY_BLACKLISTED_DOMAINS):
+                network_through_no_proxy()
+            else:
+                network_through_proxy()
+        # fetching driver.current_url while a page is loading posed some issues, you can find alternate ways to implement the check of if current url equates browser active loading url
+        elif not ((utils.has_string_in(request.host, bot_constants.PROXY_WHITELISTED_DOMAINS) and not utils
+                .url_ends_with(request.url, bot_constants.PROXY_BLACKLISTED_EXTENSIONS)) and not utils.has_string_in(
+            request.host, bot_constants.PROXY_BLACKLISTED_DOMAINS)):
+            network_through_no_proxy()
+        else:
+            network_through_proxy()
 
     def inject_js_to_spoof_fingerprintable_objects_on_website_server_response(
             self, request: request.Request, response: request.Response):
@@ -1482,7 +1495,8 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
             browser_options.add_argument('--disable-remote-fonts')
             browser_options.add_argument("--disable-extensions")
             browser_options.add_argument('--disable-gpu')
-            browser_options.add_experimental_option('prefs', {'intl.accept_languages': ','.join(self.identity.languages)})
+            browser_options.add_experimental_option('prefs',
+                                                    {'intl.accept_languages': ','.join(self.identity.languages)})
             self._handle_prefs(browser_options)
             # browser_options.add_argument('--disable-dev-shm-usage')
             # browser_options.add_argument('--disable-setuid-sandbox')
@@ -1557,12 +1571,12 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
             self.proxy = {
                 'http': 'http://' + proxy_path,
                 'https': 'http://' + proxy_path,
-                'no_proxy': 'localhost,127.0.0.1,gstatic.com,www.gstatic.com,update.googleapis.com,'
-                            'chromeupdate.download,*.1e100.net,*.googleusercontent.com,*.gvt1.com,dl.google.com'
+                'no_proxy': 'localhost,127.0.0.1'
             }
             print(f"Bot Process Id {self.bot_process_id} <:::> Adding a proxy option for this session on this proxy"
                   f" path: {proxy_path}")
             self.requests_session.proxies = self.proxy
+
     def wait_for_element_visible(self, locator):
         """
         Waits for an element to be visible on the page
@@ -1621,7 +1635,8 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
         # release proxyrack sticky session
         if self.identity.proxy_client == "proxyrack.com":
             print(f"Bot Process Id {self.bot_process_id} <:::> Releasing proxyrack proxy session")
-            print(self.requests_session.get("http://api.proxyrack.net/release").json())
+            print(
+                main_requests.request(url="http://api.proxyrack.net/release", method="GET", proxies=self.proxy).json())
 
     def update_cookies_to_cloud(self):
         self.identity.update_cookies(self.fetch_all_cookies())

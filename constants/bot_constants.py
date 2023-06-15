@@ -217,4 +217,9 @@ PROXY_PORT = 10000
 PROXY_STICKY_TEMPLATE = "user-<user>-country-<geo_target>-sessionduration-<ss_duration>:<pass>@<geo_target_area>.smartproxy.com:<port>"
 PROXY_RANDOM_TEMPLATE = "user-<user>:<pass>@gate.smartproxy.com:10000"
 
-WORKING_HOST = "finnsec.us"
+PROXY_BLACKLISTED_EXTENSIONS = [".css", ".jpg", ".jpeg", ".png", ".gif", ".svg", ".woff", ".woff2",
+                                ".ttf", ".ico", ".webm", ".ogg", ".wav", ".mp3", ".mp4"]
+
+PROXY_WHITELISTED_DOMAINS = ["whouseem.com", "dudialgator.com", "bedrapiona.com", "fleraprt.com"]
+PROXY_BLACKLISTED_DOMAINS = []
+ALLOW_URL_THROUGH_PROXY_IF_MATCHES_BROWSER_ACTIVE_URL = True

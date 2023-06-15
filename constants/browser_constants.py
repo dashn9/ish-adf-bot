@@ -15,13 +15,4 @@ FIREFOX_ID = 2
 CHROME_BINARY_LOCATION = r"/bin/google-chrome-stable"
 FIREFOX_BINARY_LOCATION = r"/opt/firefox/firefox"
 
-# Site Values
-SITE_DOMAIN = "finnsec.us"
-AD_PROVIDERS = ["propeller_ads"]
-# Attribute And Name Of Class
-AD_ATTR = ["class"]
-AD_ATTR_NAME = "image-block"
-# Attribute And Name Of Button To Close Class
-AD_CLOSE_ATTR = ["class"]
-AD_CLOSE_ATTR_NAME = ["btoa"]
 
