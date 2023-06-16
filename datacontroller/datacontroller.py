@@ -1,7 +1,6 @@
 import json
 import requests
-import subprocess
-from requests.exceptions import ProxyError, ReadTimeout
+from requests.exceptions import ProxyError, SSLError
 
 
 class DataController:
@@ -41,7 +40,7 @@ class DataController:
                 session.get("http://api.proxyrack.net/release")
                 identity_timezone.close()
                 return identity_timezone.json()
-        except (ProxyError, json.JSONDecodeError, ReadTimeout):
+        except (ProxyError, json.JSONDecodeError, SSLError, TimeoutError):
             if retries <= 2:
                 retries += 1
                 return self.fetch_timezone(identity_id, proxy, retries)
