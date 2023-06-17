@@ -69,6 +69,7 @@ class Identity:
 
         self.is_vpn_connected = True
         self.article_read_time_offset = random.randint(-15, 12)
+        self.proxy_url = None
 
     def resolve_identity_from_cloud(self, method, value):
         identity = self.data_controller.fetch_an_identity(method, value)
@@ -132,6 +133,7 @@ class Identity:
         self.ad_click_probability = identity["AD_CLICK_PROBABILITY"]
         self.ad_keywords = identity["AD_KEYWORDS"]
         self.ad_keywords_click_probability = identity["AD_KEYWORDS_CLICK_PROBABILITY"]
+        self.proxy_url = self.resolve_proxy_url(self.proxy_geo, self.proxy_client)
         self.identity_raw = identity
 
     def auto_initiate_identity(self, method, method_value):
@@ -142,7 +144,7 @@ class Identity:
         self.resolve_referer()
 
     def resolve_timezone(self):
-        resolved_proxy_url = self.resolve_proxy_url(self.proxy_geo, self.proxy_client)
+        resolved_proxy_url = self.proxy_url
         if self.improvised_public_ip:
             geolocation = self.data_controller.fetch_geolocation_data(resolved_proxy_url)
 

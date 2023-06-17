@@ -96,9 +96,9 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
         self.probability_of_click = 0.45
         self.current_tab_length = 1
         self.cached_requests_session = cached_requests.CachedSession(
-            bot_constants.FULL_DIRECTORY_PATH + '/requests_cache')
+            bot_constants.FULL_DIRECTORY_PATH + '/caches/request_caches/requests_cache')
         self.requests_session = cached_requests.CachedSession(
-            bot_constants.FULL_DIRECTORY_PATH + '/proxy_requests_cache', cache_control=True)
+            bot_constants.FULL_DIRECTORY_PATH + '/caches/request_caches/proxy_requests_cache', cache_control=True)
         self.total_request_size = 0
         self.uncached_response_size = 0
         self.cached_response_size = 0
@@ -1177,6 +1177,10 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
             next_read_sequence_time = utils.fetch_percentage_value(
                 seconds_to_read, next_read_sequence_percentage + rand.uniform(-1.2, 1.2))
 
+            # There are possiblities next_read_sequence_time could be less than zero, resetting
+            if next_read_sequence_time < 0:
+                next_read_sequence_time = 0
+
             print(f"Bot Process Id {self.bot_process_id} <:::> Navigation Mode -->", mode)
             print(f"Bot Process Id {self.bot_process_id} <:::> Remaining Content Percentage To Read -->",
                   remaining_reading_content_percentage)
@@ -1567,7 +1571,7 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
         t.daemon = True
         t.start()
         if use_proxy:
-            proxy_path = self.identity.resolve_proxy_url(self.identity.proxy_geo)
+            proxy_path = self.identity.proxy_url
             self.proxy = {
                 'http': 'http://' + proxy_path,
                 'https': 'http://' + proxy_path,

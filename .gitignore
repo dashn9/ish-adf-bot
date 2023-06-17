@@ -4,6 +4,5 @@
 **/geckodriver
 identity/account_details.temp.conf
 /chrome_cache/
-/requests_cache.sqlite
-/proxy_requests_cache.sqlite
-/block_ips.sh
+/caches/
+!SeleniumWebDrivers/Chrome/.gitkeep

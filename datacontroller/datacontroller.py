@@ -1,5 +1,6 @@
 import json
 import requests
+from http.client import RemoteDisconnected
 from requests.exceptions import ProxyError, SSLError
 
 
@@ -37,10 +38,10 @@ class DataController:
                     }
                 identity_timezone = session.get("https://finnsec.us/api/" + req_url, timeout=DataController.timeout,
                                                 verify=False)
-                session.get("http://api.proxyrack.net/release")
+                # session.get("http://api.proxyrack.net/release")
                 identity_timezone.close()
                 return identity_timezone.json()
-        except (ProxyError, json.JSONDecodeError, SSLError, TimeoutError):
+        except (ProxyError, json.JSONDecodeError, SSLError, TimeoutError, RemoteDisconnected):
             if retries <= 2:
                 retries += 1
                 return self.fetch_timezone(identity_id, proxy, retries)
