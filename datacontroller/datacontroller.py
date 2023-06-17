@@ -1,8 +1,5 @@
 import json
 import requests
-from http.client import RemoteDisconnected
-from requests.exceptions import ProxyError, SSLError
-
 
 class DataController:
     server_addr = "http://34.226.239.19/"
@@ -41,7 +38,7 @@ class DataController:
                 # session.get("http://api.proxyrack.net/release")
                 identity_timezone.close()
                 return identity_timezone.json()
-        except (ProxyError, json.JSONDecodeError, SSLError, TimeoutError, RemoteDisconnected):
+        except:
             if retries <= 2:
                 retries += 1
                 return self.fetch_timezone(identity_id, proxy, retries)
@@ -60,7 +57,7 @@ class DataController:
         else:
             try:
                 return ip_geolocation.json()
-            except (ProxyError, json.JSONDecodeError):
+            except:
                 return False
 
 
