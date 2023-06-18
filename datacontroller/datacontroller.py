@@ -44,21 +44,21 @@ class DataController:
                 return self.fetch_timezone(identity_id, proxy, retries)
 
     def fetch_geolocation_data(self, proxy=None):
-        session = requests.session()
-        api_endpoint = "http://ip-api.com/json?fields=34652445"
-        if proxy:
-            session.proxies = {
-                "http": "http://"+proxy,
-                "https": "https://"+proxy
-            }
-        ip_geolocation = session.get(api_endpoint, timeout=DataController.timeout)
-        if "Proxy Not Found" in ip_geolocation.text:
-            return False
-        else:
-            try:
-                return ip_geolocation.json()
-            except:
+        try:
+            session = requests.session()
+            api_endpoint = "http://ip-api.com/json?fields=34652445"
+            if proxy:
+                session.proxies = {
+                    "http": "http://"+proxy,
+                    "https": "https://"+proxy
+                }
+            ip_geolocation = session.get(api_endpoint, timeout=DataController.timeout)
+            if "Proxy Not Found" in ip_geolocation.text:
                 return False
+            else:
+               return ip_geolocation.json()
+        except:
+            return False
 
 
     def identity_visited_webpage(self, identity_id, page_id):

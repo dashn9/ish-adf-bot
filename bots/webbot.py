@@ -1643,6 +1643,7 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
                 main_requests.request(url="http://api.proxyrack.net/release", method="GET", proxies=self.proxy).json())
 
     def update_cookies_to_cloud(self):
+        self.web_browser_driver.stop_client()
         self.identity.update_cookies(self.fetch_all_cookies())
 
     def open_new_tab(self, url):
