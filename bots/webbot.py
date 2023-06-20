@@ -1158,11 +1158,11 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
                 mode = "touch"
             elif isinstance(self.mouse, Mouse):
                 mode = "wheel"
-                if rand.random() < 0.55 and WebBot.active_on_mouse_movement.value < 0:
+                if rand.random() < bot_constants.USE_MOUSE_READ_PROBABILITY and WebBot.active_on_mouse_movement.value < 0:
                     WebBot.active_on_mouse_movement.value = self.bot_process_id
                     mode = "mouse_to_scrollbar"
                     self.bring_window_to_front()
-            elif rand.random() < 0.55 and WebBot.active_on_mouse_movement.value < 0:
+            elif rand.random() < bot_constants.USE_MOUSE_READ_PROBABILITY and WebBot.active_on_mouse_movement.value < 0:
                 WebBot.active_on_mouse_movement.value = self.bot_process_id
                 mode = "mouse_to_scrollbar"
                 self.bring_window_to_front()
@@ -1639,8 +1639,11 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
         # release proxyrack sticky session
         if self.identity.proxy_client == "proxyrack.com":
             print(f"Bot Process Id {self.bot_process_id} <:::> Releasing proxyrack proxy session")
-            print(
-                main_requests.request(url="http://api.proxyrack.net/release", method="GET", proxies=self.proxy).json())
+            try:
+                print(
+                    main_requests.request(url="http://api.proxyrack.net/release", method="GET", proxies=self.proxy).json())
+            except:
+                print(f"Bot Process Id {self.bot_process_id} <:::> An error occurred proxyrack proxy session")
 
     def update_cookies_to_cloud(self):
         self.web_browser_driver.stop_client()

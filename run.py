@@ -31,6 +31,8 @@ config.read(boc.FULL_DIRECTORY_PATH + "/config.ini")
 
 run_infinitely = False
 debug = True
+bot_server_id = None
+
 if "OPTIONS" in config:
     options = config["OPTIONS"]
     boc.NORDVPN_OVPN_FILE_PATH = options.get("nordvpn-ovpn-files-path", boc.NORDVPN_OVPN_FILE_PATH)
@@ -61,6 +63,8 @@ if "BOT" in config:
 
     boc.BOT_MAX_ALIVE_TIME = bot_conf.getint("max-alive-time", boc.BOT_MAX_ALIVE_TIME)
     boc.BOT_MIN_ALIVE_TIME = bot_conf.getint("min-alive-time", boc.BOT_MIN_ALIVE_TIME)
+    boc.USE_MOUSE_READ_PROBABILITY = bot_conf.getfloat("mouse-use-probability", boc.USE_MOUSE_READ_PROBABILITY)
+    bot_server_id = bot_conf.get("bot-id", None)
     run_infinitely = bot_conf.getboolean("run-infinitely", False)
 
 if "OVPN" in config:
@@ -117,6 +121,8 @@ elif fetch_by == "id":
 else:
     fetch_by = "scr"
     fetch_by_value = [boc.SCREEN_WIDTH, boc.SCREEN_HEIGHT]
+
+DataController.ping_is_alive(bot_server_id)
 
 identity = Identity()
 identity.auto_initiate_identity(fetch_by, fetch_by_value)

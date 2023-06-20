@@ -103,3 +103,8 @@ class DataController:
         req_url = "fetch_active_urls.php?amount=rand"
         page_details = session.get(DataController.server_api_addr + req_url, timeout=DataController.timeout)
         return page_details.text
+
+    @staticmethod
+    def ping_is_alive(bot_server_id):
+        req_url = "bot_is_alive.php?bot_id="+bot_server_id
+        requests.get(DataController.server_api_addr + req_url)
