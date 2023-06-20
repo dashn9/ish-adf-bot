@@ -122,8 +122,6 @@ else:
     fetch_by = "scr"
     fetch_by_value = [boc.SCREEN_WIDTH, boc.SCREEN_HEIGHT]
 
-DataController.ping_is_alive(bot_server_id)
-
 identity = Identity()
 identity.auto_initiate_identity(fetch_by, fetch_by_value)
 active_bot_processes = []
@@ -203,6 +201,7 @@ def run_bot(identity, process_id):
                 print("Updating Cookies To Cloud")
                 web_bot.update_cookies_to_cloud()
                 web_bot.web_browser_driver.quit()
+                DataController.ping_is_alive(bot_server_id)
         except ConnectionRefusedError:
             print("Most likely the Cookie Update job has been done by the daemon responsible for keeping reading "
                   "activity on time as a ConnectionRefusedError popped up")
