@@ -41,13 +41,14 @@ def set_timezone(web_driver: WebDriver, timezone="Etc/GMT"):
 
 def get_all_cookies(web_driver: WebDriver):
     if isinstance(web_driver, Chrome):
-        return web_driver.execute_cdp_cmd("Network.getAllCookies", {})["cookies"]
+        return web_driver.execute_cdp_cmd("Storage.getCookies", {})["cookies"]
 
 def clear_all_cookies(web_driver: WebDriver):
     if isinstance(web_driver, Chrome):
-        return web_driver.execute_cdp_cmd("Network.clearBrowserCookies", {})
+        return web_driver.execute_cdp_cmd("Storage.clearCookies", {})
 
 def set_all_cookies(web_driver: WebDriver, cookies):
     if isinstance(web_driver, Chrome):
-        return web_driver.execute_cdp_cmd("Network.setCookies", {"cookies": cookies})
+        print("cookies: ", cookies)
+        return web_driver.execute_cdp_cmd("Storage.setCookies", {"cookies": cookies})
 

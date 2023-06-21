@@ -1646,11 +1646,6 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
                 print(f"Bot Process Id {self.bot_process_id} <:::> An error occurred proxyrack proxy session")
 
     def update_cookies_to_cloud(self):
-        # This are fixes for freezes while trying to fetch the cookies, freeze happens if you attempt fetching cookies
-        # from an untitled page, so switch to the main page which is guaranteed loaded then fetch cookies
-        self.web_browser_driver.stop_client()
-        self.web_browser_driver.switch_to.window(self.web_browser_driver.window_handles[0])
-
         self.identity.update_cookies(self.fetch_all_cookies())
 
     def open_new_tab(self, url):
