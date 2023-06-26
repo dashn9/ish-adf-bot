@@ -29,7 +29,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
-from selenium.common.exceptions import TimeoutException, StaleElementReferenceException
+from selenium.common.exceptions import TimeoutException, StaleElementReferenceException, WebDriverException, InvalidArgumentException
 import pyautogui
 
 from pyclick import HumanClicker, HumanCurve
@@ -106,7 +106,7 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
         self.urls_cached = set()
         self.urls_through_proxy = set()
         self.proxy = None
-        self.to_click_ad = False
+        self.ad_to_click = False
         self.ad_with_keyword_wait_counter = 0
 
         # pyclick
@@ -718,49 +718,89 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
         self.smart_click_trigger((x_start, y_start), self.identity.device_type)
         self.revert_to_main_page()
 
+    def trigger_vignette(self, open_vignette=False):
+        try:
+            if not open_vignette:
+                ads_dimensions = self.locate_ad_elements_in_iframe(ads_elements_type=self.vignette_ad_close_type,
+                    ads_elements_name=self.vignette_ad_close_name)
+            else:
+                ads_dimensions = self.locate_ad_elements_in_iframe(ads_elements_type=self.vignette_ad_open_type,
+                                                                   ads_elements_name=self.vignette_ad_open_name)
+            if not ads_dimensions:
+                return
+            time.sleep(0.5)
+            if not open_vignette:
+                self.ad_click(rand.choice(ads_dimensions), revert_back=False)
+            else:
+                self.ad_click(rand.choice(ads_dimensions))
+            print(f"Bot Process Id {self.bot_process_id} <:::> Vignette ad trigger attempted")
+            time.sleep(0.5)
+            self.trigger_vignette()
+        except TimeoutException:
+            # I no longer use Expected conditions in the iframe_check for locating elements, so this branch of code may never be reached, look for other ways
+            print(f"Bot Process Id {self.bot_process_id} <:::> No active vignette to close")
+            return
+
     def smart_ad_click(self, switch_focus_to_new_tab=True):
         ad_click_success = False
-        if self.to_click_ad:
-            try:
-                ads_dimensions = self.locate_ad_elements(ads_elements_type=self.ad_links_type,
-                                                         ads_elements_name=self.ad_links_name, duration_to_look_for=0.5)
+        if not hasattr(self, "track_vignette_close"):
+            self.track_vignette_close = 1
+        if self.ad_to_click != "vignette" and self.vignette_ad_close_name and self.track_vignette_close >= 3:
+            self.trigger_vignette()
+            self.track_vignette_close = 0
+        else:
+            self.track_vignette_close += 1
+        tab_length = len(self.web_browser_driver.window_handles)
+        try:
+            if self.ad_to_click == "vignette" and self.vignette_ad_open_name:
+                # Reseting time activated before loading, so ad page has more time to load
+                self.time_activated = time.time()
+                self.trigger_vignette(open_vignette=True)
+                if tab_length != len(self.web_browser_driver.window_handles):
+                    self.ad_to_click = None
+                    ad_click_success = True
+            elif self.ad_to_click == "in_page" and self.in_page_ad_links_name:
+                self.trigger_vignette()
+                time.sleep(0.4)
+                ads_dimensions = self.locate_ad_elements_in_iframe(ads_elements_type=self.in_page_ad_links_type,
+                                                         ads_elements_name=self.in_page_ad_links_name)
                 if not ads_dimensions:
                     return
 
-                if not isinstance(self.ad_keywords, list) or self.ad_with_keyword_wait_counter >= 2:
+                if not isinstance(self.ad_keywords, list) or self.ad_with_keyword_wait_counter >= 1:
                     print(f"Bot Process Id {self.bot_process_id} <:::> Keywords won't be used as basis for ad click")
                     # Reseting time activated before loading, so ad page has more time to load
                     self.time_activated = time.time()
-                    if self.ad_click(rand.choice(ads_dimensions)):
+                    if self.ad_click(rand.choice(ads_dimensions)) and tab_length != len(self.web_browser_driver.window_handles):
                         ad_click_success = True
-                    self.to_click_ad = False
+                        self.ad_to_click = None
                 else:
                     for ad_dimensions in ads_dimensions:
                         for keyword in self.ad_keywords:
                             if keyword in ad_dimensions["text_content"]:
                                 # Reseting time activated before loading, so ad page has more time to load
                                 self.time_activated = time.time()
-                                if self.ad_click(ad_dimensions):
+                                if self.ad_click(ad_dimensions) and tab_length != len(self.web_browser_driver.window_handles):
                                     ad_click_success = True
-                                self.to_click_ad = False
+                                    self.ad_to_click = None
                                 print(
                                     f"Bot Process Id {self.bot_process_id} <:::> Keyword was used as a base to click an ad")
                                 break
                         else:
                             continue
                         break
-                if self.to_click_ad:
-                    self.ad_with_keyword_wait_counter += 1
-                    print(f"Bot Process Id {self.bot_process_id} <:::> Ad with any of keywords wasn't found, Try again")
-                if ad_click_success and switch_focus_to_new_tab:
-                    self.web_browser_driver.switch_to.window(
-                        self.web_browser_driver.window_handles[-1])
-                    if self.identity.device_type == "is_smartphone":
-                        time.sleep(0.2)
-                        self.activate_mobile()
-                return ad_click_success
-            except TimeoutException:
-                print(f"Bot Process Id {self.bot_process_id} <:::> No ads found, Try again")
+                    if self.ad_to_click:
+                        self.ad_with_keyword_wait_counter += 1
+                        print(f"Bot Process Id {self.bot_process_id} <:::> Ad with any of keywords wasn't found, Try again")
+            if ad_click_success and switch_focus_to_new_tab:
+                time.sleep(1)
+                self.web_browser_driver.switch_to.window(
+                    self.web_browser_driver.window_handles[-1])
+            if self.identity.device_type == "is_smartphone":
+                self.activate_mobile()
+            return ad_click_success
+        except TimeoutException:
+            print(f"Bot Process Id {self.bot_process_id} <:::> No ads found, Try again")
 
     def ad_click(self, ad_dimensions: dict, revert_back=False):
         if self.identity.device_type == "is_pc":
@@ -772,7 +812,7 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
                                                             max_overshoot=35,
                                                             probability_of_overshoot=round(rand.random(), 2))
             pyautogui.click()
-            if not revert_back:
+            if revert_back:
                 self.revert_to_main_page()
             self.simulate_human_mouse_move_behavior_to_point(previous_mouse_pos[0], previous_mouse_pos[1])
             return True
@@ -782,28 +822,31 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
                            ad_dimensions["y"] +
                            rand.uniform(0, ad_dimensions["height"])
                            )
-            return True
-            if not revert_back:
+            if revert_back:
                 self.revert_to_main_page()
+            return True
 
-    def locate_ad_elements(self, ads_elements_type, ads_elements_name: str, duration_to_look_for=2):
+    def locate_ad_elements_in_iframe(self, ads_elements_type, ads_elements_name: str):
         def iframe_check():
-            wait = WebDriverWait(self.web_browser_driver, duration_to_look_for)
-            iframe = wait.until(EC.presence_of_element_located((By.TAG_NAME, "iframe")))
-            if self.identity.device_type == "is_smartphone":
-                iframe_offset = self.get_element_location_window_offset(iframe)
-            else:
-                iframe_offset = self.get_element_window_location_screen_offsets(iframe)["html_web_element"]
-            self.web_browser_driver.switch_to.frame(iframe)
+            try:
+                iframe = self.web_browser_driver.find_element(By.TAG_NAME, "iframe")
+                if self.identity.device_type == "is_smartphone":
+                    iframe_offset = self.get_element_location_window_offset(iframe)
+                else:
+                    iframe_offset = self.get_element_window_location_screen_offsets(iframe)["html_web_element"]
+                self.web_browser_driver.switch_to.frame(iframe)
+            except (WebDriverException, StaleElementReferenceException):
+                self.web_browser_driver.switch_to.default_content()
+                return False
             ads_elements = None
             try:
-                ads_elements = wait.until(
-                    EC.presence_of_all_elements_located((ads_elements_type, ads_elements_name)))
-            except TimeoutException:
+                ads_elements = self.web_browser_driver.find_elements(ads_elements_type, ads_elements_name)
+            except (TimeoutException, InvalidArgumentException):
                 print(
-                    f"Bot Process Id {self.bot_process_id} <:::> Element parent body was found but ads were not present")
+                    f"Bot Process Id {self.bot_process_id} <:::> Element parent body was found but ad elements to interact with were not present")
                 self.web_browser_driver.switch_to.default_content()
             if not ads_elements:
+                self.web_browser_driver.switch_to.default_content()
                 return
             ads_elements_rect = []
             for ad_element in ads_elements:
@@ -830,9 +873,7 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
             return
         if ads_elements_name.startswith("//iframe"):
             ads_elements_name = ads_elements_name[8:]
-            if iframe_check():
-                time.sleep(1)
-                return iframe_check()
+            return iframe_check()
 
     def click_trigger(self, x_coord=50, y_coord=50, device_type="is_pc"):
         if device_type == "is_smartphone":
@@ -859,10 +900,17 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
                 return False
         return False
 
-    def set_ad_behaviour_environment(self, ad_links_type, ad_links_name, maximum_no_of_ads=1, ad_keywords=None):
-        self.to_click_ad = True
-        self.ad_links_type = ad_links_type
-        self.ad_links_name = ad_links_name
+    def set_ad_behaviour_environment(self, ad_to_click, vignette_ad_close_type, vignette_ad_close_name, vignette_ad_open_type,
+                vignette_ad_open_name, in_page_ad_links_type, in_page_ad_links_name, maximum_no_of_ads=1, ad_keywords=None):
+        self.ad_to_click = ad_to_click
+
+        self.vignette_ad_close_type = vignette_ad_close_type
+        self.vignette_ad_close_name = vignette_ad_close_name
+        self.vignette_ad_open_type = vignette_ad_open_type
+        self.vignette_ad_open_name = vignette_ad_open_name
+
+        self.in_page_ad_links_type = in_page_ad_links_type
+        self.in_page_ad_links_name = in_page_ad_links_name
         self.maximum_no_of_ads = maximum_no_of_ads
         self.ad_keywords = ad_keywords
 

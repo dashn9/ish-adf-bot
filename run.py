@@ -151,13 +151,24 @@ def run_bot(identity, process_id):
     try:
         web_bot.time_activated = time.time()
         web_bot.web_browser_driver.get(page_info.get("page_url"))
-        if random.random() <= identity.ad_click_probability:
-            if random.random() >= identity.ad_keywords_click_probability:
-                identity.ad_keywords = None
-            web_bot.set_ad_behaviour_environment(ad_links_type=page_info["ad_link_elements_type"],
-                                                 ad_links_name=page_info["ad_link_elements_name"],
-                                                 maximum_no_of_ads=page_info["maximum_no_of_ads"],
-                                                 ad_keywords=identity.ad_keywords)
+
+        if random.random() >= identity.ad_keywords_click_probability:
+            identity.ad_keywords = None
+        ad_click_probability = random.random()
+        ad_to_click = None
+        if ad_click_probability <= identity.vignette_ad_click_probability:
+            ad_to_click = "vignette"
+        elif ad_click_probability <= identity.in_page_ad_click_probability:
+            ad_to_click = "in_page"
+        web_bot.set_ad_behaviour_environment(
+            ad_to_click=ad_to_click,
+            vignette_ad_close_type=page_info["vignette_close_ad_elements_type"],
+            vignette_ad_close_name=page_info["vignette_close_ad_elements_name"],
+            vignette_ad_open_type=page_info["vignette_open_ad_elements_type"],
+            vignette_ad_open_name=page_info["vignette_open_ad_elements_name"],
+            in_page_ad_links_type=page_info["in_page_ad_link_elements_type"],
+            in_page_ad_links_name=page_info["in_page_ad_link_elements_name"],
+            maximum_no_of_ads=page_info["maximum_no_of_ads"], ad_keywords=identity.ad_keywords)
         time.sleep(random.uniform(0, 1))
         if web_bot.identity.device_type == "is_pc" and random.random() < 0.2:
             web_bot.move_mouse_to_random_area_on_screen()

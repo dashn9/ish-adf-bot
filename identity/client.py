@@ -19,7 +19,8 @@ class Identity:
                  hardware_concurrency=None, memory=None, has_mouse=None, has_battery=None, has_touch=None,
                  browser_name="", browser_version="", screen_resolution=None, gpu_vendor="", gpu_renderer="",
                  proxy_client="", proxy_geo="", referer="", reading_speed=None, timezone=None, languages=["en-US", "en"],
-                 mouse_delta_y=None, ad_click_probability=0.2, ad_keywords=None, ad_keywords_click_probability=0.2,
+                 mouse_delta_y=None, vignette_ad_click_probability=0.2, in_page_ad_click_probability=0.4,
+                 ad_keywords=None, ad_keywords_click_probability=0.2,
                  cookies=list()):
         self.identity_raw = None
         self.id = id
@@ -61,7 +62,8 @@ class Identity:
         self.invalid_proxy = False
         self.has_visited_today = 0
         self.page_depth = 0.3
-        self.ad_click_probability = ad_click_probability
+        self.vignette_ad_click_probability = vignette_ad_click_probability
+        self.in_page_ad_click_probability = in_page_ad_click_probability
         self.ad_keywords = ad_keywords
         self.ad_keywords_click_probability = ad_keywords_click_probability
 
@@ -130,7 +132,8 @@ class Identity:
                 self.cookies = identity["COOKIES"]
             else:
                 self.cookies = list()
-        self.ad_click_probability = identity["AD_CLICK_PROBABILITY"]
+        self.vignette_ad_click_probability = identity["VIGNETTE_AD_CLICK_PROBABILITY"]
+        self.in_page_ad_click_probability = identity["IN_PAGE_AD_CLICK_PROBABILITY"]
         self.ad_keywords = identity["AD_KEYWORDS"]
         self.ad_keywords_click_probability = identity["AD_KEYWORDS_CLICK_PROBABILITY"]
         self.proxy_url = self.resolve_proxy_url(self.proxy_geo, self.proxy_client)
