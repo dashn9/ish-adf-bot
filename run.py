@@ -30,9 +30,18 @@ config = configparser.ConfigParser()
 config.read(boc.FULL_DIRECTORY_PATH + "/config.ini")
 
 run_infinitely = False
+
+
+def restart_plug():
+    if not run_infinitely:
+        exit()
+    else:
+        print("Attempting to rerun operations")
+        os.execv(sys.executable, ['python3.10'] + sys.argv)
+
+
 debug = True
 bot_server_id = None
-
 if "OPTIONS" in config:
     options = config["OPTIONS"]
     boc.NORDVPN_OVPN_FILE_PATH = options.get("nordvpn-ovpn-files-path", boc.NORDVPN_OVPN_FILE_PATH)
@@ -123,7 +132,12 @@ else:
     fetch_by_value = [boc.SCREEN_WIDTH, boc.SCREEN_HEIGHT]
 
 identity = Identity()
-identity.auto_initiate_identity(fetch_by, fetch_by_value)
+try:
+    identity.auto_initiate_identity(fetch_by, fetch_by_value)
+except:
+    print("An error occurred while initiating identity(check identity server), sleeping for 15 seconds then restarting")
+    time.sleep(15)
+    restart_plug()
 active_bot_processes = []
 page_info = json.loads(DataController.fetch_active_random_url())
 page_content_element_type = By.ID
@@ -247,9 +261,5 @@ else:
 active_bot_processes = []
 WebBot.active_on_mouse_movement.value = -498
 print("Successfully Completed Activity For Identity:", identity.id)
-if not run_infinitely:
-    exit()
-else:
-    print("Attempting to rerun operations")
-    os.execv(sys.executable, ['python3.10'] + sys.argv)
+restart_plug()
 

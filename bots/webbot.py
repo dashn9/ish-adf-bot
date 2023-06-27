@@ -1386,25 +1386,35 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
                                                                 data=request.body)
                 if response.from_cache:
                     self.urls_cached.add(request.url)
+
+                response.body = response.content
+                request.response = response
+                return True
             except SSLError:
                 print(
                     f'Bot Process Id {self.bot_process_id} <:::> {request.url} would not be able to go through the cacher as a result of an ssl error')
-                return
+                return False
 
-        def network_through_proxy():
+        def network_through_proxy(generate_empty_response_on_fail=True, retries=0):
             print(f'Bot Process Id {self.bot_process_id} <:::> {request.url} is passing through the proxy')
             try:
                 response = self.requests_session.request(url=request.url, verify=False, headers=request.headers,
                                                          allow_redirects=False, method=request.method,
                                                          data=request.body)
+                self.urls_through_proxy.add(request.url)
+                response.body = response.content
+                request.response = response
+                return True
             except (SSLError, ProxyError):
-                print(
-                    f'Bot Process Id {self.bot_process_id} <:::> {request.url} generated an ssl or proxy error, it won\'t go through proxy')
-                return
-
-            self.urls_through_proxy.add(request.url)
-            response.body = response.content
-            request.response = response
+                if generate_empty_response_on_fail and retries < 2:
+                    return network_through_proxy(retries=retries+1)
+                else:
+                    response = cached_requests.Response(408, b'')
+                    response.body = response.content
+                    request.response = response
+                    print(
+                        f'Bot Process Id {self.bot_process_id} <:::> {request.url} generated an ssl or proxy error, it won\'t go through proxy, so dud response was generated')
+                return False
 
         self.track_request_size(request)
         self.print_total_usage()
