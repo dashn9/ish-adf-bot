@@ -1407,13 +1407,13 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
                 return True
             except (SSLError, ProxyError):
                 # fix against ip leaks
-                if generate_empty_response_on_fail and retries < 1:
+                if generate_empty_response_on_fail and retries < 2:
                     time.sleep(0.5)
                     return network_through_proxy(retries=retries+1)
                 else:
                     response = main_requests.Response()
                     response.status_code = 408
-                    response.content = b''
+                    response._content = b''
                     response.body = response.content
                     request.response = response
                     print(
