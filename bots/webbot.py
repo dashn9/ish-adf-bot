@@ -8,6 +8,7 @@ import re
 import pytweening
 import random as rand
 import json
+import selenium.common
 import tempfile
 from functools import reduce
 
@@ -1407,7 +1408,7 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
                 return True
             except (SSLError, ProxyError):
                 # fix against ip leaks
-                if generate_empty_response_on_fail and retries < 2:
+                if generate_empty_response_on_fail and retries < 1:
                     time.sleep(0.5)
                     return network_through_proxy(retries=retries+1)
                 else:
@@ -1707,7 +1708,15 @@ class WebBot:  # A powerful WebBot designed to visit and perform activities on g
             except:
                 print(f"Bot Process Id {self.bot_process_id} <:::> An error occurred proxyrack proxy session")
 
+    def resolve_active_alert(self):
+        try:
+            alert = self.web_browser_driver.switch_to.alert
+            alert.accept()
+        except selenium.common.NoAlertPresentException:
+            pass
+
     def update_cookies_to_cloud(self):
+        self.resolve_active_alert()
         self.identity.update_cookies(self.fetch_all_cookies())
 
     def open_new_tab(self, url):

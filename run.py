@@ -219,12 +219,12 @@ def run_bot(identity, process_id):
             web_bot.move_mouse_to_fool_exit_point()
 
         try:
-            web_bot.release_proxies()
-            web_bot.requests_session.close()
-            web_bot.cached_requests_session.close()
             if web_bot.web_browser_driver.session_id:
                 print("Updating Cookies To Cloud")
                 web_bot.update_cookies_to_cloud()
+                web_bot.release_proxies()
+                web_bot.requests_session.close()
+                web_bot.cached_requests_session.close()
                 web_bot.web_browser_driver.quit()
                 DataController.ping_is_alive(bot_server_id)
         except ConnectionRefusedError:
