@@ -30,6 +30,7 @@ config = configparser.ConfigParser()
 config.read(boc.FULL_DIRECTORY_PATH + "/config.ini")
 
 run_infinitely = False
+use_proxy = True
 
 
 def restart_plug():
@@ -42,6 +43,7 @@ def restart_plug():
 
 debug = True
 bot_server_id = None
+
 if "OPTIONS" in config:
     options = config["OPTIONS"]
     boc.NORDVPN_OVPN_FILE_PATH = options.get("nordvpn-ovpn-files-path", boc.NORDVPN_OVPN_FILE_PATH)
@@ -58,14 +60,7 @@ if "WAIT_CONDITIONS" in config:
 
 if "PROXY" in config:
     proxy_config = config["PROXY"]
-    boc.PROXY_PRODUCT = proxy_config.get("proxy-product", boc.PROXY_PRODUCT)
-    boc.PROXY_GEO_TARGET_AREA = proxy_config.get("proxy-geo-target-area", boc.PROXY_GEO_TARGET_AREA)
-    boc.PROXY_SESSION_DURATION = proxy_config.getint("proxy-session-duration", boc.PROXY_SESSION_DURATION)
-    boc.PROXY_USERNAME = proxy_config.get("proxy-username", boc.PROXY_USERNAME)
-    boc.PROXY_PASSWORD = proxy_config.get("proxy-password", boc.PROXY_PASSWORD)
-    boc.PROXY_PORT = proxy_config.getint("proxy-port", boc.PROXY_PORT)
-    boc.PROXY_STICKY_TEMPLATE = proxy_config.get("proxy-sticky-template", boc.PROXY_STICKY_TEMPLATE)
-    boc.PROXY_RANDOM_TEMPLATE = proxy_config.get("proxy-random-template", boc.PROXY_RANDOM_TEMPLATE)
+    use_proxy = proxy_config.getboolean("use-proxy", True)
 
 if "BOT" in config:
     bot_conf = config["BOT"]
@@ -109,9 +104,11 @@ if "SITE" in config:
 
     boc.PROXY_WHITELISTED_DOMAINS = ads.get("proxy-whitelisted-domains", boc.PROXY_WHITELISTED_DOMAINS).split(",")
     boc.PROXY_blackLISTED_DOMAINS = ads.get("proxy-blacklisted-domains", boc.PROXY_BLACKLISTED_DOMAINS).split(",")
-    boc.PROXY_BLACKLISTED_EXTENSIONS = ads.get("proxy-blacklisted-extensions", boc.PROXY_BLACKLISTED_EXTENSIONS).split(",")
-    boc.ALLOW_URL_THROUGH_PROXY_IF_MATCHES_BROWSER_ACTIVE_URL = ads.getboolean(
-        "allow-url-through-proxy-if-matches-browser-active-url", boc.ALLOW_URL_THROUGH_PROXY_IF_MATCHES_BROWSER_ACTIVE_URL)
+    boc.PROXY_BLACKLISTED_EXTENSIONS = ads.get("proxy-blacklisted-extensions", boc.PROXY_BLACKLISTED_EXTENSIONS).\
+        split(",")
+    boc.ALLOW_URL_THROUGH_PROXY_IF_MATCHES_BROWSER_ACTIVE_URL = \
+        ads.getboolean("allow-url-through-proxy-if-matches-browser-active-url",
+                       boc.ALLOW_URL_THROUGH_PROXY_IF_MATCHES_BROWSER_ACTIVE_URL)
 
 if "IDENTITY" in config:
     idy = config["IDENTITY"]
@@ -157,11 +154,13 @@ elif page_info.get("related_articles_elements_type") == "tag_name":
 
 boc.PROXY_WHITELISTED_DOMAINS = page_info.get("proxy_domain_whitelists", "*")
 
+
 def run_bot(identity, process_id):
     web_bot = WebBot(identity=identity, browser_to_use_id=brc.CHROME_ID,
                      driver_path=boc.FULL_DIRECTORY_PATH + boc.WEB_DRIVERS_BASE_LOCATION + boc.WEB_DRIVERS_CHROME_LOCATION +
-                                 boc.CHROME_WEBDRIVER, bot_process_id=process_id, no_of_clicks=page_info["page_clicks"])
-    web_bot.open_web_browser(use_proxy=True)
+                                 boc.CHROME_WEBDRIVER, bot_process_id=process_id, no_of_clicks=page_info["page_clicks"],
+                     use_proxy=use_proxy)
+    web_bot.open_web_browser()
     try:
         web_bot.time_activated = time.time()
         web_bot.web_browser_driver.get(page_info.get("page_url"))
@@ -182,7 +181,7 @@ def run_bot(identity, process_id):
             vignette_ad_open_name=page_info["vignette_open_ad_elements_name"],
             in_page_ad_links_type=page_info["in_page_ad_link_elements_type"],
             in_page_ad_links_name=page_info["in_page_ad_link_elements_name"],
-            maximum_no_of_ads=page_info["maximum_no_of_ads"], ad_keywords=identity.ad_keywords)
+            ad_keywords=identity.ad_keywords)
         time.sleep(random.uniform(0, 1))
         if web_bot.identity.device_type == "is_pc" and random.random() < 0.2:
             web_bot.move_mouse_to_random_area_on_screen()
@@ -197,7 +196,7 @@ def run_bot(identity, process_id):
                 web_bot.read_element_content(body_element)
                 while random.random() < identity.page_depth:
                     web_bot.time_activated = time.time()
-                    web_bot.open_link_in_related_articles_section([body_element])
+                    web_bot.open_link_in_elements([body_element])
                     body_element = WebDriverWait(web_bot.web_browser_driver, 4).until(
                         EC.presence_of_element_located((By.TAG_NAME, "body"))
                     )
@@ -209,7 +208,7 @@ def run_bot(identity, process_id):
                 while random.random() < identity.page_depth:
                     web_bot.time_activated = time.time()
                     web_bot.no_of_clicks = page_info.get("page_clicks")
-                    web_bot.open_link_in_related_articles_section(web_bot.web_browser_driver.find_elements(
+                    web_bot.open_link_in_elements(web_bot.web_browser_driver.find_elements(
                         related_articles_elements_type, related_articles_elements_name))
 
                     web_bot.read_element_content(web_bot.web_browser_driver.find_element(page_content_element_type,
@@ -223,7 +222,7 @@ def run_bot(identity, process_id):
                 print("Updating Cookies To Cloud")
                 web_bot.update_cookies_to_cloud()
                 web_bot.release_proxies()
-                web_bot.requests_session.close()
+                web_bot.proxy_requests_session.close()
                 web_bot.cached_requests_session.close()
                 web_bot.web_browser_driver.quit()
                 DataController.ping_is_alive(bot_server_id)

@@ -4,13 +4,10 @@ import string
 import subprocess
 import time
 
-import urllib3.exceptions
-
-import requests.exceptions
-
 from datacontroller.datacontroller import DataController
 from constants import bot_constants
 from bots import utils
+
 
 class Identity:
     ovpn_process = None
@@ -70,8 +67,8 @@ class Identity:
         self.data_controller = DataController()
 
         self.is_vpn_connected = True
-        self.article_read_time_offset = random.randint(-15, 12)
         self.proxy_url = None
+        self.proxy_release_url = None
 
     def resolve_identity_from_cloud(self, method, value):
         identity = self.data_controller.fetch_an_identity(method, value)
@@ -136,7 +133,8 @@ class Identity:
         self.in_page_ad_click_probability = identity["IN_PAGE_AD_CLICK_PROBABILITY"]
         self.ad_keywords = identity["AD_KEYWORDS"]
         self.ad_keywords_click_probability = identity["AD_KEYWORDS_CLICK_PROBABILITY"]
-        self.proxy_url = self.resolve_proxy_url(self.proxy_geo, self.proxy_client)
+        self.proxy_url = identity["PROXY_URL"]
+        self.proxy_release_url = identity["PROXY_RELEASE_URL"]
         self.identity_raw = identity
 
     def auto_initiate_identity(self, method, method_value):
