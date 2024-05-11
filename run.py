@@ -7,8 +7,13 @@ import multiprocessing
 import json
 import configparser
 import traceback
-from selenium.common.exceptions import TimeoutException, WebDriverException, StaleElementReferenceException, \
-    UnexpectedAlertPresentException
+import undetected_chromedriver as uc
+from selenium.common.exceptions import (
+    TimeoutException,
+    WebDriverException,
+    StaleElementReferenceException,
+    UnexpectedAlertPresentException,
+)
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
@@ -38,7 +43,7 @@ def restart_plug():
         exit()
     else:
         print("Attempting to rerun operations")
-        os.execv(sys.executable, ['python3.10'] + sys.argv)
+        os.execv(sys.executable, ["python3.10"] + sys.argv)
 
 
 debug = True
@@ -46,8 +51,12 @@ bot_server_id = None
 
 if "OPTIONS" in config:
     options = config["OPTIONS"]
-    boc.NORDVPN_OVPN_FILE_PATH = options.get("nordvpn-ovpn-files-path", boc.NORDVPN_OVPN_FILE_PATH)
-    boc.IPVANISH_OVPN_FILE_PATH = options.get("ipvanish-ovpn-files-path", boc.IPVANISH_OVPN_FILE_PATH)
+    boc.NORDVPN_OVPN_FILE_PATH = options.get(
+        "nordvpn-ovpn-files-path", boc.NORDVPN_OVPN_FILE_PATH
+    )
+    boc.IPVANISH_OVPN_FILE_PATH = options.get(
+        "ipvanish-ovpn-files-path", boc.IPVANISH_OVPN_FILE_PATH
+    )
     boc.SCREEN_WIDTH = options.getint("screen-width", boc.SCREEN_WIDTH)
     boc.SCREEN_HEIGHT = options.getint("screen-height", boc.SCREEN_HEIGHT)
     boc.UP_TASKBAR_HEIGHT = options.getint("up-taskbar-height", boc.UP_TASKBAR_HEIGHT)
@@ -56,7 +65,9 @@ if "OPTIONS" in config:
 if "WAIT_CONDITIONS" in config:
     options = config["OPTIONS"]
 
-    boc.IMPLICITLY_WAIT_TIME = options.get("implicitly-wait-time", boc.IMPLICITLY_WAIT_TIME)
+    boc.IMPLICITLY_WAIT_TIME = options.get(
+        "implicitly-wait-time", boc.IMPLICITLY_WAIT_TIME
+    )
 
 if "PROXY" in config:
     proxy_config = config["PROXY"]
@@ -67,48 +78,69 @@ if "BOT" in config:
 
     boc.BOT_MAX_ALIVE_TIME = bot_conf.getint("max-alive-time", boc.BOT_MAX_ALIVE_TIME)
     boc.BOT_MIN_ALIVE_TIME = bot_conf.getint("min-alive-time", boc.BOT_MIN_ALIVE_TIME)
-    boc.USE_MOUSE_READ_PROBABILITY = bot_conf.getfloat("mouse-use-probability", boc.USE_MOUSE_READ_PROBABILITY)
+    boc.USE_MOUSE_READ_PROBABILITY = bot_conf.getfloat(
+        "mouse-use-probability", boc.USE_MOUSE_READ_PROBABILITY
+    )
     bot_server_id = bot_conf.get("bot-id", None)
     run_infinitely = bot_conf.getboolean("run-infinitely", False)
+
+if "BROWSER" in config:
+    browser_conf = config["BROWSER"]
+
+    brc.MAXIMUM_WINDOW_PROBABILITY = browser_conf.getint(
+        "maximum-window-probability", brc.MAXIMUM_WINDOW_PROBABILITY
+    )
 
 if "OVPN" in config:
     ovpn = config["OVPN"]
 
-    boc.MAX_OVPN_CONNECT_RETRIES = ovpn.getint("max-connect-retries", boc.MAX_OVPN_CONNECT_RETRIES)
-    boc.OVPN_MAX_WAIT_TIME_TILL_IP_IMPROVISE = ovpn.getint("max-wait-time", boc.OVPN_MAX_WAIT_TIME_TILL_IP_IMPROVISE)
+    boc.MAX_OVPN_CONNECT_RETRIES = ovpn.getint(
+        "max-connect-retries", boc.MAX_OVPN_CONNECT_RETRIES
+    )
+    boc.OVPN_MAX_WAIT_TIME_TILL_IP_IMPROVISE = ovpn.getint(
+        "max-wait-time", boc.OVPN_MAX_WAIT_TIME_TILL_IP_IMPROVISE
+    )
 
 if "SCROLL" in config:
     scroll = config["SCROLL"]
 
-    boc.PX_VALUE_TO_CHECK_WHEN_SCROLL_TO_POINT = scroll.getint("px-value", boc.PX_VALUE_TO_CHECK_WHEN_SCROLL_TO_POINT)
+    boc.PX_VALUE_TO_CHECK_WHEN_SCROLL_TO_POINT = scroll.getint(
+        "px-value", boc.PX_VALUE_TO_CHECK_WHEN_SCROLL_TO_POINT
+    )
 
-if "WEB_DRIVERS" in config:
-    web_drivers = config["WEB_DRIVERS"]
+if "EXECUTABLES" in config:
+    executables = config["EXECUTABLES"]
 
-    boc.WEB_DRIVERS_BASE_LOCATION = web_drivers.get("base-location", boc.WEB_DRIVERS_BASE_LOCATION)
-    boc.WEB_DRIVERS_CHROME_LOCATION = web_drivers.get("chrome-location", boc.WEB_DRIVERS_CHROME_LOCATION)
-    boc.CHROME_WEBDRIVER = web_drivers.get("chrome-webdriver", boc.CHROME_WEBDRIVER)
-    boc.WEB_DRIVERS_GECKO_LOCATION = web_drivers.get("gecko-location", boc.WEB_DRIVERS_GECKO_LOCATION)
-    boc.GECKO_WEBDRIVER = web_drivers.get("gecko-webdriver", boc.GECKO_WEBDRIVER)
-    boc.WEB_DRIVERS_FIREFOX_LOCATION = web_drivers.get("firefox-location", boc.WEB_DRIVERS_FIREFOX_LOCATION)
-    boc.FIREFOX_WEBDRIVER = web_drivers.get("firefox-webdriver", boc.FIREFOX_WEBDRIVER)
+    boc.CHROME_WEBDRIVER_LOCATION = executables.get(
+        "chrome-webdriver-location", boc.CHROME_WEBDRIVER_LOCATION
+    )
+    boc.FIREFOX_WEBDRIVER_LOCATION = executables.get(
+        "firefox-webdriver-location", boc.FIREFOX_WEBDRIVER_LOCATION
+    )
 
-if "BROWSER" in config:
-    browser = config["BROWSER"]
-
-    brc.CHROME_BINARY_LOCATION = browser.get("chrome-binary-location", brc.CHROME_BINARY_LOCATION)
-    brc.FIREFOX_BINARY_LOCATION = browser.get("firefox-binary-location", brc.FIREFOX_BINARY_LOCATION)
+    brc.CHROME_BINARY_LOCATION = executables.get(
+        "chrome-binary-location", brc.CHROME_BINARY_LOCATION
+    )
+    brc.FIREFOX_BINARY_LOCATION = executables.get(
+        "firefox-binary-location", brc.FIREFOX_BINARY_LOCATION
+    )
 
 if "SITE" in config:
     ads = config["SITE"]
 
-    boc.PROXY_WHITELISTED_DOMAINS = ads.get("proxy-whitelisted-domains", boc.PROXY_WHITELISTED_DOMAINS).split(",")
-    boc.PROXY_blackLISTED_DOMAINS = ads.get("proxy-blacklisted-domains", boc.PROXY_BLACKLISTED_DOMAINS).split(",")
-    boc.PROXY_BLACKLISTED_EXTENSIONS = ads.get("proxy-blacklisted-extensions", boc.PROXY_BLACKLISTED_EXTENSIONS).\
-        split(",")
-    boc.ALLOW_URL_THROUGH_PROXY_IF_MATCHES_BROWSER_ACTIVE_URL = \
-        ads.getboolean("allow-url-through-proxy-if-matches-browser-active-url",
-                       boc.ALLOW_URL_THROUGH_PROXY_IF_MATCHES_BROWSER_ACTIVE_URL)
+    boc.PROXY_WHITELISTED_DOMAINS = ads.get(
+        "proxy-whitelisted-domains", boc.PROXY_WHITELISTED_DOMAINS
+    ).split(",")
+    boc.PROXY_blackLISTED_DOMAINS = ads.get(
+        "proxy-blacklisted-domains", boc.PROXY_BLACKLISTED_DOMAINS
+    ).split(",")
+    boc.PROXY_BLACKLISTED_EXTENSIONS = ads.get(
+        "proxy-blacklisted-extensions", boc.PROXY_BLACKLISTED_EXTENSIONS
+    ).split(",")
+    boc.ALLOW_URL_THROUGH_PROXY_IF_MATCHES_BROWSER_ACTIVE_URL = ads.getboolean(
+        "allow-url-through-proxy-if-matches-browser-active-url",
+        boc.ALLOW_URL_THROUGH_PROXY_IF_MATCHES_BROWSER_ACTIVE_URL,
+    )
 
 if "IDENTITY" in config:
     idy = config["IDENTITY"]
@@ -132,10 +164,11 @@ identity = Identity()
 try:
     identity.auto_initiate_identity(fetch_by, fetch_by_value)
 except:
-    print("An error occurred while initiating identity(check identity server), sleeping for 15 seconds then restarting")
+    print(
+        "An error occurred while initiating identity(check identity server), sleeping for 15 seconds then restarting"
+    )
     time.sleep(15)
     restart_plug()
-active_bot_processes = []
 page_info = json.loads(DataController.fetch_active_random_url())
 page_content_element_type = By.ID
 page_content_element_name = page_info.get("page_content_element_name")
@@ -156,10 +189,17 @@ boc.PROXY_WHITELISTED_DOMAINS = page_info.get("proxy_domain_whitelists", "*")
 
 
 def run_bot(identity, process_id):
-    web_bot = WebBot(identity=identity, browser_to_use_id=brc.CHROME_ID,
-                     driver_path=boc.FULL_DIRECTORY_PATH + boc.WEB_DRIVERS_BASE_LOCATION + boc.WEB_DRIVERS_CHROME_LOCATION +
-                                 boc.CHROME_WEBDRIVER, bot_process_id=process_id, no_of_clicks=page_info["page_clicks"],
-                     use_proxy=use_proxy)
+    web_bot = WebBot(
+        identity=identity,
+        browser_to_use_id=brc.CHROME_ID,
+        driver_path=boc.FULL_DIRECTORY_PATH
+        + boc.WEB_DRIVERS_BASE_LOCATION
+        + boc.WEB_DRIVERS_CHROME_LOCATION
+        + boc.CHROME_WEBDRIVER,
+        bot_process_id=process_id,
+        no_of_clicks=page_info["page_clicks"],
+        use_proxy=use_proxy,
+    )
     web_bot.open_web_browser()
     try:
         web_bot.time_activated = time.time()
@@ -181,13 +221,19 @@ def run_bot(identity, process_id):
             vignette_ad_open_name=page_info["vignette_open_ad_elements_name"],
             in_page_ad_links_type=page_info["in_page_ad_link_elements_type"],
             in_page_ad_links_name=page_info["in_page_ad_link_elements_name"],
-            ad_keywords=identity.ad_keywords)
+            ad_keywords=identity.ad_keywords,
+        )
         time.sleep(random.uniform(0, 1))
         if web_bot.identity.device_type == "is_pc" and random.random() < 0.2:
             web_bot.move_mouse_to_random_area_on_screen()
-        if web_bot.read_element_content(web_bot.web_browser_driver.find_element(page_content_element_type,
-                                                                             page_content_element_name)) == \
-            "ad_clicked":
+        if (
+            web_bot.read_element_content(
+                web_bot.web_browser_driver.find_element(
+                    page_content_element_type, page_content_element_name
+                )
+            )
+            == "ad_clicked"
+        ):
             try:
                 time.sleep(random.uniform(0.7, 1.5))
                 body_element = WebDriverWait(web_bot.web_browser_driver, 4).until(
@@ -202,17 +248,28 @@ def run_bot(identity, process_id):
                     )
                     web_bot.read_element_content(body_element)
             except TimeoutException:
-                print("Body Element Of The Ad Page Could Not Be Found Or Not Loaded On Time")
+                print(
+                    "Body Element Of The Ad Page Could Not Be Found Or Not Loaded On Time"
+                )
         else:
-            if page_info.get("related_articles_elements_type") and page_info.get("related_articles_elements_name"):
+            if page_info.get("related_articles_elements_type") and page_info.get(
+                "related_articles_elements_name"
+            ):
                 while random.random() < identity.page_depth:
                     web_bot.time_activated = time.time()
                     web_bot.no_of_clicks = page_info.get("page_clicks")
-                    web_bot.open_link_in_elements(web_bot.web_browser_driver.find_elements(
-                        related_articles_elements_type, related_articles_elements_name))
+                    web_bot.open_link_in_elements(
+                        web_bot.web_browser_driver.find_elements(
+                            related_articles_elements_type,
+                            related_articles_elements_name,
+                        )
+                    )
 
-                    web_bot.read_element_content(web_bot.web_browser_driver.find_element(page_content_element_type,
-                                                                                         page_content_element_name))
+                    web_bot.read_element_content(
+                        web_bot.web_browser_driver.find_element(
+                            page_content_element_type, page_content_element_name
+                        )
+                    )
                     identity.page_depth = identity.page_depth / 2
         if web_bot.identity.device_type == "is_pc":
             web_bot.move_mouse_to_fool_exit_point()
@@ -227,38 +284,34 @@ def run_bot(identity, process_id):
                 web_bot.web_browser_driver.quit()
                 DataController.ping_is_alive(bot_server_id)
         except ConnectionRefusedError:
-            print("Most likely the Cookie Update job has been done by the daemon responsible for keeping reading "
-                  "activity on time as a ConnectionRefusedError popped up")
+            print(
+                "Most likely the Cookie Update job has been done by the daemon responsible for keeping reading "
+                "activity on time as a ConnectionRefusedError popped up"
+            )
 
     # These errors occurs when the browser session is terminated and webbot isn't aware
-    except (NewConnectionError, ConnectionRefusedError, MaxRetryError, ConnectionResetError, ProtocolError, ReadTimeout,
-            StaleElementReferenceException, WebDriverException, TimeoutException, UnexpectedAlertPresentException):
+    except (
+        NewConnectionError,
+        ConnectionRefusedError,
+        MaxRetryError,
+        ConnectionResetError,
+        ProtocolError,
+        ReadTimeout,
+        StaleElementReferenceException,
+        WebDriverException,
+        TimeoutException,
+        UnexpectedAlertPresentException,
+    ):
         if debug:
             print(traceback.format_exc())
             print("The Error Above Was Handled, But Printed For Debugging Purpose")
         web_bot.web_browser_driver.quit()
 
-no_of_bots = 1
-if no_of_bots == 1:
     if not identity.invalid_proxy:
         run_bot(identity, 0)
     else:
         print(f"Identity(ID = {identity.id}) proxy is invalid. Restarting program")
-else:
-    for i in range(no_of_bots):
-        if not identity.invalid_proxy:
-            print(f"Identity Successfully Initiated, Attaching Identity(ID = {identity.id}) To Bot process {i}")
-            bot_process = multiprocessing.Process(target=run_bot, args=(identity, i,), name=f"bot_process_{i}")
-            active_bot_processes.append(bot_process)
-            bot_process.start()
-        else:
-            print(f"Identity(ID = {identity.id}) proxy is invalid. Restarting program")
 
-    for bot_process in active_bot_processes:
-        bot_process.join()
 
-active_bot_processes = []
-WebBot.active_on_mouse_movement.value = -498
 print("Successfully Completed Activity For Identity:", identity.id)
 restart_plug()
-

@@ -1,8 +1,11 @@
 import os
+
 # With Great Power Comes Great Responsibility
 
 # FULL WORKING DIRECTORY
-FULL_DIRECTORY_PATH = os.path.dirname(os.path.realpath(__file__)).replace("/constants", "")
+FULL_DIRECTORY_PATH = os.path.dirname(os.path.realpath(__file__)).replace(
+    "/constants", ""
+)
 
 # Identify Browser To Use
 RAND_BROWSER = 9999
@@ -15,4 +18,4 @@ FIREFOX_ID = 2
 CHROME_BINARY_LOCATION = r"/bin/google-chrome-stable"
 FIREFOX_BINARY_LOCATION = r"/opt/firefox/firefox"
 
-
+MAXIMUM_WINDOW_PROBABILITY = 0.92

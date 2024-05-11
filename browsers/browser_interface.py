@@ -361,7 +361,7 @@ class BrowserInterface:
         open_browser_in_full_screen = True
         window_size = (bot_constants.SCREEN_WIDTH, bot_constants.SCREEN_HEIGHT)
         # An 8% chance and device is pc that randomly resize the web browser in a manner that is un-obstructive
-        if random.random() < 0.08 and self.device_type == "is_pc":
+        if random.random() >= browser_constants.MAXIMUM_WINDOW_PROBABILITYs and self.device_type == "is_pc":
             open_browser_in_full_screen = False
             window_size = utils.fetch_random_window_size_relative_to_screen(
                 bot_constants.SCREEN_WIDTH, bot_constants.SCREEN_HEIGHT)

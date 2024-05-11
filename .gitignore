@@ -1,8 +1,9 @@
 **/__pycache__
+/.idea
+/.venv
 /keys
-**/chromedriver
-**/geckodriver
+/executables
 identity/account_details.temp.conf
-/chrome_cache/
-/caches/
-!SeleniumWebDrivers/Chrome/.gitkeep
+/chrome_cache
+/caches
+/config.ini

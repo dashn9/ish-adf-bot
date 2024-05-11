@@ -1,5 +1,0 @@
-undetected_chromedriver
-selenium
-selenium_wire
-pyautogui
-pyclick

@@ -6,19 +6,12 @@ import os
 IMPLICITLY_WAIT_TIME = 15
 
 # FULL WORKING DIRECTORY
-FULL_DIRECTORY_PATH = os.path.dirname(os.path.realpath(__file__)).replace("/constants", "")
+FULL_DIRECTORY_PATH = os.path.dirname(os.path.realpath(__file__)).replace(
+    "/constants", ""
+)
 
 # Selenium Web Drivers Locations
-WEB_DRIVERS_BASE_LOCATION = "/SeleniumWebDrivers"
-
-WEB_DRIVERS_CHROME_LOCATION = "/Chrome"
-CHROME_WEBDRIVER = "/chromedriver"
-
-WEB_DRIVERS_GECKO_LOCATION = "/Gecko"
-GECKO_WEBDRIVER = "/geckodriver"
-
-WEB_DRIVERS_FIREFOX_LOCATION = "/Gecko"
-FIREFOX_WEBDRIVER = "/geckodriver"
+CHROME_WEBDRIVER_LOCATION = "/executables/drivers/chrome/chromedriver"
 
 BOT_MAX_ALIVE_TIME = 90
 BOT_MIN_ALIVE_TIME = 35
@@ -208,7 +201,7 @@ PROXY_GEO_TARGETS_CITIES = {
     "Louisville": "us-city-louisville",
     "Porto Alegre": "br-city-porto_alegre",
     "Campinas": "br-city-campinas",
-    "Karachi": "pk-city-karachi"
+    "Karachi": "pk-city-karachi",
 }
 
 PROXY_USERNAME = "adfrpr"
@@ -217,10 +210,30 @@ PROXY_PORT = 10000
 PROXY_STICKY_TEMPLATE = "user-<user>-country-<geo_target>-sessionduration-<ss_duration>:<pass>@<geo_target_area>.smartproxy.com:<port>"
 PROXY_RANDOM_TEMPLATE = "user-<user>:<pass>@gate.smartproxy.com:10000"
 
-PROXY_BLACKLISTED_EXTENSIONS = [".css", ".jpg", ".jpeg", ".png", ".gif", ".svg", ".woff", ".woff2",
-                                ".ttf", ".ico", ".webm", ".ogg", ".wav", ".mp3", ".mp4"]
+PROXY_BLACKLISTED_EXTENSIONS = [
+    ".css",
+    ".jpg",
+    ".jpeg",
+    ".png",
+    ".gif",
+    ".svg",
+    ".woff",
+    ".woff2",
+    ".ttf",
+    ".ico",
+    ".webm",
+    ".ogg",
+    ".wav",
+    ".mp3",
+    ".mp4",
+]
 
-PROXY_WHITELISTED_DOMAINS = ["whouseem.com", "dudialgator.com", "bedrapiona.com", "fleraprt.com"]
+PROXY_WHITELISTED_DOMAINS = [
+    "whouseem.com",
+    "dudialgator.com",
+    "bedrapiona.com",
+    "fleraprt.com",
+]
 PROXY_BLACKLISTED_DOMAINS = []
 ALLOW_URL_THROUGH_PROXY_IF_MATCHES_BROWSER_ACTIVE_URL = True
 
