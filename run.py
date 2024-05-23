@@ -3,10 +3,6 @@ import random
 import os
 import sys
 import time
-import multiprocessing
-import json
-import configparser
-import traceback
 from selenium.common.exceptions import (
     TimeoutException,
     WebDriverException,
@@ -26,142 +22,35 @@ from identity.client import Identity
 import constants.browser_constants as brc
 import constants.bot_constants as boc
 from datacontroller.datacontroller import DataController
+from constants.config import (
+    BOT_ID,
+    RUN_INFINITELY,
+    DEBUG,
+    FETCH_BY,
+    FETCH_BY_VALUE,
+    load_configurations,
+)
 
 boc.FULL_DIRECTORY_PATH = os.path.dirname(os.path.realpath(__file__))
 brc.FULL_DIRECTORY_PATH = os.path.dirname(os.path.realpath(__file__))
 
-config = configparser.ConfigParser()
-config.read(boc.FULL_DIRECTORY_PATH + "/config.ini")
-
-run_infinitely = False
-use_proxy = True
-
 
 def restart_plug():
-    if not run_infinitely:
+    if not RUN_INFINITELY:
         exit()
     else:
         print("Attempting to rerun operations")
         os.execv(sys.executable, ["python3.10"] + sys.argv)
 
 
-debug = True
-bot_server_id = None
+load_configurations()
 
-if "OPTIONS" in config:
-    options = config["OPTIONS"]
-    boc.NORDVPN_OVPN_FILE_PATH = options.get(
-        "nordvpn-ovpn-files-path", boc.NORDVPN_OVPN_FILE_PATH
-    )
-    boc.IPVANISH_OVPN_FILE_PATH = options.get(
-        "ipvanish-ovpn-files-path", boc.IPVANISH_OVPN_FILE_PATH
-    )
-    boc.SCREEN_WIDTH = options.getint("screen-width", boc.SCREEN_WIDTH)
-    boc.SCREEN_HEIGHT = options.getint("screen-height", boc.SCREEN_HEIGHT)
-    boc.UP_TASKBAR_HEIGHT = options.getint("up-taskbar-height", boc.UP_TASKBAR_HEIGHT)
-    debug = options.getboolean("debug", True)
-
-if "WAIT_CONDITIONS" in config:
-    options = config["OPTIONS"]
-
-    boc.IMPLICITLY_WAIT_TIME = options.get(
-        "implicitly-wait-time", boc.IMPLICITLY_WAIT_TIME
-    )
-
-if "PROXY" in config:
-    proxy_config = config["PROXY"]
-    use_proxy = proxy_config.getboolean("use-proxy", True)
-
-if "BOT" in config:
-    bot_conf = config["BOT"]
-
-    boc.BOT_MAX_ALIVE_TIME = bot_conf.getint("max-alive-time", boc.BOT_MAX_ALIVE_TIME)
-    boc.BOT_MIN_ALIVE_TIME = bot_conf.getint("min-alive-time", boc.BOT_MIN_ALIVE_TIME)
-    boc.USE_MOUSE_READ_PROBABILITY = bot_conf.getfloat(
-        "mouse-use-probability", boc.USE_MOUSE_READ_PROBABILITY
-    )
-    bot_server_id = bot_conf.get("bot-id", None)
-    run_infinitely = bot_conf.getboolean("run-infinitely", False)
-
-if "BROWSER" in config:
-    browser_conf = config["BROWSER"]
-
-    brc.MAXIMUM_WINDOW_PROBABILITY = browser_conf.getfloat(
-        "maximum-window-probability", brc.MAXIMUM_WINDOW_PROBABILITY
-    )
-
-if "OVPN" in config:
-    ovpn = config["OVPN"]
-
-    boc.MAX_OVPN_CONNECT_RETRIES = ovpn.getint(
-        "max-connect-retries", boc.MAX_OVPN_CONNECT_RETRIES
-    )
-    boc.OVPN_MAX_WAIT_TIME_TILL_IP_IMPROVISE = ovpn.getint(
-        "max-wait-time", boc.OVPN_MAX_WAIT_TIME_TILL_IP_IMPROVISE
-    )
-
-if "SCROLL" in config:
-    scroll = config["SCROLL"]
-
-    boc.PX_VALUE_TO_CHECK_WHEN_SCROLL_TO_POINT = scroll.getint(
-        "px-value", boc.PX_VALUE_TO_CHECK_WHEN_SCROLL_TO_POINT
-    )
-
-if "EXECUTABLES" in config:
-    executables = config["EXECUTABLES"]
-
-    boc.CHROME_WEBDRIVER_LOCATION = executables.get(
-        "chrome-webdriver-location", boc.CHROME_WEBDRIVER_LOCATION
-    )
-    boc.FIREFOX_WEBDRIVER_LOCATION = executables.get(
-        "firefox-webdriver-location", boc.FIREFOX_WEBDRIVER_LOCATION
-    )
-
-    brc.CHROME_BINARY_LOCATION = executables.get(
-        "chrome-binary-location", brc.CHROME_BINARY_LOCATION
-    )
-    brc.FIREFOX_BINARY_LOCATION = executables.get(
-        "firefox-binary-location", brc.FIREFOX_BINARY_LOCATION
-    )
-
-if "SITE" in config:
-    ads = config["SITE"]
-
-    boc.PROXY_WHITELISTED_DOMAINS = ads.get(
-        "proxy-whitelisted-domains", boc.PROXY_WHITELISTED_DOMAINS
-    ).split(",")
-    boc.PROXY_blackLISTED_DOMAINS = ads.get(
-        "proxy-blacklisted-domains", boc.PROXY_BLACKLISTED_DOMAINS
-    ).split(",")
-    boc.PROXY_BLACKLISTED_EXTENSIONS = ads.get(
-        "proxy-blacklisted-extensions", boc.PROXY_BLACKLISTED_EXTENSIONS
-    ).split(",")
-    boc.ALLOW_URL_THROUGH_PROXY_IF_MATCHES_BROWSER_ACTIVE_URL = ads.getboolean(
-        "allow-url-through-proxy-if-matches-browser-active-url",
-        boc.ALLOW_URL_THROUGH_PROXY_IF_MATCHES_BROWSER_ACTIVE_URL,
-    )
-
-if "IDENTITY" in config:
-    idy = config["IDENTITY"]
-    fetch_by = idy.get("fetch-by", "scr")
-    fetch_by_value = idy.get("fetch-by-value", [boc.SCREEN_WIDTH, boc.SCREEN_HEIGHT])
-
-if fetch_by == "device_type":
-    fetch_by_value = fetch_by_value
-
-elif fetch_by == "proxy_geo":
-    fetch_by_value = fetch_by_value
-
-elif fetch_by == "id":
-    fetch_by_value = int(fetch_by_value)
-
-else:
-    fetch_by = "scr"
-    fetch_by_value = [boc.SCREEN_WIDTH, boc.SCREEN_HEIGHT]
+if FETCH_BY == "scr":
+    FETCH_BY_VALUE = [boc.SCREEN_WIDTH, boc.SCREEN_HEIGHT]
 
 identity = Identity()
 try:
-    identity.auto_initiate_identity(fetch_by, fetch_by_value)
+    identity.auto_initiate_identity(FETCH_BY, FETCH_BY_VALUE)
 except:
     print(
         "An error occurred while initiating identity(check identity server), sleeping for 15 seconds then restarting"
@@ -197,7 +86,7 @@ def run_bot(identity, process_id):
         + boc.CHROME_WEBDRIVER,
         bot_process_id=process_id,
         no_of_clicks=page_info["page_clicks"],
-        use_proxy=use_proxy,
+        USE_PROXY=USE_PROXY,
     )
     web_bot.open_web_browser()
     try:
@@ -281,7 +170,7 @@ def run_bot(identity, process_id):
                 web_bot.proxy_requests_session.close()
                 web_bot.cached_requests_session.close()
                 web_bot.web_browser_driver.quit()
-                DataController.ping_is_alive(bot_server_id)
+                DataController.ping_is_alive(BOT_ID)
         except ConnectionRefusedError:
             print(
                 "Most likely the Cookie Update job has been done by the daemon responsible for keeping reading "
@@ -301,9 +190,9 @@ def run_bot(identity, process_id):
         TimeoutException,
         UnexpectedAlertPresentException,
     ):
-        if debug:
+        if DEBUG:
             print(traceback.format_exc())
-            print("The Error Above Was Handled, But Printed For Debugging Purpose")
+            print("The Error Above Was Handled, But Printed For DEBUGging Purpose")
         web_bot.web_browser_driver.quit()
 
     if not identity.invalid_proxy:
