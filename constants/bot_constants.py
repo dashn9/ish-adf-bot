@@ -12,6 +12,7 @@ FULL_DIRECTORY_PATH = os.path.dirname(os.path.realpath(__file__)).replace(
 
 # Selenium Web Drivers Locations
 CHROME_WEBDRIVER_LOCATION = "/executables/drivers/chrome/chromedriver"
+FIREFOX_WEBDRIVER_LOCATION = "/executables/drivers/firefox/firefoxdriver"
 
 BOT_MAX_ALIVE_TIME = 90
 BOT_MIN_ALIVE_TIME = 35

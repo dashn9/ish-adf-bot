@@ -2,7 +2,11 @@ import pyautogui
 import random
 import time
 
-from selenium.common.exceptions import TimeoutException, WebDriverException, InvalidArgumentException
+from selenium.common.exceptions import (
+    TimeoutException,
+    WebDriverException,
+    InvalidArgumentException,
+)
 from selenium.common import StaleElementReferenceException
 from selenium.webdriver.common.by import By
 
@@ -12,9 +16,15 @@ from humanbehaviourmechanics.human_movements import HumanMovements
 
 
 class SmartAdsInteractions:
-    def __init__(self, browser_interface: BrowserInterface, human_movements: HumanMovements, no_of_clicks=0):
+    def __init__(
+        self,
+        browser_interface: BrowserInterface,
+        human_movements: HumanMovements,
+        no_of_clicks=0,
+    ):
         self.browser_interface = browser_interface
-        self.no_of_clicks = no_of_clicks
+        # Attempts to click at certain points during read, to trigger popunders
+        human_movements.no_of_clicks = no_of_clicks
         self.ad_with_keyword_wait_counter = 0
         self.human_movements = human_movements
         self.bot_process_id = browser_interface.bot_process_id
@@ -45,11 +55,15 @@ class SmartAdsInteractions:
     def trigger_vignette(self, open_vignette=False):
         try:
             if not open_vignette:
-                ads_dimensions = self.locate_ad_elements_in_iframe(ads_elements_type=self.vignette_ad_close_type,
-                                                                   ads_elements_name=self.vignette_ad_close_name)
+                ads_dimensions = self.locate_ad_elements_in_iframe(
+                    ads_elements_type=self.vignette_ad_close_type,
+                    ads_elements_name=self.vignette_ad_close_name,
+                )
             else:
-                ads_dimensions = self.locate_ad_elements_in_iframe(ads_elements_type=self.vignette_ad_open_type,
-                                                                   ads_elements_name=self.vignette_ad_open_name)
+                ads_dimensions = self.locate_ad_elements_in_iframe(
+                    ads_elements_type=self.vignette_ad_open_type,
+                    ads_elements_name=self.vignette_ad_open_name,
+                )
                 if self.strip_ads_with_negative_keywords(ads_dimensions):
                     return False
             if not ads_dimensions:
@@ -59,20 +73,28 @@ class SmartAdsInteractions:
                 self.ad_click(random.choice(ads_dimensions), revert_back=False)
             else:
                 self.ad_click(random.choice(ads_dimensions))
-            print(f"Bot Process Id {self.bot_process_id} <:::> Vignette ad trigger attempted")
+            print(
+                f"Bot Process Id {self.bot_process_id} <:::> Vignette ad trigger attempted"
+            )
             time.sleep(0.5)
             self.trigger_vignette()
         except TimeoutException:
             # I no longer use Expected conditions in the iframe_check for locating elements, so this branch of code may
             # never be reached, look for other ways
-            print(f"Bot Process Id {self.bot_process_id} <:::> No active vignette to close")
+            print(
+                f"Bot Process Id {self.bot_process_id} <:::> No active vignette to close"
+            )
             return
 
     def smart_ad_click(self, switch_focus_to_new_tab=True):
         ad_click_success = False
         if not hasattr(self, "track_vignette_close"):
             self.track_vignette_close = 1
-        if self.ad_to_click != "vignette" and self.vignette_ad_close_name and self.track_vignette_close >= 3:
+        if (
+            self.ad_to_click != "vignette"
+            and self.vignette_ad_close_name
+            and self.track_vignette_close >= 3
+        ):
             self.trigger_vignette()
             self.track_vignette_close = 0
         else:
@@ -88,7 +110,9 @@ class SmartAdsInteractions:
                     self.trigger_vignette()
                     return
                 self.trigger_vignette(open_vignette=True)
-                if tab_length != len(self.browser_interface.web_browser_driver.window_handles):
+                if tab_length != len(
+                    self.browser_interface.web_browser_driver.window_handles
+                ):
                     self.ad_to_click = None
                     ad_click_success = True
                 else:  # the reason why this condition branch was added was because of the possibility trigger_vignette
@@ -97,17 +121,27 @@ class SmartAdsInteractions:
             elif self.ad_to_click == "in_page" and self.in_page_ad_links_name:
                 self.trigger_vignette()
                 time.sleep(0.4)
-                ads_dimensions = self.locate_ad_elements_in_iframe(ads_elements_type=self.in_page_ad_links_type,
-                                                                   ads_elements_name=self.in_page_ad_links_name)
+                ads_dimensions = self.locate_ad_elements_in_iframe(
+                    ads_elements_type=self.in_page_ad_links_type,
+                    ads_elements_name=self.in_page_ad_links_name,
+                )
                 if not ads_dimensions:
                     return
 
-                if not isinstance(self.ad_keywords, list) or self.ad_with_keyword_wait_counter >= 1:
-                    print(f"Bot Process Id {self.bot_process_id} <:::> Keywords won't be used as basis for ad click")
+                if (
+                    not isinstance(self.ad_keywords, list)
+                    or self.ad_with_keyword_wait_counter >= 1
+                ):
+                    print(
+                        f"Bot Process Id {self.bot_process_id} <:::> Keywords won't be used as basis for ad click"
+                    )
                     # Resetting time activated before loading, so ad page has more time to load
                     self.browser_interface.time_activated = time.time()
-                    if self.ad_click(random.choice(ads_dimensions)) and tab_length != len(
-                            self.browser_interface.web_browser_driver.window_handles):
+                    if self.ad_click(
+                        random.choice(ads_dimensions)
+                    ) and tab_length != len(
+                        self.browser_interface.web_browser_driver.window_handles
+                    ):
                         ad_click_success = True
                         self.ad_to_click = None
                 else:
@@ -117,23 +151,29 @@ class SmartAdsInteractions:
                                 # Resetting time activated before loading, so ad page has more time to load
                                 self.browser_interface.time_activated = time.time()
                                 if self.ad_click(ad_dimensions) and tab_length != len(
-                                        self.browser_interface.web_browser_driver.window_handles):
+                                    self.browser_interface.web_browser_driver.window_handles
+                                ):
                                     ad_click_success = True
                                     self.ad_to_click = None
-                                print(f"Bot Process Id {self.bot_process_id} <:::> Keyword was used as a base to click "
-                                      f"an ad")
+                                print(
+                                    f"Bot Process Id {self.bot_process_id} <:::> Keyword was used as a base to click "
+                                    f"an ad"
+                                )
                                 break
                         else:
                             continue
                         break
                     if self.ad_to_click:
                         self.ad_with_keyword_wait_counter += 1
-                        print(f"Bot Process Id {self.bot_process_id} <:::> Ad with any of keywords wasn't found, "
-                              f"Try again")
+                        print(
+                            f"Bot Process Id {self.bot_process_id} <:::> Ad with any of keywords wasn't found, "
+                            f"Try again"
+                        )
             if ad_click_success and switch_focus_to_new_tab:
                 time.sleep(1)
                 self.browser_interface.web_browser_driver.switch_to.window(
-                    self.browser_interface.web_browser_driver.window_handles[-1])
+                    self.browser_interface.web_browser_driver.window_handles[-1]
+                )
             if self.browser_interface.device_type == "is_smartphone":
                 self.browser_interface.activate_mobile()
             return ad_click_success
@@ -143,24 +183,35 @@ class SmartAdsInteractions:
     def locate_ad_elements_in_iframe(self, ads_elements_type, ads_elements_name: str):
         def iframe_check():
             try:
-                iframe = self.browser_interface.web_browser_driver.find_element(By.TAG_NAME, "iframe")
+                iframe = self.browser_interface.web_browser_driver.find_element(
+                    By.TAG_NAME, "iframe"
+                )
                 if self.browser_interface.device_type == "is_smartphone":
-                    iframe_offset = self.browser_interface.get_element_location_window_offset(iframe)
+                    iframe_offset = (
+                        self.browser_interface.get_element_location_window_offset(
+                            iframe
+                        )
+                    )
                 else:
                     iframe_offset = self.browser_interface.get_element_window_location_screen_offsets(
-                        iframe)["html_web_element"]
+                        iframe
+                    )[
+                        "html_web_element"
+                    ]
                 self.browser_interface.web_browser_driver.switch_to.frame(iframe)
             except (WebDriverException, StaleElementReferenceException):
                 self.browser_interface.web_browser_driver.switch_to.default_content()
                 return False
             ads_elements = None
             try:
-                ads_elements = self.browser_interface.web_browser_driver.find_elements(ads_elements_type,
-                                                                                       ads_elements_name)
+                ads_elements = self.browser_interface.web_browser_driver.find_elements(
+                    ads_elements_type, ads_elements_name
+                )
             except (TimeoutException, InvalidArgumentException):
                 print(
                     f"Bot Process Id {self.bot_process_id} <:::> Element parent body was found but ad elements to "
-                    f"interact with were not present")
+                    f"interact with were not present"
+                )
                 self.browser_interface.web_browser_driver.switch_to.default_content()
             if not ads_elements:
                 self.browser_interface.web_browser_driver.switch_to.default_content()
@@ -186,15 +237,25 @@ class SmartAdsInteractions:
         elif ads_elements_type == "id":
             ads_elements_type = By.ID
         else:
-            print(f"Bot Process Id {self.bot_process_id} <:::> The ads type you are trying to locate is not supported")
+            print(
+                f"Bot Process Id {self.bot_process_id} <:::> The ads type you are trying to locate is not supported"
+            )
             return
         if ads_elements_name.startswith("//iframe"):
             ads_elements_name = ads_elements_name[8:]
             return iframe_check()
 
-    def set_ad_behaviour_environment(self, ad_to_click, vignette_ad_close_type, vignette_ad_close_name,
-                                     vignette_ad_open_type, vignette_ad_open_name, in_page_ad_links_type,
-                                     in_page_ad_links_name, ad_keywords=None):
+    def set_ad_behaviour_environment(
+        self,
+        ad_to_click,
+        vignette_ad_close_type,
+        vignette_ad_close_name,
+        vignette_ad_open_type,
+        vignette_ad_open_name,
+        in_page_ad_links_type,
+        in_page_ad_links_name,
+        ad_keywords=None,
+    ):
         self.ad_to_click = ad_to_click
 
         self.vignette_ad_close_type = vignette_ad_close_type
@@ -209,52 +270,32 @@ class SmartAdsInteractions:
     def close_ad(self):
         pass
 
-    def click_trigger(self, x_coord=50, y_coord=50, device_type="is_pc"):
-        if device_type == "is_smartphone":
-            self.human_movements.touch.tap(x_coord, y_coord)
-            return True
-        elif device_type == "is_pc":
-            pyautogui.click()
-            return True
-        else:
-            print(
-                f"Bot Process Id {self.bot_process_id} <:::> The device type you are attempting to click on is unknown")
-            return False
-
     def ad_click(self, ad_dimensions: dict, revert_back=False):
         if self.browser_interface.device_type == "is_pc":
             previous_mouse_pos = pyautogui.position()
             self.human_movements.simulate_human_mouse_move_behavior_to_area(
-                ad_dimensions["x"], ad_dimensions["y"], ad_dimensions["width"], ad_dimensions["height"],
+                ad_dimensions["x"],
+                ad_dimensions["y"],
+                ad_dimensions["width"],
+                ad_dimensions["height"],
                 x_coordinates_offset_percentage=random.randint(0, 100),
-                y_coordinates_offset_percentage=random.randint(0, 100), max_overshoot=35,
-                probability_of_overshoot=round(random.random(), 2))
+                y_coordinates_offset_percentage=random.randint(0, 100),
+                max_overshoot=35,
+                probability_of_overshoot=round(random.random(), 2),
+            )
             time.sleep(random.uniform(0.1, 0.4))
             pyautogui.click()
             if revert_back:
                 self.browser_interface.revert_to_main_page()
-            self.human_movements.simulate_human_mouse_move_behavior_to_point(previous_mouse_pos[0],
-                                                                             previous_mouse_pos[1])
+            self.human_movements.simulate_human_mouse_move_behavior_to_point(
+                previous_mouse_pos[0], previous_mouse_pos[1]
+            )
             return True
         elif self.browser_interface.device_type == "is_smartphone":
-            self.human_movements.touch.tap(ad_dimensions["x"] +
-                                           random.uniform(0, ad_dimensions["width"]),
-                                           ad_dimensions["y"] +
-                                           random.uniform(0, ad_dimensions["height"])
-                                           )
+            self.human_movements.touch.tap(
+                ad_dimensions["x"] + random.uniform(0, ad_dimensions["width"]),
+                ad_dimensions["y"] + random.uniform(0, ad_dimensions["height"]),
+            )
             if revert_back:
                 self.browser_interface.revert_to_main_page()
             return True
-
-    def smart_click_trigger(self, coordinates=(100, 100), device_type="is_pc"):
-        if self.no_of_clicks > 0:
-            if random.uniform(0, 1) <= self.probability_of_click:
-                self.probability_of_click -= utils.fetch_percentage_value(self.probability_of_click, 15)
-                self.no_of_clicks -= 1
-                self.click_trigger(coordinates[0], coordinates[1], device_type)
-                print(f"Bot Process Id {self.bot_process_id} <:::> Click was triggered successfully")
-                return True
-            else:
-                self.probability_of_click += utils.fetch_percentage_value(self.probability_of_click, 15)
-                return False
-        return False

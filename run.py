@@ -7,7 +7,6 @@ import multiprocessing
 import json
 import configparser
 import traceback
-import undetected_chromedriver as uc
 from selenium.common.exceptions import (
     TimeoutException,
     WebDriverException,
@@ -87,7 +86,7 @@ if "BOT" in config:
 if "BROWSER" in config:
     browser_conf = config["BROWSER"]
 
-    brc.MAXIMUM_WINDOW_PROBABILITY = browser_conf.getint(
+    brc.MAXIMUM_WINDOW_PROBABILITY = browser_conf.getfloat(
         "maximum-window-probability", brc.MAXIMUM_WINDOW_PROBABILITY
     )
 
