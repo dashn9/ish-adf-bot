@@ -1,7 +1,7 @@
 import json
-from numpy import identity
 import requests
 
+from constants.config import DEBUG
 from constants.bot_constants import IDENTITY_API_BASE_HOST
 
 
@@ -13,12 +13,13 @@ class DataController:
         pass
 
     def fetch_an_identity(self, method, value):
-        session = requests.session()
         if isinstance(value, list):
             value = json.dumps(value)
         req_url = f"bots/identity/{method}/{value}"
-        identity = session.get(
-            self.server_api + req_url, timeout=DataController.timeout
+        identity = requests.get(
+            self.server_addr + req_url,
+            timeout=DataController.timeout,
+            verify=False,
         )
         identity.close()
         if identity.text == "void":
@@ -27,23 +28,23 @@ class DataController:
 
     def fetch_timezone(self, identity_id, proxy=None, retries=0):
         try:
-            session = requests.session()
             req_url = "fetch_update_timezone.php"
+            req_session = requests.session()
             if identity_id:
                 identity_id = str(identity_id)
                 req_url = req_url + "?id=" + identity_id
                 if proxy:
-                    session.proxies = {
+                    req_session.proxies = {
                         "http": "http://" + proxy,
                         "https": "http://" + proxy,
                         "no_proxy": "localhost,127.0.0.1",
                     }
-                identity_timezone = session.get(
+                identity_timezone = req_session.get(
                     "https://finnsec.us/api/" + req_url,
                     timeout=DataController.timeout,
-                    verify=False,
+                    verify=not DEBUG,
                 )
-                # session.get("http://api.proxyrack.net/release")
+                # self.request.get("http://api.proxyrack.net/release")
                 identity_timezone.close()
                 return identity_timezone.json()
         except:
@@ -53,14 +54,16 @@ class DataController:
 
     def fetch_geolocation_data(self, proxy=None):
         try:
-            session = requests.session()
             api_endpoint = "http://ip-api.com/json?fields=34652445"
+            req_session = requests.session(verify=not DEBUG)
             if proxy:
-                session.proxies = {
+                req_session.proxies = {
                     "http": "http://" + proxy,
                     "https": "https://" + proxy,
                 }
-            ip_geolocation = session.get(api_endpoint, timeout=DataController.timeout)
+            ip_geolocation = req_session.get(
+                api_endpoint, timeout=DataController.timeout
+            )
             if "Proxy Not Found" in ip_geolocation.text:
                 return False
             else:
@@ -72,29 +75,27 @@ class DataController:
         pass
 
     def update_cookies(self, uid, cookies):
-        session = requests.session()
         if isinstance(cookies, list):
             cookies = json.dumps(cookies)
         req_url = "update_cookies_for_identity.php"
-        cookies_update = session.post(
-            self.server_api + req_url,
+        cookies_update = requests.post(
+            self.server_addr + req_url,
             data={"identity_id": str(uid), "cookies": cookies},
             timeout=DataController.timeout,
+            verify=not DEBUG,
         )
         print("cookie update: " + cookies_update.text)
         cookies_update.close()
 
     def fetch_vpn_account_details(self, vpn_client):
-        session = requests.session()
         req_url = "get_a_vpn_account.php?vpn_client=" + vpn_client
-        vpn_account = session.get(
-            self.server_api + req_url, timeout=DataController.timeout
+        vpn_account = requests.get(
+            self.server_addr + req_url, timeout=DataController.timeout
         )
         vpn_account.close()
         return vpn_account.json()
 
     def update_vpn_account_status(self, vpn_client, vpn_account_id, vpn_account_status):
-        session = requests.session()
         auth_status = "AUTH_VALID"
         vpn_account_id = str(vpn_account_id)
         if vpn_account_status == 0:
@@ -107,8 +108,8 @@ class DataController:
             + "&account_status="
             + auth_status
         )
-        vpn_account_update = session.get(
-            self.server_api + req_url, timeout=DataController.timeout
+        vpn_account_update = requests.get(
+            self.server_addr + req_url, timeout=DataController.timeout, verify=not DEBUG
         )
         vpn_account_update.close()
         if vpn_account_update.text == "successful":
@@ -121,14 +122,15 @@ class DataController:
 
     @staticmethod
     def fetch_active_random_url():
-        session = requests.session()
         req_url = "fetch_active_urls.php?amount=rand"
-        page_details = session.get(
-            DataController.server_api + req_url, timeout=DataController.timeout
+        page_details = requests.get(
+            DataController.server_addr + req_url,
+            timeout=DataController.timeout,
+            verify=not DEBUG,
         )
-        return page_details.text
+        return page_details.json()
 
     @staticmethod
     def ping_is_alive(bot_server_id):
         req_url = "bot_is_alive.php?bot_id=" + bot_server_id
-        requests.get(DataController.server_api + req_url)
+        requests.get(DataController.server_addr + req_url)

@@ -3,6 +3,7 @@ import random
 import os
 import sys
 import time
+import traceback
 from selenium.common.exceptions import (
     TimeoutException,
     WebDriverException,
@@ -28,7 +29,6 @@ from constants.config import (
     DEBUG,
     FETCH_BY,
     FETCH_BY_VALUE,
-    load_configurations,
 )
 
 boc.FULL_DIRECTORY_PATH = os.path.dirname(os.path.realpath(__file__))
@@ -43,21 +43,13 @@ def restart_plug():
         os.execv(sys.executable, ["python3.10"] + sys.argv)
 
 
-load_configurations()
-
 if FETCH_BY == "scr":
     FETCH_BY_VALUE = [boc.SCREEN_WIDTH, boc.SCREEN_HEIGHT]
 
 identity = Identity()
-try:
-    identity.auto_initiate_identity(FETCH_BY, FETCH_BY_VALUE)
-except:
-    print(
-        "An error occurred while initiating identity(check identity server), sleeping for 15 seconds then restarting"
-    )
-    time.sleep(15)
-    restart_plug()
-page_info = json.loads(DataController.fetch_active_random_url())
+identity.auto_initiate_identity(FETCH_BY, FETCH_BY_VALUE)
+
+page_info = DataController.fetch_active_random_url()
 page_content_element_type = By.ID
 page_content_element_name = page_info.get("page_content_element_name")
 related_articles_elements_type = By.CLASS_NAME
@@ -86,7 +78,7 @@ def run_bot(identity, process_id):
         + boc.CHROME_WEBDRIVER,
         bot_process_id=process_id,
         no_of_clicks=page_info["page_clicks"],
-        USE_PROXY=USE_PROXY,
+        USE_PROXY=boc.USE_PROXY,
     )
     web_bot.open_web_browser()
     try:
@@ -192,7 +184,7 @@ def run_bot(identity, process_id):
     ):
         if DEBUG:
             print(traceback.format_exc())
-            print("The Error Above Was Handled, But Printed For DEBUGging Purpose")
+            print("The Error Above Was Handled, But Printed For DEBUGing Purpose")
         web_bot.web_browser_driver.quit()
 
     if not identity.invalid_proxy:
