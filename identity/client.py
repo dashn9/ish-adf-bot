@@ -67,9 +67,9 @@ class Identity:
         self.browser_name = browser_name
         self.browser_version = browser_version
         self.screen_resolution = screen_resolution
-        if isinstance(screen_resolution, list):
-            self.screen_width = screen_resolution[0]
-            self.screen_height = screen_resolution[1]
+        if isinstance(screen_resolution, dict):
+            self.screen_width = screen_resolution["logical_width"]
+            self.screen_height = screen_resolution["logical_height"]
         else:
             self.screen_width = 1920
             self.screen_height = 1080
@@ -153,7 +153,7 @@ class Identity:
             "keywords_click_probability"
         ]
         self.ad_type_to_click = identity["ADS"]["type"]
-        self.proxy_url = identity.get("PROXY_URL", None)
+        self.proxy_url = identity.get("PROXY_URL")
         self.proxy_release_url = identity.get("PROXY_RELEASE_URL", None)
         self.identity_raw = identity
 
@@ -281,6 +281,7 @@ class Identity:
         return "".join(random.choice(chars) for _ in range(length))
 
     def resolve_proxy_url(self, geo_target, proxy_name="proxyrack.com"):
+        """This Function is Deprecated, The Proxy URL is now resolved from backend."""
         if proxy_name in ["smartproxy.com", "proxyrack.com"]:
             if geo_target:
                 proxy_url = bot_constants.PROXY_STICKY_TEMPLATE.replace(

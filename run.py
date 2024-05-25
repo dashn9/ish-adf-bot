@@ -40,7 +40,7 @@ def restart_plug():
         exit()
     else:
         print("Attempting to rerun operations")
-        os.execv(sys.executable, ["python3.10"] + sys.argv)
+        os.execv(sys.executable, ["python"] + sys.argv)
 
 
 if FETCH_BY == "scr":
@@ -72,13 +72,9 @@ def run_bot(identity, process_id):
     web_bot = WebBot(
         identity=identity,
         browser_to_use_id=brc.CHROME_ID,
-        driver_path=boc.FULL_DIRECTORY_PATH
-        + boc.WEB_DRIVERS_BASE_LOCATION
-        + boc.WEB_DRIVERS_CHROME_LOCATION
-        + boc.CHROME_WEBDRIVER,
+        driver_path=boc.FULL_DIRECTORY_PATH + boc.CHROME_WEBDRIVER_LOCATION,
         bot_process_id=process_id,
         no_of_clicks=page_info["page_clicks"],
-        USE_PROXY=boc.USE_PROXY,
     )
     web_bot.open_web_browser()
     try:
@@ -187,11 +183,7 @@ def run_bot(identity, process_id):
             print("The Error Above Was Handled, But Printed For DEBUGing Purpose")
         web_bot.web_browser_driver.quit()
 
-    if not identity.invalid_proxy:
-        run_bot(identity, 0)
-    else:
-        print(f"Identity(ID = {identity.id}) proxy is invalid. Restarting program")
 
-
+run_bot(identity, 0)
 print("Successfully Completed Activity For Identity:", identity.id)
 restart_plug()

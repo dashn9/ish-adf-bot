@@ -25,7 +25,7 @@ from network.network_processors import NetworkRunner
 class BrowserInterface:
     def __init__(self, browser_to_use_id=browser_constants.CHROME_ID,
                  driver_path=f"{bot_constants.FULL_DIRECTORY_PATH}/SeleniumWebDrivers/Chrome/chromedriver",
-                 network_runner: NetworkRunner=None, bot_process_id=None, timezone_id=None, device_type="is_pc",
+                 bot_process_id=None, timezone_id=None, device_type="is_pc",
                  has_touch="no_touch", has_mouse="no_mouse", languages=["en-US", "en"], user_agent=None, hardware=None,
                  platform=None, screen_width=1920, screen_height=1080, device_pixel_ratio=1, cookies=list(),
                  identity_id=None, cookies_update_callback=None):
@@ -37,7 +37,6 @@ class BrowserInterface:
         self.bot_process_id = bot_process_id
         self.current_tab_length = 1
         self.timezone_id = timezone_id
-        self.network_runner = network_runner
         self.device_type = device_type
         self.has_touch = has_touch
         self.has_mouse = has_mouse
@@ -361,7 +360,7 @@ class BrowserInterface:
         open_browser_in_full_screen = True
         window_size = (bot_constants.SCREEN_WIDTH, bot_constants.SCREEN_HEIGHT)
         # An 8% chance and device is pc that randomly resize the web browser in a manner that is un-obstructive
-        if random.random() >= browser_constants.MAXIMUM_WINDOW_PROBABILITYs and self.device_type == "is_pc":
+        if random.random() >= browser_constants.MAXIMUM_WINDOW_PROBABILITY and self.device_type == "is_pc":
             open_browser_in_full_screen = False
             window_size = utils.fetch_random_window_size_relative_to_screen(
                 bot_constants.SCREEN_WIDTH, bot_constants.SCREEN_HEIGHT)
@@ -438,9 +437,9 @@ class BrowserInterface:
         else:
             self.web_browser_driver.set_window_position(0, 0)
             self.web_browser_driver.set_window_size(*window_size)
-        if self.network_runner:
-            self.web_browser_driver.request_interceptor = self.network_runner.request_interceptor
-            self.web_browser_driver.response_interceptor = self.network_runner.response_interceptor
+
+            self.web_browser_driver.request_interceptor = self.request_interceptor
+            self.web_browser_driver.response_interceptor = self.response_interceptor
         self.browser_action_chains = ActionChains(self.self.browser_interface.web_browser_driver)
         t = Thread(target=self.quit_browser_after_max_alive)
         t.daemon = True
