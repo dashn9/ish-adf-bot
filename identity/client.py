@@ -178,22 +178,22 @@ class Identity:
                 geolocation["offset"] / 60,
                 geolocation["continent"] + " " + geolocation["city"] + " Standard Time",
             ]
-        elif self.identity_raw["TIMEZONE_ID"]:
+        elif self.identity_raw["TIMEZONE"]:
             self.timezone = [
-                self.identity_raw["TIMEZONE_ID"],
-                self.identity_raw["TIMEZONE_OFFSET"],
-                self.identity_raw["TIMEZONE_FULL_NAME"],
+                self.identity_raw["TIMEZONE"]["id"],
+                self.identity_raw["TIMEZONE"]["offset"],
+                self.identity_raw["TIMEZONE"]["full_name"],
             ]
         else:
             print("Resolving Timezone From Cloud")
             identity_timezone = self.data_controller.fetch_timezone(
                 self.id, resolved_proxy_url
             )
-            if identity_timezone and "TIMEZONE_ID" in identity_timezone.keys():
+            if identity_timezone and identity_timezone.get("id", None):
                 self.timezone = [
-                    identity_timezone["TIMEZONE_ID"],
-                    identity_timezone["TIMEZONE_OFFSET"],
-                    identity_timezone["TIMEZONE_FULL_NAME"],
+                    identity_timezone["id"],
+                    identity_timezone["offset"],
+                    identity_timezone["full_name"],
                 ]
             else:
                 print("An empty timezone was resolved from cloud - fixing")

@@ -26,31 +26,28 @@ class DataController:
             return False
         return identity.json()
 
-    def fetch_timezone(self, identity_id, proxy=None, retries=0):
-        try:
-            req_url = "fetch_update_timezone.php"
-            req_session = requests.session()
-            if identity_id:
-                identity_id = str(identity_id)
-                req_url = req_url + "?id=" + identity_id
-                if proxy:
-                    req_session.proxies = {
-                        "http": "http://" + proxy,
-                        "https": "http://" + proxy,
-                        "no_proxy": "localhost,127.0.0.1",
-                    }
-                identity_timezone = req_session.get(
-                    "https://finnsec.us/api/" + req_url,
-                    timeout=DataController.timeout,
-                    verify=not DEBUG,
-                )
-                # self.request.get("http://api.proxyrack.net/release")
-                identity_timezone.close()
-                return identity_timezone.json()
-        except:
-            if retries <= 2:
-                retries += 1
-                return self.fetch_timezone(identity_id, proxy, retries)
+    def fetch_timezone(self, identity_id: int, proxy=None, retries=0):
+        # try:
+        req_url = f"bots/identity/{identity_id}/timezone/fetch"
+        req_session = requests.session()
+        identity_id = str(identity_id)
+        if proxy:
+            req_session.proxies = {
+                "http": "http://" + proxy,
+                "https": "http://" + proxy,
+                "no_proxy": "localhost,127.0.0.1",
+            }
+        identity_timezone = req_session.get(
+            self.server_addr + req_url,
+            timeout=DataController.timeout,
+            verify=not DEBUG,
+        )
+        identity_timezone.close()
+        return identity_timezone.json()
+        # except:
+        #     if retries <= 2:
+        #         retries += 1
+        #         return self.fetch_timezone(identity_id, proxy, retries)
 
     def fetch_geolocation_data(self, proxy=None):
         try:
@@ -122,7 +119,7 @@ class DataController:
 
     @staticmethod
     def fetch_active_random_url():
-        req_url = "fetch_active_urls.php?amount=rand"
+        req_url = "url/random"
         page_details = requests.get(
             DataController.server_addr + req_url,
             timeout=DataController.timeout,
