@@ -24,7 +24,6 @@ from network.network_processors import NetworkRunner
 
 class BrowserInterface:
     def __init__(self, browser_to_use_id=browser_constants.CHROME_ID,
-                 driver_path=f"{bot_constants.FULL_DIRECTORY_PATH}/SeleniumWebDrivers/Chrome/chromedriver",
                  bot_process_id=None, timezone_id=None, device_type="is_pc",
                  has_touch="no_touch", has_mouse="no_mouse", languages=["en-US", "en"], user_agent=None, hardware=None,
                  platform=None, screen_width=1920, screen_height=1080, device_pixel_ratio=1, cookies=list(),
@@ -32,7 +31,6 @@ class BrowserInterface:
         self.web_browser_driver = None
         self.time_activated = time.time()
         self.browser_to_use_id = browser_to_use_id
-        self.driver_path = driver_path
         self.opened_browser_urls = dict()
         self.bot_process_id = bot_process_id
         self.current_tab_length = 1
@@ -395,7 +393,9 @@ class BrowserInterface:
             sw_options = {
             }
             self.web_browser_driver = sw_uc.Chrome(
-                driver_executable_path=self.driver_path, options=browser_options, seleniumwire_options=sw_options)
+                driver_executable_path=bot_constants.FULL_DIRECTORY_PATH+bot_constants.CHROME_WEBDRIVER_LOCATION,
+                browser_executable_path=bot_constants.FULL_DIRECTORY_PATH+browser_constants.CHROME_BINARY_LOCATION,
+                options=browser_options, seleniumwire_options=sw_options)
 
             # Opens a firefox browser
         elif self.browser_to_use_id == browser_constants.FIREFOX_ID:

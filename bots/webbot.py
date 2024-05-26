@@ -15,7 +15,6 @@ class WebBot(
         self,
         identity=None,
         browser_to_use_id=browser_constants.CHROME_ID,
-        driver_path=f"{bot_constants.FULL_DIRECTORY_PATH}/SeleniumWebDrivers/Chrome/chromedriver",
         bot_process_id=None,
         no_of_clicks=0,
     ):
@@ -60,7 +59,6 @@ class WebBot(
         BrowserInterface.__init__(
             self,
             browser_to_use_id=browser_to_use_id,
-            driver_path=driver_path,
             bot_process_id=bot_process_id,
             timezone_id=identity.timezone[0],
             device_type=identity.device_type,

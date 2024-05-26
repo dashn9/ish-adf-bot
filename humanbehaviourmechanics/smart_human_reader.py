@@ -9,7 +9,6 @@ from selenium.webdriver.remote import webdriver as remote_webdriver
 
 from bots import utils as global_utils
 from humanbehaviourmechanics import utils
-from browsers.browser_interface import BrowserInterface
 from constants import bot_constants
 from constants.keyboard_keys import Keys as K_Keys
 from humanbehaviourmechanics.human_behaviour_reveries import HumanBehaviourReveries

@@ -72,7 +72,6 @@ def run_bot(identity, process_id):
     web_bot = WebBot(
         identity=identity,
         browser_to_use_id=brc.CHROME_ID,
-        driver_path=boc.FULL_DIRECTORY_PATH + boc.CHROME_WEBDRIVER_LOCATION,
         bot_process_id=process_id,
         no_of_clicks=page_info["page_clicks"],
     )
