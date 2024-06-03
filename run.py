@@ -84,10 +84,9 @@ def run_bot(identity, process_id):
             identity.ad_keywords = None
         ad_click_probability = random.random()
         ad_to_click = None
-        if ad_click_probability <= identity.vignette_ad_click_probability:
-            ad_to_click = "vignette"
-        elif ad_click_probability <= identity.in_page_ad_click_probability:
-            ad_to_click = "in_page"
+        if ad_click_probability <= identity.ad_click_probability:
+            ad_to_click = identity.ad_type_to_click
+
         web_bot.set_ad_behaviour_environment(
             ad_to_click=ad_to_click,
             vignette_ad_close_type=page_info["vignette_close_ad_elements_type"],

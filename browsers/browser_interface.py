@@ -392,9 +392,9 @@ class BrowserInterface:
                 browser_options.add_argument(f"--window-size={window_size[0]},{window_size[1]}")
             sw_options = {
             }
+            browser_options.binary_location = bot_constants.FULL_DIRECTORY_PATH+browser_constants.CHROME_BINARY_LOCATION
             self.web_browser_driver = sw_uc.Chrome(
                 driver_executable_path=bot_constants.FULL_DIRECTORY_PATH+bot_constants.CHROME_WEBDRIVER_LOCATION,
-                browser_executable_path=bot_constants.FULL_DIRECTORY_PATH+browser_constants.CHROME_BINARY_LOCATION,
                 options=browser_options, seleniumwire_options=sw_options)
 
             # Opens a firefox browser
@@ -440,7 +440,7 @@ class BrowserInterface:
 
             self.web_browser_driver.request_interceptor = self.request_interceptor
             self.web_browser_driver.response_interceptor = self.response_interceptor
-        self.browser_action_chains = ActionChains(self.self.browser_interface.web_browser_driver)
+        self.browser_action_chains = ActionChains(self.web_browser_driver)
         t = Thread(target=self.quit_browser_after_max_alive)
         t.daemon = True
         t.start()
