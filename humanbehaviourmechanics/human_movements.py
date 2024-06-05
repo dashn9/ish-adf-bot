@@ -17,19 +17,15 @@ from bots import utils
 class HumanMovements:
     def __init__(
         self,
-        browser_interface: BrowserInterface,
         smart_ads_interactions=None,
         mouse_delta_y=50,
     ):
-        self.browser_interface = browser_interface
-        self.keyboard = Keyboard(self.browser_interface.web_browser_driver)
+        self._keyboard = Keyboard(self.web_browser_driver)
         pyautogui.FAILSAFE = False
-        if self.browser_interface.has_touch == "has_touch":
-            self.touch = Touchscreen(
-                self.browser_interface.web_browser_driver, self.keyboard
-            )
+        self.touch = None
+        if self.has_touch == "has_touch":
+            self.touch = Touchscreen(self.web_browser_driver, self.keyboard)
         self.mouse = None
-        self.bot_process_id = browser_interface.bot_process_id
         self.last_document_offsets = [0, 0]
         self.mouse_delta_y = mouse_delta_y
         self.smart_ads_interactions = smart_ads_interactions
@@ -37,6 +33,12 @@ class HumanMovements:
         self.no_of_clicks = 0
 
         super().__init__()
+
+    @property
+    def keyboard(self):
+        if self._keyboard.webdriver is None:
+            self._keyboard.webdriver = self.web_browser_driver
+        return self._keyboard
 
     @staticmethod
     def get_mouse_position():
@@ -353,9 +355,7 @@ class HumanMovements:
             )
             if not isinstance(self.touch, Touchscreen):
                 element_screen_position = (
-                    self.browser_interface.get_element_window_location_screen_offsets(
-                        html_web_element
-                    )
+                    self.get_element_window_location_screen_offsets(html_web_element)
                 )
                 el_pos = dict(
                     area_x=element_screen_position["html_web_element"][0],
@@ -375,7 +375,7 @@ class HumanMovements:
                     probability_of_overshoot=round(random.random(), 2),
                 )
         else:
-            self.browser_interface.browser_action_chains.move_to_element_with_offset(
+            self.browser_action_chains.move_to_element_with_offset(
                 html_web_element, 20, 20
             ).perform()
 
@@ -383,7 +383,7 @@ class HumanMovements:
         self, html_web_element, percentage_to_scroll_to, time_to_sleep=1
     ):
         def has_page_offset_changed():
-            document_offsets = self.browser_interface.get_window_document_offsets()
+            document_offsets = self.get_window_document_offsets()
             document_offsets = [
                 document_offsets["x_offset"],
                 document_offsets["y_offset"],
@@ -409,10 +409,8 @@ class HumanMovements:
             self.read_with_touch(px_to_adjust_by, duration)
 
         def offset_adjuster(offset_to_adjust_to, html_web_element):
-            element_coordinates = (
-                self.browser_interface.get_element_location_window_offset(
-                    html_web_element
-                )
+            element_coordinates = self.get_element_location_window_offset(
+                html_web_element
             )
             if offset_to_adjust_to > element_coordinates["y_offset"]:
                 if isinstance(self.touch, Touchscreen):
@@ -420,10 +418,8 @@ class HumanMovements:
                         if not has_page_offset_changed():
                             return True
                         scroll_with_touch(False, 0.5)
-                        element_coordinates = (
-                            self.browser_interface.get_element_location_window_offset(
-                                html_web_element
-                            )
+                        element_coordinates = self.get_element_location_window_offset(
+                            html_web_element
                         )
                 else:
                     while offset_to_adjust_to >= element_coordinates["y_offset"]:
@@ -438,10 +434,8 @@ class HumanMovements:
                             time.sleep(random.uniform(0.15, 0.6))
                         else:
                             time.sleep(0.3)
-                        element_coordinates = (
-                            self.browser_interface.get_element_location_window_offset(
-                                html_web_element
-                            )
+                        element_coordinates = self.get_element_location_window_offset(
+                            html_web_element
                         )
                     self.keyboard.up(K_Keys["ArrowUp"])
                     if random.random() > 0.5:
@@ -452,10 +446,8 @@ class HumanMovements:
                         if not has_page_offset_changed():
                             return True
                         scroll_with_touch(True, 0.5)
-                        element_coordinates = (
-                            self.browser_interface.get_element_location_window_offset(
-                                html_web_element
-                            )
+                        element_coordinates = self.get_element_location_window_offset(
+                            html_web_element
                         )
                 else:
                     while offset_to_adjust_to <= element_coordinates["y_offset"]:
@@ -470,10 +462,8 @@ class HumanMovements:
                             time.sleep(random.uniform(0.15, 0.6))
                         else:
                             time.sleep(0.3)
-                        element_coordinates = (
-                            self.browser_interface.get_element_location_window_offset(
-                                html_web_element
-                            )
+                        element_coordinates = self.get_element_location_window_offset(
+                            html_web_element
                         )
                     self.keyboard.up(K_Keys["ArrowDown"])
                     if random.random() > 0.5:
@@ -482,16 +472,16 @@ class HumanMovements:
         # Element Height - Browser Window Makes It Possible To Eject Browser Dimensions From Calculations
         workable_height = html_web_element.rect.get(
             "height"
-        ) - self.browser_interface.web_browser_driver.get_window_rect().get("height")
+        ) - self.web_browser_driver.get_window_rect().get("height")
 
         offset_to_adjust_to = utils.fetch_percentage_value(
             workable_height, percentage_to_scroll_to
         )
         offset_to_adjust_to *= -1
 
-        original_y_offset = self.browser_interface.get_element_location_window_offset(
-            html_web_element
-        )["y_offset"]
+        original_y_offset = self.get_element_location_window_offset(html_web_element)[
+            "y_offset"
+        ]
 
         offset_adjuster(offset_to_adjust_to, html_web_element)
         time.sleep(time_to_sleep)
@@ -505,25 +495,19 @@ class HumanMovements:
         direction_to_move=True,
     ):
         self.keyboard.down_persistent(key)
-        element_coordinates = self.browser_interface.get_element_location_window_offset(
-            html_web_element
-        )
+        element_coordinates = self.get_element_location_window_offset(html_web_element)
         old_element_coordinates = element_coordinates
         boundary = element_coordinates.get("y_offset") - boundary
         offset_same_count = 0
 
         if direction_to_move:
             while element_coordinates.get("y_offset") >= boundary:
-                old_element_coordinates = (
-                    self.browser_interface.get_element_location_window_offset(
-                        html_web_element
-                    )
+                old_element_coordinates = self.get_element_location_window_offset(
+                    html_web_element
                 )
                 time.sleep(0.1)
-                element_coordinates = (
-                    self.browser_interface.get_element_location_window_offset(
-                        html_web_element
-                    )
+                element_coordinates = self.get_element_location_window_offset(
+                    html_web_element
                 )
 
                 if offset_same_count > 1:
@@ -535,16 +519,12 @@ class HumanMovements:
 
         elif not direction_to_move:
             while boundary >= element_coordinates.get("y_offset"):
-                old_element_coordinates = (
-                    self.browser_interface.get_element_location_window_offset(
-                        html_web_element
-                    )
+                old_element_coordinates = self.get_element_location_window_offset(
+                    html_web_element
                 )
                 time.sleep(0.1)
-                element_coordinates = (
-                    self.browser_interface.get_element_location_window_offset(
-                        html_web_element
-                    )
+                element_coordinates = self.get_element_location_window_offset(
+                    html_web_element
                 )
 
                 if offset_same_count > 1:
@@ -571,7 +551,7 @@ class HumanMovements:
     ):
         pyautogui.mouseDown()
         if self.no_of_clicks > 0:
-            while self.browser_interface.revert_to_main_page():
+            while self.revert_to_main_page():
                 pyautogui.mouseUp()
                 pyautogui.mouseDown()
 
@@ -595,8 +575,8 @@ class HumanMovements:
         # [[(x, y, width, height) x3] x3]
         generated_page_boundaries = []
         if not hasattr(self, "generated_page_boundaries") or force_screen_reset:
-            a_third_width = self.browser_interface.screen_width / 3
-            a_third_height = self.browser_interface.screen_height / 3
+            a_third_width = self.screen_width / 3
+            a_third_height = self.screen_height / 3
             for h in range(3):
                 generated_page_boundaries.append([])
                 for w in range(3):
@@ -661,7 +641,7 @@ class HumanMovements:
             (x_start, y_start), (x_end, y_end), duration
         )
 
-        self.smart_click_trigger((x_start, y_start), self.browser_interface.device_type)
+        self.smart_click_trigger((x_start, y_start), self.device_type)
 
     def scroll_element_into_vertical_view(
         self,
@@ -678,7 +658,7 @@ class HumanMovements:
         """
 
         def has_page_offset_changed():
-            document_offsets = self.browser_interface.get_window_document_offsets()
+            document_offsets = self.get_window_document_offsets()
             document_offsets = [
                 document_offsets["x_offset"],
                 document_offsets["y_offset"],
@@ -705,10 +685,8 @@ class HumanMovements:
                 px_to_adjust_by = random.randint(-500, -1)
             self.read_with_touch(px_to_adjust_by, duration)
 
-        element_browser_coordinates = (
-            self.browser_interface.get_element_window_location_screen_offsets(
-                html_web_element
-            )
+        element_browser_coordinates = self.get_element_window_location_screen_offsets(
+            html_web_element
         )
 
         if simulate_human_behaviour:
@@ -727,8 +705,10 @@ class HumanMovements:
                             scroll(K_Keys["ArrowDown"])
                         if not has_page_offset_changed():
                             return True
-                        element_browser_coordinates = self.browser_interface.get_element_window_location_screen_offsets(
-                            html_web_element
+                        element_browser_coordinates = (
+                            self.get_element_window_location_screen_offsets(
+                                html_web_element
+                            )
                         )
                 elif (
                     element_browser_coordinates["html_web_element"][1]
@@ -744,8 +724,10 @@ class HumanMovements:
                             scroll(K_Keys["ArrowUp"])
                         if not has_page_offset_changed():
                             return True
-                        element_browser_coordinates = self.browser_interface.get_element_window_location_screen_offsets(
-                            html_web_element
+                        element_browser_coordinates = (
+                            self.get_element_window_location_screen_offsets(
+                                html_web_element
+                            )
                         )
 
             elif element_scroll_to == 1:
@@ -763,8 +745,10 @@ class HumanMovements:
                             scroll(K_Keys["ArrowDown"])
                         if not has_page_offset_changed():
                             return True
-                        element_browser_coordinates = self.browser_interface.get_element_window_location_screen_offsets(
-                            html_web_element
+                        element_browser_coordinates = (
+                            self.get_element_window_location_screen_offsets(
+                                html_web_element
+                            )
                         )
                 elif (
                     element_browser_coordinates["html_web_element"][1]
@@ -780,17 +764,17 @@ class HumanMovements:
                             scroll(K_Keys["ArrowUp"])
                         if not has_page_offset_changed():
                             return True
-                        element_browser_coordinates = self.browser_interface.get_element_window_location_screen_offsets(
-                            html_web_element
+                        element_browser_coordinates = (
+                            self.get_element_window_location_screen_offsets(
+                                html_web_element
+                            )
                         )
 
         else:
-            self.browser_interface.browser_action_chains.move_to_element(
-                html_web_element
-            )
+            self.browser_action_chains.move_to_element(html_web_element)
 
     def send_mouse_to_scrollbar(self, is_asychronous=False):
-        scroll_bar = self.browser_interface.get_scroll_bar_coordinates(2)
+        scroll_bar = self.get_scroll_bar_coordinates(2)
         return self.simulate_human_mouse_move_behavior_to_area(
             scroll_bar["x_pos"] + 2,
             scroll_bar["y_pos"] + 2,

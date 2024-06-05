@@ -167,7 +167,7 @@ class Identity:
         self.resolve_referer()
 
     def resolve_timezone(self):
-        resolved_proxy_url = self.proxy_url
+        resolved_proxy_url = self.proxy_url if bot_constants.USE_PROXY else None
         if self.improvised_public_ip:
             geolocation = self.data_controller.fetch_geolocation_data(
                 resolved_proxy_url

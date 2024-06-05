@@ -15,9 +15,8 @@ from humanbehaviourmechanics.human_movements import HumanMovements
 class HumanBehaviourReveries:
     active_on_mouse_movement = Value(ctypes.c_int, -1)
 
-    def __init__(self, human_movements: HumanMovements):
-        self.bot_process_id = self.bot_process_id
-        self.human_movements = human_movements
+    def __init__(self):
+        pass
 
     def move_mouse_to_fool_exit_point(self):
         """
@@ -26,8 +25,8 @@ class HumanBehaviourReveries:
         """
         if HumanBehaviourReveries.active_on_mouse_movement.value < 0:
             HumanBehaviourReveries.active_on_mouse_movement.value = self.bot_process_id
-            self.browser_instance.bring_window_to_front()
-            self.human_movements.simulate_human_mouse_move_behavior_to_point(
+            self.bring_window_to_front()
+            self.simulate_human_mouse_move_behavior_to_point(
                 random.randint(0, bot_constants.SCREEN_WIDTH), 4
             )
             time.sleep(0.5)
@@ -40,8 +39,8 @@ class HumanBehaviourReveries:
     def move_mouse_to_random_area_on_screen(self):
         if HumanBehaviourReveries.active_on_mouse_movement.value < 0:
             HumanBehaviourReveries.active_on_mouse_movement.value = self.bot_process_id
-            self.browser_instance.bring_window_to_front()
-            self.human_movements.simulate_human_mouse_move_behavior_to_area(
+            self.bring_window_to_front()
+            self.simulate_human_mouse_move_behavior_to_area(
                 0,
                 0,
                 bot_constants.SCREEN_WIDTH,
@@ -74,29 +73,27 @@ class HumanBehaviourReveries:
             print(
                 f"Bot Process Id {self.bot_process_id} <:::> Attempting To Open A Link In Related Articles"
             )
-            self.browser_instance.bring_window_to_front()
+            self.bring_window_to_front()
             link_to_follow = links_to_follow[
                 random.randint(0, len(links_to_follow) - 1)
             ]
-            self.human_movements.move_pointing_device_to_element(link_to_follow)
+            self.move_pointing_device_to_element(link_to_follow)
             time.sleep(random.uniform(0.2, 0.8))
-            if self.browser_instance.has_touch:
+            if self.has_touch:
                 time.sleep(random.uniform(0.3, 0.5))
                 try:
                     element_location_and_dimensions = (
-                        self.browser_instance.get_element_location_window_offset(
-                            link_to_follow
-                        )
+                        self.get_element_location_window_offset(link_to_follow)
                     )
                     # Do click continually until page remained unchanged after click
-                    self.human_movements.touch.tap(
+                    self.touch.tap(
                         element_location_and_dimensions["x_offset"]
                         + random.uniform(0, link_to_follow.rect["width"]),
                         element_location_and_dimensions["y_offset"]
                         + random.uniform(0, link_to_follow.rect["height"]),
                     )
-                    while self.browser_instance.revert_to_main_page():
-                        self.human_movements.touch.tap(
+                    while self.revert_to_main_page():
+                        self.touch.tap(
                             element_location_and_dimensions["x_offset"]
                             + random.uniform(0, link_to_follow.rect["width"]),
                             element_location_and_dimensions["y_offset"]
@@ -112,7 +109,7 @@ class HumanBehaviourReveries:
             else:
                 # Do click continually until page remained unchanged after click
                 pyautogui.click()
-                while self.browser_instance.revert_to_main_page():
+                while self.revert_to_main_page():
                     pyautogui.click()
             print(
                 f"Bot Process Id {self.bot_process_id} <:::> Done Attempting To Open A Link In Related Articles"
