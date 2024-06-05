@@ -380,7 +380,10 @@ class BrowserInterface:
                 browser_options.add_argument(f"--user-agent={self.user_agent}")
             browser_options.binary_location = browser_constants.CHROME_BINARY_LOCATION
             if open_browser_in_full_screen:
-                browser_options.add_argument("--kiosk")
+                if random.random() <= browser_constants.KIOSK_MODE_PROBABILITY:
+                    browser_options.add_argument("--kiosk")
+                else:
+                    browser_options.add_argument("--start-maximized")
             else:
                 browser_options.add_argument(f"--window-size={window_size[0]},{window_size[1]}")
             sw_options = {

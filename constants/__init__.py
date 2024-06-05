@@ -56,6 +56,9 @@ def load_configurations():
         brc.MAXIMUM_WINDOW_PROBABILITY = browser_conf.getfloat(
             "maximum-window-probability", brc.MAXIMUM_WINDOW_PROBABILITY
         )
+        brc.KIOSK_MODE_PROBABILITY = browser_conf.getfloat(
+            "kiosk-mode-probability", brc.KIOSK_MODE_PROBABILITY
+        )
 
     if "OVPN" in config:
         ovpn = config["OVPN"]
