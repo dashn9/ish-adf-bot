@@ -358,7 +358,7 @@ class BrowserInterface:
         open_browser_in_full_screen = True
         window_size = (bot_constants.SCREEN_WIDTH, bot_constants.SCREEN_HEIGHT)
         # An 8% chance and device is pc that randomly resize the web browser in a manner that is un-obstructive
-        if random.random() >= browser_constants.MAXIMUM_WINDOW_PROBABILITY and self.device_type == "is_pc":
+        if random.random() >= browser_constants.MAXIMUM_WINDOW_PROBABILITY and self.device_type == "computer":
             open_browser_in_full_screen = False
             window_size = utils.fetch_random_window_size_relative_to_screen(
                 bot_constants.SCREEN_WIDTH, bot_constants.SCREEN_HEIGHT)
@@ -366,7 +366,6 @@ class BrowserInterface:
         if self.browser_to_use_id == browser_constants.CHROME_ID:
             print(f"Bot Process Id {self.bot_process_id} <:::> Opening Chrome Browser")
             browser_options = webdriver.ChromeOptions()
-            # browser_options.add_argument(f'--disk-cache-dir={bot_constants.FULL_DIRECTORY_PATH}/chrome_cache')
             browser_options.add_argument('--disable-background-networking')
             browser_options.add_argument('--disable-background-timer-throttling')
             browser_options.add_argument('--disable-backgrounding-occluded-windows')
@@ -377,17 +376,11 @@ class BrowserInterface:
             browser_options.add_experimental_option('prefs',
                                                     {'intl.accept_languages': ','.join(self.languages)})
             self._handle_prefs(browser_options)
-            # browser_options.add_argument('--disable-dev-shm-usage')
-            # browser_options.add_argument('--disable-setuid-sandbox')
-            # browser_options.add_argument('--no-sandbox')
-            # browser_options.add_argument('--dns-prefetch-disable')
-            # browser_options.add_argument('--blink-settings=imagesEnabled=false')
-            # browser_options.add_argument('--disable-plugin-discovery')
             if self.user_agent:
                 browser_options.add_argument(f"--user-agent={self.user_agent}")
             browser_options.binary_location = browser_constants.CHROME_BINARY_LOCATION
             if open_browser_in_full_screen:
-                browser_options.add_argument("--start-maximized")
+                browser_options.add_argument("--kiosk")
             else:
                 browser_options.add_argument(f"--window-size={window_size[0]},{window_size[1]}")
             sw_options = {
@@ -432,14 +425,12 @@ class BrowserInterface:
         devtools_primary.set_timezone(self.web_browser_driver, self.timezone_id)
         self.web_browser_driver.implicitly_wait(bot_constants.IMPLICITLY_WAIT_TIME)
         # self.web_browser_driver.set_window_position(0, 0)
-        if open_browser_in_full_screen:
-            self.web_browser_driver.maximize_window()
-        else:
+        if not open_browser_in_full_screen:
             self.web_browser_driver.set_window_position(0, 0)
             self.web_browser_driver.set_window_size(*window_size)
 
-            self.web_browser_driver.request_interceptor = self.request_interceptor
-            self.web_browser_driver.response_interceptor = self.response_interceptor
+        self.web_browser_driver.request_interceptor = self.request_interceptor
+        self.web_browser_driver.response_interceptor = self.response_interceptor
         self.browser_action_chains = ActionChains(self.web_browser_driver)
         t = Thread(target=self.quit_browser_after_max_alive)
         t.daemon = True
