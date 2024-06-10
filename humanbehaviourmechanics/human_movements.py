@@ -7,10 +7,9 @@ from selenium.webdriver.remote.webdriver import WebElement
 from threading import Thread
 from pyclick import HumanClicker, HumanCurve
 
-from browsers.browser_interface import BrowserInterface
 from constants import bot_constants
 from constants.keyboard_keys import Keys as K_Keys
-from bots.devtools.devtools_input import Keyboard, Touchscreen
+from bots.devtools.devtools_input import Keyboard, Touchscreen, Mouse
 from bots import utils
 
 
@@ -22,10 +21,10 @@ class HumanMovements:
     ):
         self._keyboard = Keyboard(self.web_browser_driver)
         pyautogui.FAILSAFE = False
-        self.touch = None
+        self._touch = None
         if self.has_touch == "has_touch":
-            self.touch = Touchscreen(self.web_browser_driver, self.keyboard)
-        self.mouse = None
+            self._touch = Touchscreen(self.web_browser_driver, self._keyboard)
+        self._mouse = Mouse(self.web_browser_driver, self._keyboard)
         self.last_document_offsets = [0, 0]
         self.mouse_delta_y = mouse_delta_y
         self.smart_ads_interactions = smart_ads_interactions
@@ -36,9 +35,21 @@ class HumanMovements:
 
     @property
     def keyboard(self):
-        if self._keyboard.webdriver is None:
+        if self._keyboard and self._keyboard.webdriver is None:
             self._keyboard.webdriver = self.web_browser_driver
         return self._keyboard
+
+    @property
+    def mouse(self):
+        if self._mouse and self._mouse.webdriver is None:
+            self._mouse.webdriver = self.web_browser_driver
+        return self._mouse
+
+    @property
+    def touch(self):
+        if self._touch and self._touch.webdriver is None:
+            self._touch.webdriver = self.web_browser_driver
+        return self._touch
 
     @staticmethod
     def get_mouse_position():
