@@ -36,6 +36,7 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
         px_to_adjust_by = max(px_to_adjust_by, 10)
         # Stamp the initial time before reading began
         read_mode_time_used = time.time()
+        mode = "wheel"
         if mode == "arrow_keys":
             key = K_Keys["ArrowDown"]
             if not direction:
@@ -44,6 +45,7 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
             # Wait to complete scroll
             time.sleep(0.12)
         elif mode == "wheel":
+            print("mouse delta y", self.mouse_delta_y)
             self.mouse.mouse_wheel(
                 *pyautogui.position(), px_to_adjust_by, deltaY=self.mouse_delta_y
             )

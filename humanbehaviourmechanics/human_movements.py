@@ -14,11 +14,7 @@ from bots import utils
 
 
 class HumanMovements:
-    def __init__(
-        self,
-        smart_ads_interactions=None,
-        mouse_delta_y=50,
-    ):
+    def __init__(self):
         self._keyboard = Keyboard(self.web_browser_driver)
         pyautogui.FAILSAFE = False
         self._touch = None
@@ -26,8 +22,6 @@ class HumanMovements:
             self._touch = Touchscreen(self.web_browser_driver, self._keyboard)
         self._mouse = Mouse(self.web_browser_driver, self._keyboard)
         self.last_document_offsets = [0, 0]
-        self.mouse_delta_y = mouse_delta_y
-        self.smart_ads_interactions = smart_ads_interactions
         # No of clicks that could happen at the beginning of a scroll or touch scroll
         self.no_of_clicks = 0
 
