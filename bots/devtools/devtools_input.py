@@ -192,7 +192,7 @@ class Mouse:
     # Therefore in the event it doesn't work out(The ad operation), Kindly revamp this scroll system
     def mouse_wheel_with_bezier_animation(self, x, y, px_to_adjust_by):
         plot = utils.generate_mouse_wheel_plot(
-            int(px_to_adjust_by), random.randint(90, 300)
+            int(px_to_adjust_by), random.randint(50, 200)
         )
         for p in plot:
             self.webdriver.execute_cdp_cmd(
@@ -219,9 +219,9 @@ class Mouse:
         deltaY=10,
         vary_deltaY_on_read=False,
     ):
-        reading_pace = [90, 300]
-        fast_scrolling_pace = [4, 35]
-        scrolling_pace = [35, 80]
+        reading_pace = [0.7, 3]
+        fast_scrolling_pace = [0.08, 0.7]
+        scrolling_pace = [0.7, 1.6]
 
         latency = reading_pace
 
@@ -233,6 +233,8 @@ class Mouse:
             if random.random() > 0.5:
                 latency = scrolling_pace
 
+        latency = [latency[0] * deltaY, latency[1] * deltaY]
+
         steps = int(px_to_adjust_by / deltaY)
 
         if steps == 0:
@@ -240,13 +242,13 @@ class Mouse:
 
         vary_deltaY_on_read = vary_deltaY_on_read and is_reading
         for i in range(steps):
-            deltaY_modifier = i
+            deltaY_modifier = 1
             prob_of_restep = random.random()
-            if vary_deltaY_on_read and prob_of_restep >= 0.90:
-                deltaY_modifier = i + 1
+            if vary_deltaY_on_read and prob_of_restep >= 0.80:
+                deltaY_modifier += 1
                 i += 1
-            elif vary_deltaY_on_read and prob_of_restep >= 0.97:
-                deltaY_modifier = i + 1
+            if vary_deltaY_on_read and prob_of_restep >= 0.87:
+                deltaY_modifier += 1
                 i += 1
             self.webdriver.execute_cdp_cmd(
                 "Input.dispatchMouseEvent",
