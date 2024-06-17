@@ -45,9 +45,9 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
             # Wait to complete scroll
             time.sleep(0.12)
         elif mode == "wheel":
-            print("mouse delta y", self.mouse_delta_y)
-            self.mouse.mouse_wheel(
-                *pyautogui.position(), px_to_adjust_by, deltaY=self.mouse_delta_y
+            self.mouse.mouse_wheel_with_bezier_animation(
+                *pyautogui.position(),
+                px_to_adjust_by,
             )
         elif mode == "touch":
             if not direction:

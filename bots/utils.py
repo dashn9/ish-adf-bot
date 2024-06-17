@@ -720,7 +720,7 @@ def plot_cubic_bezier(p0, p1, p2, p3, num_points=100):
     return values
 
 
-def generate_plot_mouse_wheel_curve(px_to_adjust_by=1000, duration=3000):
+def generate_mouse_wheel_plot(px_to_adjust_by=1000, duration=3000):
     p0 = np.array([0, 0])
     p1 = np.array([0.3, 1])
     p2 = np.array([0.5, 0])
@@ -744,3 +744,6 @@ def generate_plot_mouse_wheel_curve(px_to_adjust_by=1000, duration=3000):
         )
         for i in range(len(duration_to_wait))
     ]
+
+
+print(generate_mouse_wheel_plot(500, 4000))

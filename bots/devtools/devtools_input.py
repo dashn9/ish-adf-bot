@@ -191,8 +191,8 @@ class Mouse:
     # Although I'm not particularly interested in this approach, but no much option because I lack the required mathematical skills to modify to my taste(math skills which i'm currently learning)
     # Therefore in the event it doesn't work out(The ad operation), Kindly revamp this scroll system
     def mouse_wheel_with_bezier_animation(self, x, y, px_to_adjust_by):
-        plot = self.generate_mouse_wheel_curve(
-            px_to_adjust_by, random.randint(1000, 4000)
+        plot = utils.generate_mouse_wheel_plot(
+            int(px_to_adjust_by), random.randint(90, 300)
         )
         for p in plot:
             self.webdriver.execute_cdp_cmd(
@@ -206,7 +206,7 @@ class Mouse:
                     deltaY=p[1],
                 ),
             )
-            time.sleep(p[0])
+            time.sleep(p[0] / 1000)
 
     # Irrespective, a huge load of optimizations is still needed here after brushing my math and bitwise skills
     def mouse_wheel(
@@ -224,8 +224,6 @@ class Mouse:
         scrolling_pace = [35, 80]
 
         latency = reading_pace
-
-        latency = (latency[0] / 1000, latency[1] / 1000)
 
         self.x = x
         self.y = y
@@ -261,7 +259,7 @@ class Mouse:
                     deltaY=deltaY * deltaY_modifier,
                 ),
             )
-            time.sleep(random.uniform(latency[0], latency[1]))
+            time.sleep(random.uniform(latency[0], latency[1]) / 1000)
 
     def click(self, x, y, options={"delay": 0}):
         delay = options["delay"]
