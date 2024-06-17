@@ -208,7 +208,17 @@ class Mouse:
             )
             time.sleep(p[0])
 
-    def mouse_wheel(self, x, y, px_to_adjust_by, is_reading=True, deltaX=0, deltaY=10):
+    # Irrespective, a huge load of optimizations is still needed here after brushing my math and bitwise skills
+    def mouse_wheel(
+        self,
+        x,
+        y,
+        px_to_adjust_by,
+        is_reading=True,
+        deltaX=0,
+        deltaY=10,
+        vary_deltaY_on_read=False,
+    ):
         reading_pace = [90, 300]
         fast_scrolling_pace = [4, 35]
         scrolling_pace = [35, 80]
@@ -230,7 +240,16 @@ class Mouse:
         if steps == 0:
             steps == 1
 
+        vary_deltaY_on_read = vary_deltaY_on_read and is_reading
         for i in range(steps):
+            deltaY_modifier = i
+            prob_of_restep = random.random()
+            if vary_deltaY_on_read and prob_of_restep >= 0.90:
+                deltaY_modifier = i + 1
+                i += 1
+            elif vary_deltaY_on_read and prob_of_restep >= 0.97:
+                deltaY_modifier = i + 1
+                i += 1
             self.webdriver.execute_cdp_cmd(
                 "Input.dispatchMouseEvent",
                 dict(
@@ -239,7 +258,7 @@ class Mouse:
                     y=y,
                     modifiers=self.keyboard.modifiers,
                     deltaX=deltaX,
-                    deltaY=deltaY,
+                    deltaY=deltaY * deltaY_modifier,
                 ),
             )
             time.sleep(random.uniform(latency[0], latency[1]))
