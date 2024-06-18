@@ -36,15 +36,23 @@ class HumanBehaviourReveries:
             return True
         return False
 
-    def move_mouse_to_random_area_on_screen(self):
+    def move_mouse_to_random_area_on_screen(
+        self,
+        bounds: dict = {
+            "x": 0,
+            "y": 0,
+            "width": bot_constants.SCREEN_WIDTH,
+            "height": bot_constants.SCREEN_HEIGHT,
+        },
+    ):
         if HumanBehaviourReveries.active_on_mouse_movement.value < 0:
             HumanBehaviourReveries.active_on_mouse_movement.value = self.bot_process_id
             self.bring_window_to_front()
             self.simulate_human_mouse_move_behavior_to_area(
-                0,
-                0,
-                bot_constants.SCREEN_WIDTH,
-                bot_constants.SCREEN_HEIGHT,
+                bounds["x"],
+                bounds["y"],
+                bounds["width"],
+                bounds["height"],
                 x_coordinates_offset_percentage=random.randint(0, 100),
                 y_coordinates_offset_percentage=random.randint(0, 100),
                 max_overshoot=35,
