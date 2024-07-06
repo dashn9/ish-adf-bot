@@ -45,17 +45,17 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
             # Wait to complete scroll
             time.sleep(0.12)
         elif mode == "wheel":
-            if random.random() < 1:
+            if random.random() < 0.65:
                 element_screen_position = (
                     self.get_element_window_location_screen_offsets(html_web_element)
                 )
                 self.move_mouse_to_random_area_on_screen(
                     {
                         "x": element_screen_position["html_web_element"][0],
-                        "y": self.get_document_offset_from_screen["y"],
+                        "y": self.get_document_offset_from_screen()["y"],
                         "width": html_web_element.rect["width"],
                         "height": min(
-                            element_screen_position[2],
+                            element_screen_position["html_web_element"][2],
                             self.get_browser_inner_size()["height"],
                         ),
                     }
