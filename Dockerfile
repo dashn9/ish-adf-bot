@@ -1,7 +1,7 @@
 FROM python:3.12.3-slim
 
 
-RUN apt-get update && apt-get install -y curl unzip gcc libffi-dev\
+RUN apt-get update && apt-get install -y curl unzip gcc libffi-dev python3-tk python3-dev xvfb\
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -21,4 +21,6 @@ RUN curl -sS -o /tmp/chrome.zip https://storage.googleapis.com/chrome-for-testin
     && unzip /tmp/chrome.zip -d executables/browsers/chrome \
     && rm /tmp/chrome.zip
 
-CMD ["python", "run.py"]
+ENV DISPLAY=:99
+
+CMD ["sh", "-c", "Xvfb :99 -screen 0 1024x768x16 & python run.py"]
