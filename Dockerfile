@@ -21,6 +21,10 @@ RUN curl -sS -o /tmp/chrome.zip https://storage.googleapis.com/chrome-for-testin
     && unzip /tmp/chrome.zip -d executables/browsers/chrome \
     && rm /tmp/chrome.zip
 
-ENV DISPLAY=:99
+ENV DISPLAY=:1
 
-CMD ["sh", "-c", "Xvfb :99 -screen 0 1024x768x16 & python run.py"]
+COPY run.sh /app/run.sh
+
+RUN chmod +x /app/run.sh
+
+CMD ["/app/run.sh"]
