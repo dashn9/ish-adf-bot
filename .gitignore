@@ -7,3 +7,4 @@ identity/account_details.temp.conf
 /chrome_cache
 /caches
 /config.ini
+/config.docker.ini
