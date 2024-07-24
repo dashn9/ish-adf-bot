@@ -10,8 +10,6 @@ ADD requirements.txt requirements.txt
 
 RUN pip install -r requirements.txt
 
-COPY . .
-
 RUN mkdir -p executables/browsers/chrome executables/drivers/chrome
 
 RUN curl -sS -o /tmp/chromedriver.zip https://storage.googleapis.com/chrome-for-testing-public/124.0.6367.201/linux64/chromedriver-linux64.zip \
@@ -23,8 +21,10 @@ RUN curl -sS -o /tmp/chrome.zip https://storage.googleapis.com/chrome-for-testin
 
 ENV DISPLAY=:1
 
-COPY run.sh /app/run.sh
+COPY run.sh .
 
-RUN chmod +x /app/run.sh
+RUN chmod +x run.sh
+
+COPY . .
 
 CMD ["/app/run.sh"]

@@ -1,6 +1,5 @@
 #!/bin/bash
 cleanup() {
-  killall Xvfb
   rm -f /tmp/.X*-lock
 }
 trap cleanup EXIT
