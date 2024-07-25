@@ -4,6 +4,13 @@ cleanup() {
 }
 trap cleanup EXIT
 
-Xvfb :1 -screen 0 1024x768x16 &
+
+Xvfb ${DISPLAY} -screen 0 ${RESOLUTION} & 
+
+x11vnc -display ${DISPLAY} -forever -nopw -listen 0.0.0.0 &
+
 sleep 3
-python run.py
+
+setup.sh
+
+python -u run.py
