@@ -32,8 +32,6 @@ ENV DISPLAY :0
 # You can configure a color depth of 8 here to save memory, however ad detection systems might look into it for patterns
 ENV RESOLUTION 1920x1080x24
 
-COPY run.sh .
-
 COPY . .
 
 COPY config.docker.ini /app/config.ini

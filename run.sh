@@ -5,12 +5,12 @@ cleanup() {
 trap cleanup EXIT
 
 
-Xvfb ${DISPLAY} -screen 0 ${RESOLUTION} & 
+Xvfb ${DISPLAY} -screen 0 ${RESOLUTION} > /dev/null 2>&1 & 
 
-x11vnc -display ${DISPLAY} -forever -nopw -listen 0.0.0.0 &
+x11vnc -display ${DISPLAY} -forever -nopw -listen 0.0.0.0 > /dev/null 2>&1 &
 
 sleep 3
 
-setup.sh
+./setup.sh
 
 python -u run.py
