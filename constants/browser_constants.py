@@ -7,6 +7,8 @@ FULL_DIRECTORY_PATH = os.path.dirname(os.path.realpath(__file__)).replace(
     "/constants", ""
 )
 
+IGNORE_SSL = False
+
 # Identify Browser To Use
 RAND_BROWSER = 9999
 NO_BROWSER = 0

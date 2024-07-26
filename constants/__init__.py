@@ -23,6 +23,7 @@ def load_configurations():
             "up-taskbar-height", boc.UP_TASKBAR_HEIGHT
         )
         cfg_mod.DEBUG = options.getboolean("debug", True)
+        cfg_mod.CONTAINERIZED = options.getboolean("containerized", False)
 
     if "WAIT_CONDITIONS" in config:
         options = config["OPTIONS"]
@@ -59,6 +60,7 @@ def load_configurations():
         brc.KIOSK_MODE_PROBABILITY = browser_conf.getfloat(
             "kiosk-mode-probability", brc.KIOSK_MODE_PROBABILITY
         )
+        brc.IGNORE_SSL = browser_conf.getboolean("ignore-ssl", brc.IGNORE_SSL)
 
     if "OVPN" in config:
         ovpn = config["OVPN"]
