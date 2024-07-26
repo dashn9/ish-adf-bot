@@ -36,6 +36,8 @@ COPY . .
 
 COPY config.docker.ini /app/config.ini
 
-RUN chmod +x /app/run.sh
+RUN chmod +x run.sh setup.sh
+
+RUN ./setup.sh
 
 CMD ["/app/run.sh"]
