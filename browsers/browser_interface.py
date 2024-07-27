@@ -3,7 +3,6 @@ import os
 import random
 import time
 import tempfile
-import requests as main_requests
 from functools import reduce
 from selenium.webdriver import ActionChains
 from threading import Thread
@@ -18,8 +17,7 @@ from seleniumwire import webdriver
 
 from bots import utils
 from bots.devtools import devtools_primary
-from constants import bot_constants, browser_constants
-from network.network_processors import NetworkRunner
+from constants import bot_constants, browser_constants, cfg_mod
 
 
 class BrowserInterface:
@@ -375,6 +373,10 @@ class BrowserInterface:
             browser_options.add_argument('--disable-gpu')
             browser_options.add_experimental_option('prefs',
                                                     {'intl.accept_languages': ','.join(self.languages)})
+            if browser_constants.IGNORE_SSL:
+                browser_options.add_argument('--ignore-certificate-errors')
+            if cfg_mod.CONTAINERIZED:
+                browser_options.add_argument('--no-sandbox')
             self._handle_prefs(browser_options)
             if self.user_agent:
                 browser_options.add_argument(f"--user-agent={self.user_agent}")
