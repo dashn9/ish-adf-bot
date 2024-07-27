@@ -8,8 +8,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.remote import webdriver as remote_webdriver
 
 from bots import utils as global_utils
-from humanbehaviourmechanics import utils
-from constants import bot_constants
+from constants import bot_constants, device_constants
 from constants.keyboard_keys import Keys as K_Keys
 from humanbehaviourmechanics.human_behaviour_reveries import HumanBehaviourReveries
 from humanbehaviourmechanics.human_movements import HumanMovements
@@ -434,23 +433,20 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
             if self.has_touch:
                 mode = "touch"
             elif self.has_mouse:
-                mode = "wheel"
                 if (
                     random.random() < bot_constants.USE_MOUSE_READ_PROBABILITY
                     and SmartHumanReader.active_on_mouse_movement.value < 0
                 ):
+                    mode = "wheel"
                     SmartHumanReader.active_on_mouse_movement.value = (
                         self.bot_process_id
                     )
-                    mode = "mouse_to_scrollbar"
+                    # The scrollbar on mac os is not prominent, and also people seldom use it anymore these days.
+                    if (
+                        self.identity.os is not device_constants.MAC_OS
+                    ) and random.random() <= 0.05:
+                        mode = "mouse_to_scrollbar"
                     self.bring_window_to_front()
-            elif (
-                random.random() < bot_constants.USE_MOUSE_READ_PROBABILITY
-                and SmartHumanReader.active_on_mouse_movement.value < 0
-            ):
-                SmartHumanReader.active_on_mouse_movement.value = self.bot_process_id
-                mode = "mouse_to_scrollbar"
-                self.bring_window_to_front()
 
             if remaining_reading_content_percentage < 26:
                 next_read_sequence_percentage = remaining_reading_content_percentage
