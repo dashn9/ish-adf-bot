@@ -35,6 +35,9 @@ class NetworkRunner:
         self.urls_cached = set()
         self.urls_through_proxy = set()
 
+        if not config.PRINT_NETWORK:
+            main_requests.packages.urllib3.disable_warnings()
+
         if use_proxy:
             self.proxy_url = self.identity.proxy_url
             self.proxy = {
@@ -100,7 +103,10 @@ class NetworkRunner:
         elif request.url not in self.urls_cached:
             self.un_cached_response_size += len(response.body or "") / 1024
         else:
-            print(f"Bot Process Id {self.bot_process_id} <:::> {request.url} is cached")
+            if config.PRINT_NETWORK:
+                print(
+                    f"Bot Process Id {self.bot_process_id} <:::> {request.url} is cached"
+                )
             self.urls_cached.remove(request.url)
             self.cached_response_size += len(response.body or "") / 1024
 
