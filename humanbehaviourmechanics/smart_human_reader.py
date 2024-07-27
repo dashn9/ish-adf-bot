@@ -45,6 +45,8 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
             # Wait to complete scroll
             time.sleep(0.12)
         elif mode == "wheel":
+            if not direction:
+                px_to_adjust_by *= -1
             if random.random() < 0.65:
                 element_screen_position = (
                     self.get_element_window_location_screen_offsets(html_web_element)
