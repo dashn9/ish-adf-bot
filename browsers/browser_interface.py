@@ -17,7 +17,7 @@ from seleniumwire import webdriver
 
 from bots import utils
 from bots.devtools import devtools_primary
-from constants import bot_constants, browser_constants, cfg_mod
+from constants import bot_constants, browser_constants, config
 
 
 class BrowserInterface:
@@ -375,7 +375,7 @@ class BrowserInterface:
                                                     {'intl.accept_languages': ','.join(self.languages)})
             if browser_constants.IGNORE_SSL:
                 browser_options.add_argument('--ignore-certificate-errors')
-            if cfg_mod.CONTAINERIZED:
+            if config.CONTAINERIZED:
                 browser_options.add_argument('--no-sandbox')
             self._handle_prefs(browser_options)
             if self.user_agent:

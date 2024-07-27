@@ -94,7 +94,6 @@ class NetworkRunner:
         )
 
     def track_response_size(self, request, response):
-        print(f"Response url: {request.url}[{response.status_code}]")
         if request.url in self.urls_through_proxy:
             self.url_through_proxy_response_size += len(response.body or "") / 1024
             self.urls_through_proxy.remove(request.url)
@@ -109,7 +108,9 @@ class NetworkRunner:
         self, request: request.Request, response: request.Response
     ):
         self.track_response_size(request, response)
-        self.print_total_usage()
+        if config.PRINT_NETWORK:
+            print(f"Response url: {request.url}[{response.status_code}]")
+            self.print_total_usage()
 
         self.inject_js_to_spoof_fingerprintable_objects_on_website_server_response(
             request, response
