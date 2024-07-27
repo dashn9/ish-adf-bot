@@ -2,15 +2,15 @@ import configparser
 
 import constants.browser_constants as brc
 import constants.bot_constants as boc
-import constants.config as cfg_mod
+from constants import config
 
-config = configparser.ConfigParser()
-config.read(boc.FULL_DIRECTORY_PATH + "/config.ini")
+configParser = configparser.ConfigParser()
+configParser.read(boc.FULL_DIRECTORY_PATH + "/config.ini")
 
 
 def load_configurations():
-    if "OPTIONS" in config:
-        options = config["OPTIONS"]
+    if "OPTIONS" in configParser:
+        options = configParser["OPTIONS"]
         boc.NORDVPN_OVPN_FILE_PATH = options.get(
             "nordvpn-ovpn-files-path", boc.NORDVPN_OVPN_FILE_PATH
         )
@@ -22,22 +22,22 @@ def load_configurations():
         boc.UP_TASKBAR_HEIGHT = options.getint(
             "up-taskbar-height", boc.UP_TASKBAR_HEIGHT
         )
-        cfg_mod.DEBUG = options.getboolean("debug", True)
-        cfg_mod.CONTAINERIZED = options.getboolean("containerized", False)
+        config.DEBUG = options.getboolean("debug", True)
+        config.CONTAINERIZED = options.getboolean("containerized", False)
 
-    if "WAIT_CONDITIONS" in config:
-        options = config["OPTIONS"]
+    if "WAIT_CONDITIONS" in configParser:
+        options = configParser["OPTIONS"]
 
         boc.IMPLICITLY_WAIT_TIME = options.get(
             "implicitly-wait-time", boc.IMPLICITLY_WAIT_TIME
         )
 
-    if "PROXY" in config:
-        proxy_config = config["PROXY"]
+    if "PROXY" in configParser:
+        proxy_config = configParser["PROXY"]
         boc.USE_PROXY = proxy_config.getboolean("use-proxy", True)
 
-    if "BOT" in config:
-        bot_conf = config["BOT"]
+    if "BOT" in configParser:
+        bot_conf = configParser["BOT"]
 
         boc.BOT_MAX_ALIVE_TIME = bot_conf.getint(
             "max-alive-time", boc.BOT_MAX_ALIVE_TIME
@@ -48,11 +48,11 @@ def load_configurations():
         boc.USE_MOUSE_READ_PROBABILITY = bot_conf.getfloat(
             "mouse-use-probability", boc.USE_MOUSE_READ_PROBABILITY
         )
-        cfg_mod.BOT_ID = bot_conf.get("bot-id", None)
-        cfg_mod.RUN_INFINITELY = bot_conf.getboolean("run-infinitely", False)
+        config.BOT_ID = bot_conf.get("bot-id", None)
+        config.RUN_INFINITELY = bot_conf.getboolean("run-infinitely", False)
 
-    if "BROWSER" in config:
-        browser_conf = config["BROWSER"]
+    if "BROWSER" in configParser:
+        browser_conf = configParser["BROWSER"]
 
         brc.MAXIMUM_WINDOW_PROBABILITY = browser_conf.getfloat(
             "maximum-window-probability", brc.MAXIMUM_WINDOW_PROBABILITY
@@ -62,8 +62,8 @@ def load_configurations():
         )
         brc.IGNORE_SSL = browser_conf.getboolean("ignore-ssl", brc.IGNORE_SSL)
 
-    if "OVPN" in config:
-        ovpn = config["OVPN"]
+    if "OVPN" in configParser:
+        ovpn = configParser["OVPN"]
 
         boc.MAX_OVPN_CONNECT_RETRIES = ovpn.getint(
             "max-connect-retries", boc.MAX_OVPN_CONNECT_RETRIES
@@ -72,15 +72,15 @@ def load_configurations():
             "max-wait-time", boc.OVPN_MAX_WAIT_TIME_TILL_IP_IMPROVISE
         )
 
-    if "SCROLL" in config:
-        scroll = config["SCROLL"]
+    if "SCROLL" in configParser:
+        scroll = configParser["SCROLL"]
 
         boc.PX_VALUE_TO_CHECK_WHEN_SCROLL_TO_POINT = scroll.getint(
             "px-value", boc.PX_VALUE_TO_CHECK_WHEN_SCROLL_TO_POINT
         )
 
-    if "EXECUTABLES" in config:
-        executables = config["EXECUTABLES"]
+    if "EXECUTABLES" in configParser:
+        executables = configParser["EXECUTABLES"]
 
         boc.CHROME_WEBDRIVER_LOCATION = executables.get(
             "chrome-webdriver-location", boc.CHROME_WEBDRIVER_LOCATION
@@ -96,8 +96,8 @@ def load_configurations():
             "firefox-binary-location", brc.FIREFOX_BINARY_LOCATION
         )
 
-    if "SITE" in config:
-        ads = config["SITE"]
+    if "SITE" in configParser:
+        ads = configParser["SITE"]
 
         boc.PROXY_WHITELISTED_DOMAINS = ads.get(
             "proxy-whitelisted-domains", boc.PROXY_WHITELISTED_DOMAINS
@@ -113,17 +113,22 @@ def load_configurations():
             boc.ALLOW_URL_THROUGH_PROXY_IF_MATCHES_BROWSER_ACTIVE_URL,
         )
 
-    if "IDENTITY" in config:
-        idy = config["IDENTITY"]
-        cfg_mod.FETCH_BY = idy.get("fetch-by", "scr")
-        cfg_mod.FETCH_BY_VALUE = idy.get(
+    if "IDENTITY" in configParser:
+        idy = configParser["IDENTITY"]
+        config.FETCH_BY = idy.get("fetch-by", "scr")
+        config.FETCH_BY_VALUE = idy.get(
             "fetch-by-value", [boc.SCREEN_WIDTH, boc.SCREEN_HEIGHT]
         )
-    if "IDENTITY_ENDPOINTS" in config:
-        idy_edp = config["IDENTITY_ENDPOINTS"]
+
+    if "IDENTITY_ENDPOINTS" in configParser:
+        idy_edp = configParser["IDENTITY_ENDPOINTS"]
         boc.IDENTITY_API_BASE_HOST = idy_edp.get(
             "base-host", "http://localhost:5000/api/"
         )
+
+    if "DEBUGGING" in configParser:
+        dbg = configParser["DEBUGGING"]
+        config.PRINT_NETWORK = dbg.getboolean("print-network", config.PRINT_NETWORK)
 
 
 load_configurations()
