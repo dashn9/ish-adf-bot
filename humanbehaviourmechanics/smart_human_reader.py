@@ -45,8 +45,6 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
             # Wait to complete scroll
             time.sleep(0.12)
         elif mode == "wheel":
-            if not direction:
-                px_to_adjust_by *= -1
             if random.random() < 0.65:
                 element_screen_position = (
                     self.get_element_window_location_screen_offsets(html_web_element)
@@ -64,8 +62,7 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
                 )
             if random.random() < 0.22:
                 self.mouse.mouse_wheel_with_bezier_animation(
-                    *pyautogui.position(),
-                    px_to_adjust_by,
+                    *pyautogui.position(), px_to_adjust_by, direction
                 )
             else:
                 self.mouse.mouse_wheel(
@@ -73,6 +70,7 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
                     px_to_adjust_by,
                     deltaY=self.identity.mouse_delta_y,
                     vary_deltaY_on_read=True,
+                    yDirection=direction,
                 )
         elif mode == "touch":
             if not direction:

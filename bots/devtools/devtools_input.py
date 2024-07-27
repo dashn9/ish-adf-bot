@@ -190,7 +190,7 @@ class Mouse:
 
     # Although I'm not particularly interested in this approach, but no much option because I lack the required mathematical skills to modify to my taste(math skills which i'm currently learning)
     # Therefore in the event it doesn't work out(The ad operation), Kindly revamp this scroll system
-    def mouse_wheel_with_bezier_animation(self, x, y, px_to_adjust_by):
+    def mouse_wheel_with_bezier_animation(self, x, y, px_to_adjust_by, yDirection=True):
         plot = utils.generate_mouse_wheel_plot(
             int(px_to_adjust_by), random.randint(50, 200)
         )
@@ -203,7 +203,7 @@ class Mouse:
                     y=y,
                     modifiers=self.keyboard.modifiers,
                     deltaX=0,
-                    deltaY=p[1],
+                    deltaY=p[1] if yDirection else -p[1],
                 ),
             )
             time.sleep(p[0] / 1000)
@@ -218,6 +218,7 @@ class Mouse:
         deltaX=0,
         deltaY=10,
         vary_deltaY_on_read=False,
+        yDirection=True,
     ):
         reading_pace = [0.7, 3]
         fast_scrolling_pace = [0.08, 0.7]
@@ -250,6 +251,7 @@ class Mouse:
             if vary_deltaY_on_read and prob_of_restep >= 0.87:
                 deltaY_modifier += 1
                 i += 1
+            deltaYToUse = deltaY * deltaY_modifier
             self.webdriver.execute_cdp_cmd(
                 "Input.dispatchMouseEvent",
                 dict(
@@ -258,7 +260,7 @@ class Mouse:
                     y=y,
                     modifiers=self.keyboard.modifiers,
                     deltaX=deltaX,
-                    deltaY=deltaY * deltaY_modifier,
+                    deltaY=deltaYToUse if (yDirection) else -deltaYToUse,
                 ),
             )
             time.sleep(random.uniform(latency[0], latency[1]) / 1000)
