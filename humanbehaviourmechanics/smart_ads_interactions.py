@@ -83,6 +83,7 @@ class SmartAdsInteractions:
         ad_click_success = False
         if not hasattr(self, "track_vignette_close"):
             self.track_vignette_close = 1
+        # Smart reader calls this function after each read loop, and searching for elements is expensive, hence this
         if (
             self.ad_to_click != "vignette"
             and self.vignette_ad_close_name
