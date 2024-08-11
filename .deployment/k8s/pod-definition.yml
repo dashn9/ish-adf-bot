@@ -4,6 +4,7 @@ metadata:
   name: webbot-pod
   labels:
     name: webbot
+    type: bot
 spec:
   containers:
   - name: ish-bot-container
