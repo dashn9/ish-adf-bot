@@ -40,4 +40,6 @@ RUN chmod +x run.sh setup.sh
 
 RUN ./setup.sh
 
+EXPOSE 5900
+
 CMD ["/app/run.sh"]
