@@ -27,10 +27,10 @@ RUN curl -sS -o /tmp/chrome.zip https://storage.googleapis.com/chrome-for-testin
     && mv /tmp/chrome-linux64/* executables/browsers/chrome \
     && rm -r /tmp/chrome.zip /tmp/chrome-linux64
 
-ENV DISPLAY :0
+ENV DISPLAY=:0
 
 # You can configure a color depth of 8 here to save memory, however ad detection systems might look into it for patterns
-ENV RESOLUTION 1920x1080x24
+ENV RESOLUTION=1920x1080x24
 
 COPY . .
 

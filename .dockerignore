@@ -1,5 +1,6 @@
 /.venv
 /.idea
 /.git
+/.deployment
 /executables
 example.conig.ini
