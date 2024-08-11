@@ -5,10 +5,13 @@ metadata:
   labels:
     name: webbot
     type: bot
-spec:
+spec:      
   containers:
   - name: ish-bot-container
     image: 127.0.0.1:12000/ish_bot
+    ports:
+      - containerPort: 5900
+        name: vnc
     resources:
       limits:
         memory: "512Mi"

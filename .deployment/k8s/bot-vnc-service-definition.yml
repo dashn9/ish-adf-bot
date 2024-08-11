@@ -8,5 +8,6 @@ spec:
     name: webbot
     type: bot
   ports:
-  - port: 5900
+  - protocol: TCP
+    port: 5900
     targetPort: 5900
