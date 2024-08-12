@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: webbot-replicaset
+  labels:
+    app: webbot
+    type: ishbot
+spec:
+  template:
+    metadata:
+      name: webbot-pod
+      labels:
+        app: webbot
+        type: ishbot
+    spec:
+      containers:
+        - name: webbot
+          image: 127.0.0.1:12000/ish_bot
+          ports:
+            - containerPort: 5900
+              name: vnc
+  replicas: 1
+  selector:
+    matchLabels:
+      type: ishbot
