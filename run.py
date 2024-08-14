@@ -149,6 +149,7 @@ def run_bot(identity, process_id):
             if web_bot.identity.device_type == "is_pc":
                 web_bot.move_mouse_to_fool_exit_point()
         else:
+            # Just a feature for testing, bot doesn't engage if engage-reader was set to false
             time.sleep(random.randint(boc.BOT_MIN_ALIVE_TIME, boc.BOT_MAX_ALIVE_TIME))
 
         try:

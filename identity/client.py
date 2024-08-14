@@ -19,7 +19,13 @@ class Identity:
         hardware="",
         os="",
         os_version="",
-        platform="",
+        platform={
+            "architecture": None,
+            "bitness": None,
+            "navigator_platform": None,
+            "name": None,
+            "version": None,
+        },
         canvas_fp_offset=None,
         audio_context_fp_offset=None,
         font_fp_offset=None,
@@ -48,7 +54,7 @@ class Identity:
         ad_keywords_click_probability=0.2,
         cookies=list(),
     ):
-        self.identity_raw = None
+        self._raw_identity = None
         self.id = id
         self.device_type = device_type
         self.hardware = hardware
@@ -142,7 +148,7 @@ class Identity:
         self.referrals = identity["REFERRALS"]
         self.referer = None
         self.reading_speed = identity["READING_SPEED"]
-        self.user_agent = None
+        self.user_agent = identity["USER_AGENT"]
         self.languages = identity["LANGUAGE"]
         self.mouse_delta_y = identity["MOUSE_DELTA_Y"]
         self.cookies = identity["COOKIES"]
@@ -155,11 +161,11 @@ class Identity:
         self.ad_type_to_click = identity["ADS"]["type"]
         self.proxy_url = identity.get("PROXY_URL")
         self.proxy_release_url = identity.get("PROXY_RELEASE_URL", None)
-        self.identity_raw = identity
+        self._raw_identity = identity
 
     def auto_initiate_identity(self, method, method_value):
         self.resolve_identity_from_cloud(method, method_value)
-        self.resolve_user_agent(
+        self.user_agent = self.user_agent or self.form_user_agent(
             self.browser_name, self.os_version, self.browser_version
         )
         self.resolve_timezone()
@@ -178,11 +184,11 @@ class Identity:
                 geolocation["offset"] / 60,
                 geolocation["continent"] + " " + geolocation["city"] + " Standard Time",
             ]
-        elif self.identity_raw["TIMEZONE"]:
+        elif self._raw_identity["TIMEZONE"]:
             self.timezone = [
-                self.identity_raw["TIMEZONE"]["id"],
-                self.identity_raw["TIMEZONE"]["offset"],
-                self.identity_raw["TIMEZONE"]["full_name"],
+                self._raw_identity["TIMEZONE"]["id"],
+                self._raw_identity["TIMEZONE"]["offset"],
+                self._raw_identity["TIMEZONE"]["full_name"],
             ]
         else:
             print("Resolving Timezone From Cloud")
@@ -231,30 +237,20 @@ class Identity:
             random.randint(0, len(self.identity.referrals) - 1)
         ]
 
-    def resolve_user_agent(self, browser_name, os_version, browser_version):
-        browser_version = [str(version) for version in browser_version]
-        chrome_template = "Mozilla/5.0 (os_version) AppleWebKit/awv1 (KHTML, like Gecko) Chrome/cv2 Safari/sv3"
-        if self.device_type == "is_smartphone":
-            chrome_template = "Mozilla/5.0 (os_version) AppleWebKit/awv1 (KHTML, like Gecko) Chrome/cv2 Mobile Safari/sv3"
-        if os_version.find("iPhone") >= 1:
-            chrome_template = "Mozilla/5.0 (os_version) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/cv2 Mobile/15E148 Safari/604.1"
-        if (
-            browser_name == "chrome"
-            and isinstance(os_version, str)
-            and isinstance(browser_version, list)
-        ):
-            chrome_ua = chrome_template.replace("os_version", os_version)
-            chrome_ua = chrome_ua.replace("awv1", browser_version[0])
-            chrome_ua = chrome_ua.replace("cv2", browser_version[1])
-            chrome_ua = chrome_ua.replace("sv3", browser_version[2])
-            self.user_agent = chrome_ua
-            print("Successfully Resolved User Agent")
-        else:
-            print(
-                "Potential Error: No User Agent Refactor Option Was Created For This Browser, Please Resolve As Quickly"
-                " As Possible"
-            )
-            return None
+    def form_user_agent(self, os, os_version, model, browser_name, browser_version):
+        BROWSER_TEMPLATES = {
+            "CHROME_ANDROID": "Mozilla/5.0 (Linux; <os> <os_version>; <model>) AppleWebKit/<apple_web_kit_version> (KHTML, like Gecko) Chrome/<browser_version> Mobile Safari/<safari_version>",
+            "CHROME_IOS": "Mozilla/5.0 (<os>; CPU iPhone OS <os_version> like Mac OS X) AppleWebKit/<apple_web_kit_version> (KHTML, like Gecko) CriOS/<browser_version> Mobile/<model> Safari/<safari_version>",
+            "CHROME_MAC": "Mozilla/5.0 (<os>; Intel Mac OS X <os_version>) AppleWebKit/<apple_web_kit_version> (KHTML, like Gecko) Chrome/<browser_version> Safari/<safari_version>",
+            # The archtecture on the windows ua below should also be subjected to change, however no provision was made for it because all windows device is x64 as per the generator.
+            # This was done considering the fact that most windows pc follow the (Windows NT 10.0; Win64; x64) pattern
+            "CHROME_WINDOWS": "Mozilla/5.0 (<os> NT <os_version>; Win64; x64) AppleWebKit/<apple_web_kit_version> (KHTML, like Gecko) Chrome/<browser_version> Safari/<safari_Version>",
+            "EDGE_WINDOWS": "Mozilla/5.0 (<os> NT <os_version>; Win64; x64) AppleWebKit/<apple_web_kit_version> (KHTML, like Gecko) Chrome/<chrome_version> Safari/<safari_version> Edg/<browser_version>",
+            "SAFARI_MAC": "Mozilla/5.0 (<os>; Intel Mac OS X <os_version>) AppleWebKit/<apple_web_kit_version> (KHTML, like Gecko) Version/<browser_version> Safari/<safari_version>",
+            "SAFARI_IOS": "Mozilla/5.0 (<os>; CPU iPhone OS <os_version> like Mac OS X) AppleWebKit/<apple_web_kit_version> (KHTML, like Gecko) Version/<browser_version> Mobile/15E148 Safari/<safari_version>",
+        }
+        if browser_name == "chrome":
+            pass
 
     def disconnect_all_vpn(self):
         if Identity.ovpn_process is not None:
