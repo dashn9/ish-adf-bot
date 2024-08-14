@@ -48,6 +48,7 @@ def load_configurations():
         boc.USE_MOUSE_READ_PROBABILITY = bot_conf.getfloat(
             "mouse-use-probability", boc.USE_MOUSE_READ_PROBABILITY
         )
+        boc.ENGAGE_READER = bot_conf.getboolean("engage-reader", boc.ENGAGE_READER)
         config.BOT_ID = bot_conf.get("bot-id", None)
         config.RUN_INFINITELY = bot_conf.getboolean("run-infinitely", False)
 

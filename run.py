@@ -98,55 +98,58 @@ def run_bot(identity, process_id):
             ad_keywords=identity.ad_keywords,
         )
         time.sleep(random.uniform(0, 1))
-        if web_bot.identity.device_type == "is_pc" and random.random() < 0.2:
-            web_bot.move_mouse_to_random_area_on_screen()
-        if (
-            web_bot.read_element_content(
-                web_bot.web_browser_driver.find_element(
-                    page_content_element_type, page_content_element_name
+        if boc.ENGAGE_READER:
+            if web_bot.identity.device_type == "is_pc" and random.random() < 0.2:
+                web_bot.move_mouse_to_random_area_on_screen()
+            if (
+                web_bot.read_element_content(
+                    web_bot.web_browser_driver.find_element(
+                        page_content_element_type, page_content_element_name
+                    )
                 )
-            )
-            == "ad_clicked"
-        ):
-            try:
-                time.sleep(random.uniform(0.7, 1.5))
-                body_element = WebDriverWait(web_bot.web_browser_driver, 4).until(
-                    EC.presence_of_element_located((By.TAG_NAME, "body"))
-                )
-                web_bot.read_element_content(body_element)
-                while random.random() < identity.page_depth:
-                    web_bot.time_activated = time.time()
-                    web_bot.open_link_in_elements([body_element])
+                == "ad_clicked"
+            ):
+                try:
+                    time.sleep(random.uniform(0.7, 1.5))
                     body_element = WebDriverWait(web_bot.web_browser_driver, 4).until(
                         EC.presence_of_element_located((By.TAG_NAME, "body"))
                     )
                     web_bot.read_element_content(body_element)
-            except TimeoutException:
-                print(
-                    "Body Element Of The Ad Page Could Not Be Found Or Not Loaded On Time"
-                )
-        else:
-            if page_info.get("related_articles_elements_type") and page_info.get(
-                "related_articles_elements_name"
-            ):
-                while random.random() < identity.page_depth:
-                    web_bot.time_activated = time.time()
-                    web_bot.no_of_clicks = page_info.get("page_clicks")
-                    web_bot.open_link_in_elements(
-                        web_bot.web_browser_driver.find_elements(
-                            related_articles_elements_type,
-                            related_articles_elements_name,
-                        )
+                    while random.random() < identity.page_depth:
+                        web_bot.time_activated = time.time()
+                        web_bot.open_link_in_elements([body_element])
+                        body_element = WebDriverWait(
+                            web_bot.web_browser_driver, 4
+                        ).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
+                        web_bot.read_element_content(body_element)
+                except TimeoutException:
+                    print(
+                        "Body Element Of The Ad Page Could Not Be Found Or Not Loaded On Time"
                     )
+            else:
+                if page_info.get("related_articles_elements_type") and page_info.get(
+                    "related_articles_elements_name"
+                ):
+                    while random.random() < identity.page_depth:
+                        web_bot.time_activated = time.time()
+                        web_bot.no_of_clicks = page_info.get("page_clicks")
+                        web_bot.open_link_in_elements(
+                            web_bot.web_browser_driver.find_elements(
+                                related_articles_elements_type,
+                                related_articles_elements_name,
+                            )
+                        )
 
-                    web_bot.read_element_content(
-                        web_bot.web_browser_driver.find_element(
-                            page_content_element_type, page_content_element_name
+                        web_bot.read_element_content(
+                            web_bot.web_browser_driver.find_element(
+                                page_content_element_type, page_content_element_name
+                            )
                         )
-                    )
-                    identity.page_depth = identity.page_depth / 2
-        if web_bot.identity.device_type == "is_pc":
-            web_bot.move_mouse_to_fool_exit_point()
+                        identity.page_depth = identity.page_depth / 2
+            if web_bot.identity.device_type == "is_pc":
+                web_bot.move_mouse_to_fool_exit_point()
+        else:
+            time.sleep(random.randint(boc.BOT_MIN_ALIVE_TIME, boc.BOT_MAX_ALIVE_TIME))
 
         try:
             if web_bot.web_browser_driver.session_id:

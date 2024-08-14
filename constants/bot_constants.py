@@ -5,6 +5,8 @@ import os
 # Time Constants
 IMPLICITLY_WAIT_TIME = 15
 
+ENGAGE_READER = True
+
 # FULL WORKING DIRECTORY
 FULL_DIRECTORY_PATH = os.path.dirname(os.path.realpath(__file__)).replace(
     "/constants", ""
