@@ -170,7 +170,7 @@ class Identity:
         self.resolve_identity_from_cloud(method, method_value)
         self.user_agent = self.user_agent or self.form_user_agent(
             self.os,
-            self.os_version,
+            self.platform.get("version", None) or self.os_version,
             self.device_model,
             self.browser_name,
             self.browser_version,

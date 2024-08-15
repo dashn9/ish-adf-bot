@@ -10,7 +10,7 @@ def return_fingerprintables_spoof_js_code(
     font_width_offset: int = 0,
     font_height_offset: int = 0,
     webgl_offsets: tuple = (0.234567654, 0.05),
-    platform=None,
+    navigator_platform=None,
     webgl_params: tuple = (
         "Google Inc. (Intel)",
         15,
@@ -139,13 +139,13 @@ def return_fingerprintables_spoof_js_code(
                 }); \n\
             }\n\
             if("'
-        + platform
-        + '" && navigator.platform != "'
-        + platform
+        + navigator_platform
+        + '" && navigator.navigator_platform != "'
+        + navigator_platform
         + '"){\n \
-                Object.defineProperty(Navigator.prototype, "platform", {\n \
+                Object.defineProperty(Navigator.prototype, "navigator_platform", {\n \
                     "value":"'
-        + platform
+        + navigator_platform
         + '"\n \
                 });\n \
             }\n \

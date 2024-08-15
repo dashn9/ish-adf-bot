@@ -183,7 +183,9 @@ class NetworkRunner:
                             timezone=self.identity.timezone,
                             font_width_offset=self.identity.font_fp_offset[0],
                             font_height_offset=self.identity.font_fp_offset[1],
-                            platform=self.identity.platform,
+                            navigator_platform=self.identity.platform.get(
+                                "navigator_platform", ""
+                            ),
                             hardware_specs={
                                 "hardware_concurrency": self.identity.hardware_concurrency,
                                 "memory": self.identity.memory,

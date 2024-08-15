@@ -24,7 +24,7 @@ class BrowserInterface:
     def __init__(self, browser_to_use_id=browser_constants.CHROME_ID,
                  bot_process_id=None, timezone_id=None, device_type="is_pc",
                  has_touch="no_touch", has_mouse="no_mouse", languages=["en-US", "en"], user_agent=None, hardware=None,
-                 platform=None, screen_width=1920, screen_height=1080, device_pixel_ratio=1, cookies=list(),
+                 platform={}, screen_width=1920, screen_height=1080, device_pixel_ratio=1, cookies=list(),
                  identity_id=None, cookies_update_callback=None):
         self.web_browser_driver = None
         self.time_activated = time.time()
