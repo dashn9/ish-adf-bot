@@ -16,7 +16,7 @@ from humanbehaviourmechanics.human_movements import HumanMovements
 
 
 class SmartAdsInteractions:
-    def __init__(
+    async def __init__(
         self,
         no_of_clicks=0,
     ):
@@ -36,7 +36,7 @@ class SmartAdsInteractions:
         self.ad_keywords = None
         self.ad_negative_keywords = None
 
-    def strip_ads_with_negative_keywords(self, ads_dimensions):
+    async def strip_ads_with_negative_keywords(self, ads_dimensions):
         if isinstance(self.ad_negative_keywords, list):
             for index, ad_dimensions in enumerate(ads_dimensions):
                 for keyword in self.ad_negative_keywords:
@@ -45,7 +45,7 @@ class SmartAdsInteractions:
             if len(ads_dimensions == 0):
                 return False
 
-    def trigger_vignette(self, open_vignette=False):
+    async def trigger_vignette(self, open_vignette=False):
         try:
             if not open_vignette:
                 ads_dimensions = self.locate_ad_elements_in_iframe(
@@ -61,7 +61,7 @@ class SmartAdsInteractions:
                     return False
             if not ads_dimensions:
                 return
-            time.sleep(0.5)
+            asyncio.sleep(0.5)
             if not open_vignette:
                 self.ad_click(random.choice(ads_dimensions), revert_back=False)
             else:
@@ -69,7 +69,7 @@ class SmartAdsInteractions:
             print(
                 f"Bot Process Id {self.bot_process_id} <:::> Vignette ad trigger attempted"
             )
-            time.sleep(0.5)
+            asyncio.sleep(0.5)
             self.trigger_vignette()
         except TimeoutException:
             # I no longer use Expected conditions in the iframe_check for locating elements, so this branch of code may
@@ -79,7 +79,7 @@ class SmartAdsInteractions:
             )
             return
 
-    def smart_ad_click(self, switch_focus_to_new_tab=True):
+    async def smart_ad_click(self, switch_focus_to_new_tab=True):
         ad_click_success = False
         if not hasattr(self, "track_vignette_close"):
             self.track_vignette_close = 1
@@ -112,7 +112,7 @@ class SmartAdsInteractions:
                     self.trigger_vignette()
             elif self.ad_to_click == "in_page" and self.in_page_ad_links_name:
                 self.trigger_vignette()
-                time.sleep(0.4)
+                asyncio.sleep(0.4)
                 ads_dimensions = self.locate_ad_elements_in_iframe(
                     ads_elements_type=self.in_page_ad_links_type,
                     ads_elements_name=self.in_page_ad_links_name,
@@ -160,7 +160,7 @@ class SmartAdsInteractions:
                             f"Try again"
                         )
             if ad_click_success and switch_focus_to_new_tab:
-                time.sleep(1)
+                asyncio.sleep(1)
                 self.web_browser_driver.switch_to.window(
                     self.web_browser_driver.window_handles[-1]
                 )
@@ -170,8 +170,10 @@ class SmartAdsInteractions:
         except TimeoutException:
             print(f"Bot Process Id {self.bot_process_id} <:::> No ads found, Try again")
 
-    def locate_ad_elements_in_iframe(self, ads_elements_type, ads_elements_name: str):
-        def iframe_check():
+    async def locate_ad_elements_in_iframe(
+        self, ads_elements_type, ads_elements_name: str
+    ):
+        async def iframe_check():
             try:
                 iframe = self.web_browser_driver.find_element(By.TAG_NAME, "iframe")
                 if self.device_type == "is_smartphone":
@@ -227,7 +229,7 @@ class SmartAdsInteractions:
             ads_elements_name = ads_elements_name[8:]
             return iframe_check()
 
-    def set_ad_behaviour_environment(
+    async def set_ad_behaviour_environment(
         self,
         ad_to_click,
         vignette_ad_close_type,
@@ -249,10 +251,10 @@ class SmartAdsInteractions:
         self.in_page_ad_links_name = in_page_ad_links_name
         self.ad_keywords = ad_keywords
 
-    def close_ad(self):
+    async def close_ad(self):
         pass
 
-    def ad_click(self, ad_dimensions: dict, revert_back=False):
+    async def ad_click(self, ad_dimensions: dict, revert_back=False):
         if self.device_type == "is_pc":
             previous_mouse_pos = pyautogui.position()
             self.simulate_human_mouse_move_behavior_to_area(
@@ -265,7 +267,7 @@ class SmartAdsInteractions:
                 max_overshoot=35,
                 probability_of_overshoot=round(random.random(), 2),
             )
-            time.sleep(random.uniform(0.1, 0.4))
+            asyncio.sleep(random.uniform(0.1, 0.4))
             pyautogui.click()
             if revert_back:
                 self.revert_to_main_page()

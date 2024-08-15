@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+import asyncio
 import random
 import os
 import sys
@@ -35,7 +36,7 @@ boc.FULL_DIRECTORY_PATH = os.path.dirname(os.path.realpath(__file__))
 brc.FULL_DIRECTORY_PATH = os.path.dirname(os.path.realpath(__file__))
 
 
-def restart_plug():
+async def restart_plug():
     if not RUN_INFINITELY:
         exit()
     else:
@@ -68,7 +69,7 @@ elif page_info.get("related_articles_elements_type") == "tag_name":
 boc.PROXY_WHITELISTED_DOMAINS = page_info.get("proxy_domain_whitelists", "*")
 
 
-def run_bot(identity, process_id):
+async def run_bot(identity, process_id):
     web_bot = WebBot(
         identity=identity,
         browser_to_use_id=brc.CHROME_ID,
@@ -97,7 +98,7 @@ def run_bot(identity, process_id):
             in_page_ad_links_name=page_info["in_page_ad_link_elements_name"],
             ad_keywords=identity.ad_keywords,
         )
-        time.sleep(random.uniform(0, 1))
+        asyncio.sleep(random.uniform(0, 1))
         if boc.ENGAGE_READER:
             if web_bot.identity.device_type == "is_pc" and random.random() < 0.2:
                 web_bot.move_mouse_to_random_area_on_screen()
@@ -110,7 +111,7 @@ def run_bot(identity, process_id):
                 == "ad_clicked"
             ):
                 try:
-                    time.sleep(random.uniform(0.7, 1.5))
+                    asyncio.sleep(random.uniform(0.7, 1.5))
                     body_element = WebDriverWait(web_bot.web_browser_driver, 4).until(
                         EC.presence_of_element_located((By.TAG_NAME, "body"))
                     )
@@ -150,7 +151,9 @@ def run_bot(identity, process_id):
                 web_bot.move_mouse_to_fool_exit_point()
         else:
             # Just a feature for testing, bot doesn't engage if engage-reader was set to false
-            time.sleep(random.randint(boc.BOT_MIN_ALIVE_TIME, boc.BOT_MAX_ALIVE_TIME))
+            asyncio.sleep(
+                random.randint(boc.BOT_MIN_ALIVE_TIME, boc.BOT_MAX_ALIVE_TIME)
+            )
 
         try:
             if web_bot.web_browser_driver.session_id:
@@ -184,8 +187,8 @@ def run_bot(identity, process_id):
             print(traceback.format_exc())
             print("The Error Above Was Handled, But Printed For DEBUGing Purpose")
         web_bot.web_browser_driver.quit()
+    print("Successfully Completed Activity For Identity:", identity.id)
+    restart_plug()
 
 
-run_bot(identity, 0)
-print("Successfully Completed Activity For Identity:", identity.id)
-restart_plug()
+asyncio.run(run_bot(identity, 0))

@@ -1,36 +1,27 @@
-from selenium.common import NoAlertPresentException
-from selenium.webdriver import Chrome
-from selenium.webdriver.remote.webdriver import WebDriver
+from nodriver import Browser, cdp
 
 
-def activate_mobile(web_driver: WebDriver, device_metrics: dict, max_touch_points=5):
-
-    if isinstance(web_driver, Chrome):
-        # You get and UnexpectedAlertPresentException if you try to activate_mobile on a page that has one present
-        try:
-            alert = web_driver.switch_to.alert
-            alert.accept()
-        except NoAlertPresentException:
-            pass
-        web_driver.execute_cdp_cmd("Emulation.setDeviceMetricsOverride", device_metrics)
-        web_driver.execute_cdp_cmd(
-            "Emulation.setTouchEmulationEnabled",
-            {"enabled": True, "maxTouchPoints": max_touch_points},
-        )
-        web_driver.execute_cdp_cmd(
-            "Emulation.setEmitTouchEventsForMouse", {"enabled": True}
-        )
+async def activate_mobile(
+    web_driver: Browser, device_metrics: dict, max_touch_points=5
+):
+    alert = web_driver.switch_to.alert
+    alert.accept()
+    web_driver.execute_cdp_cmd("Emulation.setDeviceMetricsOverride", device_metrics)
+    web_driver.execute_cdp_cmd(
+        "Emulation.setTouchEmulationEnabled",
+        {"enabled": True, "maxTouchPoints": max_touch_points},
+    )
+    web_driver.execute_cdp_cmd(
+        "Emulation.setEmitTouchEventsForMouse", {"enabled": True}
+    )
 
 
-def activate_all_focus(web_driver: WebDriver):
-    if isinstance(web_driver, Chrome):
-        web_driver.execute_cdp_cmd(
-            "Emulation.setFocusEmulationEnabled", {"enabled": True}
-        )
+async def activate_all_focus(web_driver: Browser):
+    web_driver.execute_cdp_cmd("Emulation.setFocusEmulationEnabled", {"enabled": True})
 
 
-def change_user_agent(
-    web_driver: WebDriver,
+async def change_user_agent(
+    web_driver: Browser,
     user_agent,
     platform={
         "architecture": None,
@@ -41,51 +32,32 @@ def change_user_agent(
     },
     language=["en-US", "en"],
 ):
-    if isinstance(web_driver, Chrome):
-        web_driver.execute_cdp_cmd(
-            "Emulation.setUserAgentOverride",
-            {
-                "userAgent": user_agent,
-                "language": language,
-                "platform": platform.get("navigator_platform"),
-            },
+    await web_driver.connection.send(
+        cdp.emulation.set_user_agent_override(
+            user_agent, language, platform.get("navigator_platform")
         )
-        web_driver.execute_cdp_cmd(
-            "Network.setUserAgentOverride",
-            {
-                "userAgent": user_agent,
-                "language": language,
-                "platform": platform.get("navigator_platform"),
-            },
-        )
-        web_driver.execute_cdp_cmd("Emulation.setLocaleOverride", {"locale": "en_GB"})
+    )
+    await web_driver.connection.send(cdp.emulation.set_locale_override("en_GB"))
 
 
-def set_hardware_concurrency(web_driver: WebDriver, hc=4):
-    if isinstance(web_driver, Chrome):
-        web_driver.execute_cdp_cmd(
-            "Emulation.setHardwareConcurrencyOverride", {"hardwareConcurrency": hc}
-        )
+async def set_hardware_concurrency(web_driver: Browser, hc=4):
+    await web_driver.connection.send(
+        cdp.emulation.set_hardware_concurrency_override(hc)
+    )
 
 
-def set_timezone(web_driver: WebDriver, timezone="Etc/GMT"):
-    if isinstance(web_driver, Chrome):
-        web_driver.execute_cdp_cmd(
-            "Emulation.setTimezoneOverride", {"timezoneId": timezone}
-        )
+async def set_timezone(web_driver: Browser, timezone="Etc/GMT"):
+    await web_driver.connection.send(cdp.emulation.set_timezone_override(timezone))
 
 
-def get_all_cookies(web_driver: WebDriver):
-    if isinstance(web_driver, Chrome):
-        return web_driver.execute_cdp_cmd("Storage.getCookies", {})["cookies"]
+async def get_all_cookies(web_driver: Browser):
+    await web_driver.execute_cdp_cmd("Storage.getCookies", {})["cookies"]
 
 
-def clear_all_cookies(web_driver: WebDriver):
-    if isinstance(web_driver, Chrome):
-        return web_driver.execute_cdp_cmd("Storage.clearCookies", {})
+async def clear_all_cookies(web_driver: Browser):
+    await web_driver.cookies.clear()
 
 
-def set_all_cookies(web_driver: WebDriver, cookies):
-    if isinstance(web_driver, Chrome):
-        print("cookies: ", cookies)
-        return web_driver.execute_cdp_cmd("Storage.setCookies", {"cookies": cookies})
+async def set_all_cookies(web_driver: Browser, cookies):
+    print("cookies: ", cookies)
+    await web_driver.cookies.set_all(cookies)

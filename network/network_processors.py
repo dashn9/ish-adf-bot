@@ -15,7 +15,7 @@ from constants import config
 
 
 class NetworkRunner:
-    def __init__(self, bot_process_id, identity: Identity, use_proxy=False):
+    async def __init__(self, bot_process_id, identity: Identity, use_proxy=False):
         self.cached_requests_session = requests_cache.CachedSession(
             bot_constants.FULL_DIRECTORY_PATH + "/caches/request_caches/requests_cache"
         )
@@ -51,7 +51,7 @@ class NetworkRunner:
             )
             self.proxy_requests_session.proxies = self.proxy
 
-    def release_proxies(self):
+    async def release_proxies(self):
         # release Proxyrack sticky session
         if self.identity.proxy_release_url:
             print(f"Bot Process Id {self.bot_process_id} <:::> Releasing proxy session")
@@ -68,17 +68,17 @@ class NetworkRunner:
                     f"Bot Process Id {self.bot_process_id} <:::> An error occurred, might have failed to release"
                 )
 
-    def inject_referer_into_header(self, request: request.Request):
+    async def inject_referer_into_header(self, request: request.Request):
         if self.referer_use_times < 1:
             del request.headers["Referer"]
             request.headers.add_header("Referer", self.identity.referer)
             self.referer_use_times += 1
 
-    def track_request_size(self, request):
+    async def track_request_size(self, request):
         request_size = len(request.body or "") / 1024
         self.total_request_size += request_size
 
-    def print_total_usage(self):
+    async def print_total_usage(self):
         print(
             f"Bot Process Id {self.bot_process_id} <:::> Total request size: {self.total_request_size:.2f} KB"
         )
@@ -96,7 +96,7 @@ class NetworkRunner:
             f"{self.total_request_size + self.un_cached_response_size + self.url_through_proxy_response_size:.2f} KB"
         )
 
-    def track_response_size(self, request, response):
+    async def track_response_size(self, request, response):
         if request.url in self.urls_through_proxy:
             self.url_through_proxy_response_size += len(response.body or "") / 1024
             self.urls_through_proxy.remove(request.url)
@@ -110,7 +110,7 @@ class NetworkRunner:
             self.urls_cached.remove(request.url)
             self.cached_response_size += len(response.body or "") / 1024
 
-    def response_interceptor(
+    async def response_interceptor(
         self, request: request.Request, response: request.Response
     ):
         self.track_response_size(request, response)
@@ -122,7 +122,7 @@ class NetworkRunner:
             request, response
         )
 
-    def inject_js_to_spoof_fingerprintable_objects_on_website_server_response(
+    async def inject_js_to_spoof_fingerprintable_objects_on_website_server_response(
         self, request: request.Request, response: request.Response
     ):
         """
@@ -231,17 +231,17 @@ class NetworkRunner:
             self.identity.referrer = ""
         return False
 
-    def terminate_unnecessary_requests(self, request):
+    async def terminate_unnecessary_requests(self, request):
         if request.url.endswith((".crx", "crx3")):
             request.abort()
             return True
         return False
 
-    def request_interceptor(self, request: request.Request):
+    async def request_interceptor(self, request: request.Request):
         if self.terminate_unnecessary_requests(request):
             return
 
-        def network_through_no_proxy():
+        async def network_through_no_proxy():
             try:
                 response = self.cached_requests_session.request(
                     url=request.url,
@@ -264,7 +264,9 @@ class NetworkRunner:
                 )
                 return False
 
-        def network_through_proxy(generate_empty_response_on_fail=True, retries=0):
+        async def network_through_proxy(
+            generate_empty_response_on_fail=True, retries=0
+        ):
             print(
                 f"Bot Process Id {self.bot_process_id} <:::> {request.url} is passing through the proxy"
             )
@@ -284,7 +286,7 @@ class NetworkRunner:
             except (SSLError, ProxyError):
                 # fix against ip leaks
                 if generate_empty_response_on_fail and retries < 1:
-                    time.sleep(0.5)
+                    asyncio.sleep(0.5)
                     return network_through_proxy(retries=retries + 1)
                 else:
                     response = main_requests.Response()

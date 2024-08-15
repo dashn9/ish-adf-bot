@@ -15,10 +15,10 @@ from humanbehaviourmechanics.human_movements import HumanMovements
 class HumanBehaviourReveries:
     active_on_mouse_movement = Value(ctypes.c_int, -1)
 
-    def __init__(self):
+    async def __init__(self):
         pass
 
-    def move_mouse_to_fool_exit_point(self):
+    async def move_mouse_to_fool_exit_point(self):
         """
         Attempts to move mouse towards the browser exit button
         :return: Boolean
@@ -29,14 +29,14 @@ class HumanBehaviourReveries:
             self.simulate_human_mouse_move_behavior_to_point(
                 random.randint(0, bot_constants.SCREEN_WIDTH), 4
             )
-            time.sleep(0.5)
+            asyncio.sleep(0.5)
             HumanBehaviourReveries.active_on_mouse_movement.value = (
                 -self.bot_process_id if self.bot_process_id != 0 else -500
             )
             return True
         return False
 
-    def move_mouse_to_random_area_on_screen(
+    async def move_mouse_to_random_area_on_screen(
         self,
         bounds: dict = {
             "x": 0,
@@ -58,12 +58,12 @@ class HumanBehaviourReveries:
                 max_overshoot=35,
                 probability_of_overshoot=round(random.random(), 2),
             )
-            time.sleep(0.5)
+            asyncio.sleep(0.5)
             HumanBehaviourReveries.active_on_mouse_movement.value = (
                 -self.bot_process_id if self.bot_process_id != 0 else -500
             )
 
-    def open_link_in_elements(self, elements):
+    async def open_link_in_elements(self, elements):
         links_to_follow = []
         for el in elements:
             for link in el.find_elements(By.TAG_NAME, "a"):
@@ -86,9 +86,9 @@ class HumanBehaviourReveries:
                 random.randint(0, len(links_to_follow) - 1)
             ]
             self.move_pointing_device_to_element(link_to_follow)
-            time.sleep(random.uniform(0.2, 0.8))
+            asyncio.sleep(random.uniform(0.2, 0.8))
             if self.has_touch:
-                time.sleep(random.uniform(0.3, 0.5))
+                asyncio.sleep(random.uniform(0.3, 0.5))
                 try:
                     element_location_and_dimensions = (
                         self.get_element_location_window_offset(link_to_follow)
@@ -122,7 +122,7 @@ class HumanBehaviourReveries:
             print(
                 f"Bot Process Id {self.bot_process_id} <:::> Done Attempting To Open A Link In Related Articles"
             )
-            time.sleep(0.3)
+            asyncio.sleep(0.3)
             HumanBehaviourReveries.active_on_mouse_movement.value = (
                 -self.bot_process_id if self.bot_process_id != 0 else -500
             )

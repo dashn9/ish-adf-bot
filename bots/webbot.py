@@ -11,7 +11,7 @@ class WebBot(
     BrowserInterface, SmartHumanReader, NetworkRunner
 ):  # A powerful WebBot designed to visit and perform activities on given url/s
 
-    def __init__(
+    async def __init__(
         self,
         identity=None,
         browser_to_use_id=browser_constants.CHROME_ID,

@@ -12,14 +12,14 @@ from bots import utils
 
 
 class Keyboard:
-    def __init__(self, webdriver: remote_webdriver.WebDriver):
+    async def __init__(self, webdriver: remote_webdriver.WebDriver):
         self.webdriver = webdriver
         self.modifiers = 0
         self.is_key_down = False
         self.down_key_number_of_consecutive_runs = 0
         self.pressed_keys = set()
 
-    def down(self, key, options={"text": "", "keypad": False}, simple=False):
+    async def down(self, key, options={"text": "", "keypad": False}, simple=False):
         description = self.key_description_for_string(key)
 
         pressed_keys = self.pressed_keys
@@ -57,14 +57,14 @@ class Keyboard:
             ),
         )
 
-    def down_persistent(self, key, options={"text": ""}):
-        def inner_loop():
+    async def down_persistent(self, key, options={"text": ""}):
+        async def inner_loop():
             try:
                 self.down(key, options, True)
-                time.sleep(random.uniform(0.5, 0.52))
+                asyncio.sleep(random.uniform(0.5, 0.52))
                 while self.is_key_down:
                     self.down(key, options, True)
-                    time.sleep(random.uniform(0.04, 0.07))
+                    asyncio.sleep(random.uniform(0.04, 0.07))
                     # self.down_key_number_of_consecutive_runs += 1
                 self.down_key_number_of_consecutive_runs = 0
             except Exception:
@@ -74,7 +74,7 @@ class Keyboard:
             self.is_key_down = True
             return Thread(target=inner_loop).start()
 
-    def modifier_bit(self, key):
+    async def modifier_bit(self, key):
         if key == "Alt":
             return 1
         if key == "Control":
@@ -85,7 +85,7 @@ class Keyboard:
             return 8
         return 0
 
-    def key_description_for_string(self, key):
+    async def key_description_for_string(self, key):
         shift = self.modifiers & 8
         description = dict(key="", keyCode=0, code="", text="", location=0)
 
@@ -119,7 +119,7 @@ class Keyboard:
 
         return description
 
-    def up(self, key):
+    async def up(self, key):
         description = self.key_description_for_string(key)
         self.modifiers &= ~self.modifier_bit(description["key"])
         if self.is_key_down:
@@ -127,7 +127,7 @@ class Keyboard:
             self.pressed_keys.discard(description["code"])
 
             while self.down_key_number_of_consecutive_runs != 0:
-                time.sleep(0.1)
+                asyncio.sleep(0.1)
 
             self.webdriver.execute_cdp_cmd(
                 "Input.dispatchKeyEvent",
@@ -141,10 +141,10 @@ class Keyboard:
                 ),
             )
 
-    def send_character(self, char: str):
+    async def send_character(self, char: str):
         self.webdriver.execute_cdp_cmd("Input.insertText", {"text": char})
 
-    def type(self, text: str, options={"delay": 0}):
+    async def type(self, text: str, options={"delay": 0}):
         delay = 0
         if options and options.delay:
             delay = options.delay
@@ -154,24 +154,24 @@ class Keyboard:
             else:
                 self.send_character(char)
             if delay:
-                time.sleep(delay)
+                asyncio.sleep(delay)
 
-    def press(self, key, options=(0,)):
+    async def press(self, key, options=(0,)):
         delay = options
         self.down(key, options)
         if delay:
-            time.sleep(delay)
+            asyncio.sleep(delay)
         self.up(key)
 
 
 class Mouse:
-    def __init__(self, webdriver: remote_webdriver.WebDriver, keyboard: Keyboard):
+    async def __init__(self, webdriver: remote_webdriver.WebDriver, keyboard: Keyboard):
         self.webdriver = webdriver
         self.keyboard = keyboard
         self.x = 0
         self.y = 0
 
-    def move(self, x, y, options={"steps": 10}):
+    async def move(self, x, y, options={"steps": 10}):
         steps = options["steps"]
         from_x = self.x
         from_y = self.y
@@ -190,7 +190,9 @@ class Mouse:
 
     # Although I'm not particularly interested in this approach, but no much option because I lack the required mathematical skills to modify to my taste(math skills which i'm currently learning)
     # Therefore in the event it doesn't work out(The ad operation), Kindly revamp this scroll system
-    def mouse_wheel_with_bezier_animation(self, x, y, px_to_adjust_by, yDirection=True):
+    async def mouse_wheel_with_bezier_animation(
+        self, x, y, px_to_adjust_by, yDirection=True
+    ):
         plot = utils.generate_mouse_wheel_plot(
             int(px_to_adjust_by), random.randint(50, 200)
         )
@@ -206,10 +208,10 @@ class Mouse:
                     deltaY=p[1] if yDirection else -p[1],
                 ),
             )
-            time.sleep(p[0] / 1000)
+            asyncio.sleep(p[0] / 1000)
 
     # Irrespective, a huge load of optimizations is still needed here after brushing my math and bitwise skills
-    def mouse_wheel(
+    async def mouse_wheel(
         self,
         x,
         y,
@@ -263,17 +265,17 @@ class Mouse:
                     deltaY=deltaYToUse if (yDirection) else -deltaYToUse,
                 ),
             )
-            time.sleep(random.uniform(latency[0], latency[1]) / 1000)
+            asyncio.sleep(random.uniform(latency[0], latency[1]) / 1000)
 
-    def click(self, x, y, options={"delay": 0}):
+    async def click(self, x, y, options={"delay": 0}):
         delay = options["delay"]
         self.move(x, y)
         self.down(options)
         if delay:
-            time.sleep(delay)
+            asyncio.sleep(delay)
         self.up(options)
 
-    def down(self, options={"button": "left", "click_count": 1}):
+    async def down(self, options={"button": "left", "click_count": 1}):
         button = options["button"]
         click_count = options["click_count"]
         self.button = button
@@ -289,7 +291,7 @@ class Mouse:
             ),
         )
 
-    def up(self, options={"button": "left", "click_count": 1}):
+    async def up(self, options={"button": "left", "click_count": 1}):
         button = options["button"]
         click_count = options["click_count"]
         self.button = "none"
@@ -307,11 +309,11 @@ class Mouse:
 
 
 class Touchscreen:
-    def __init__(self, webdriver: remote_webdriver.WebDriver, keyboard: Keyboard):
+    async def __init__(self, webdriver: remote_webdriver.WebDriver, keyboard: Keyboard):
         self.webdriver = webdriver
         self.keyboard = keyboard
 
-    def tap(self, x, y):
+    async def tap(self, x, y):
         # Touches appear to be lost during the first frame after navigation.
         # This waits a frame before sending the tap.
         # @see https:#crbug.com/613219
@@ -326,12 +328,12 @@ class Touchscreen:
             "Input.dispatchTouchEvent",
             dict(type="touchStart", touchPoints=touch_points),
         )
-        time.sleep(random.uniform(0.01, 0.04))
+        asyncio.sleep(random.uniform(0.01, 0.04))
         self.webdriver.execute_cdp_cmd(
             "Input.dispatchTouchEvent", dict(type="touchEnd", touchPoints=[])
         )
 
-    def simulate_human_touch_movement_with_mouse(
+    async def simulate_human_touch_movement_with_mouse(
         self, start_point=(0, 0), end_point=(0, 0), duration=3
     ):
         latency_range = (0.010, 0.025)
@@ -407,7 +409,7 @@ class Touchscreen:
                 )
             # Makes sure i is not out of index
             if i < len(generated_durations):
-                time.sleep(generated_durations[i])
+                asyncio.sleep(generated_durations[i])
             else:
-                time.sleep(random.choice(generated_durations))
+                asyncio.sleep(random.choice(generated_durations))
         return True

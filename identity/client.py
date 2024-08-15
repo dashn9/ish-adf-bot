@@ -12,7 +12,7 @@ from bots import utils
 class Identity:
     ovpn_process = None
 
-    def __init__(
+    async def __init__(
         self,
         id=None,
         device_type="",
@@ -108,7 +108,7 @@ class Identity:
         self.proxy_url = None
         self.proxy_release_url = None
 
-    def resolve_identity_from_cloud(self, method, value):
+    async def resolve_identity_from_cloud(self, method, value):
         identity = self.data_controller.fetch_an_identity(method, value)
         if not identity:
             raise ValueError(
@@ -166,7 +166,7 @@ class Identity:
         self.proxy_release_url = identity.get("PROXY_RELEASE_URL", None)
         self._raw_identity = identity
 
-    def auto_initiate_identity(self, method, method_value):
+    async def auto_initiate_identity(self, method, method_value):
         self.resolve_identity_from_cloud(method, method_value)
         self.user_agent = self.user_agent or self.form_user_agent(
             self.os,
@@ -179,7 +179,7 @@ class Identity:
         # self.connect_vpn(self.vpn_client, self.ovpn_file_name)
         self.resolve_referer()
 
-    def resolve_timezone(self):
+    async def resolve_timezone(self):
         resolved_proxy_url = self.proxy_url if bot_constants.USE_PROXY else None
         if self.improvised_public_ip:
             geolocation = self.data_controller.fetch_geolocation_data(
@@ -231,20 +231,20 @@ class Identity:
             print("geo location: ", identity_timezone)
             print("Successfully Resolved Timezone")
 
-    def resolve_referer(self):
+    async def resolve_referer(self):
         self.referer = random.choice(self.referrals)
 
-    def update_cookies(self, cookies=None):
+    async def update_cookies(self, cookies=None):
         if not cookies:
             cookies = self.cookies
         self.data_controller.update_cookies(self.id, cookies)
 
-    def fetch_referrer(self):
+    async def fetch_referrer(self):
         return self.identity.referrals[
             random.randint(0, len(self.identity.referrals) - 1)
         ]
 
-    def form_user_agent(
+    async def form_user_agent(
         self,
         os: str,
         os_version: str,
@@ -252,14 +252,14 @@ class Identity:
         browser_name: str,
         browser_version: list,
     ):
-        def standard_browser_version_replacer(ua: str, browser_version: list):
+        async def standard_browser_version_replacer(ua: str, browser_version: list):
             return (
                 ua.replace("<apple_web_kit_version>", browser_version[0])
                 .replace("<browser_version>", browser_version[1])
                 .replace("<safari_version>", browser_version[2])
             )
 
-        def edge_browser_version_replacer(ua: str, browser_version: list):
+        async def edge_browser_version_replacer(ua: str, browser_version: list):
             return (
                 ua.replace("<apple_web_kit_version>", browser_version[0])
                 .replace("<chrome_version>", browser_version[1])
@@ -289,7 +289,7 @@ class Identity:
         else:
             return standard_browser_version_replacer(user_agent, browser_version)
 
-    def disconnect_all_vpn(self):
+    async def disconnect_all_vpn(self):
         if Identity.ovpn_process is not None:
             print("Closing Program Openvpn Connection")
             Identity.ovpn_process.kill()
@@ -308,12 +308,12 @@ class Identity:
             except:
                 pass
 
-    def generate_unique_lowercase_numbers_characters(self, length=12):
+    async def generate_unique_lowercase_numbers_characters(self, length=12):
         chars = string.ascii_lowercase + string.digits
         random.seed()
         return "".join(random.choice(chars) for _ in range(length))
 
-    def resolve_proxy_url(self, geo_target, proxy_name="proxyrack.com"):
+    async def resolve_proxy_url(self, geo_target, proxy_name="proxyrack.com"):
         """This Function is Deprecated, The Proxy URL is now resolved from backend."""
         if proxy_name in ["smartproxy.com", "proxyrack.com"]:
             if geo_target:
@@ -335,7 +335,7 @@ class Identity:
                 return bot_constants.PROXY_RANDOM_TEMPLATE
         return False
 
-    def connect_vpn(self, vpn_client, vpn_file_name, **kwargs):
+    async def connect_vpn(self, vpn_client, vpn_file_name, **kwargs):
         if (
             "id" in kwargs.keys()
             and "username" in kwargs.keys()
@@ -464,7 +464,7 @@ class Identity:
             print(
                 "VPN Could Not Prove Connected For Some Other Reason, Switching VPN File And Reconnecting"
             )
-            time.sleep(0.8)
+            asyncio.sleep(0.8)
             self.improvised_public_ip = True
             config_file = utils.fetch_random_file_name_from_directory(
                 config_dir, "ovpn"
