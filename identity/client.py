@@ -248,7 +248,7 @@ class Identity:
         self,
         os: str,
         os_version: str,
-        device_model: str,
+        device_model: str | None,
         browser_name: str,
         browser_version: list,
     ):
@@ -282,7 +282,7 @@ class Identity:
             BROWSER_TEMPLATES[browser_name.upper() + "_" + os.upper()]
             .replace("<os>", os)
             .replace("<os_version>", os_version.replace(".", "_"))
-            .replace("<model>", device_model)
+            .replace("<model>", device_model or "")
         )
         if browser_name == "edge":
             return edge_browser_version_replacer(user_agent, browser_version)
