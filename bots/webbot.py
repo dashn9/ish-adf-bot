@@ -67,6 +67,7 @@ class WebBot(
             bot_process_id=bot_process_id,
             timezone_id=identity.timezone[0],
             device_type=identity.device_type,
+            hardware_concurrency=identity.hardware_concurrency,
             has_touch=identity.has_touch,
             has_mouse=identity.has_mouse,
             languages=identity.languages,

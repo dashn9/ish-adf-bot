@@ -114,11 +114,6 @@ def return_fingerprintables_spoof_js_code(
     ) = webgl_params
     code = (
         'var hardwareSpecsInject = function() {\n\
-            Object.defineProperty(Navigator.prototype, "hardwareConcurrency", {\n \
-            "value":'
-        + str(hardware_specs["hardware_concurrency"])
-        + ' \n \
-            }); \n \
             Object.defineProperty(Navigator.prototype, "deviceMemory", {\n \
                 "value":'
         + str(hardware_specs["memory"])
@@ -138,17 +133,6 @@ def return_fingerprintables_spoof_js_code(
                     "value": false\n \
                 }); \n\
             }\n\
-            if("'
-        + navigator_platform
-        + '" && navigator.platform != "'
-        + navigator_platform
-        + '"){\n \
-                Object.defineProperty(Navigator.prototype, "platform", {\n \
-                    "value":"'
-        + navigator_platform
-        + '"\n \
-                });\n \
-            }\n \
         }\n \
         var font_inject = function() {\n\
             var rand = {\n\

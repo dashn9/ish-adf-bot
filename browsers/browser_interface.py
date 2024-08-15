@@ -22,7 +22,7 @@ from constants import bot_constants, browser_constants, config
 
 class BrowserInterface:
     def __init__(self, browser_to_use_id=browser_constants.CHROME_ID,
-                 bot_process_id=None, timezone_id=None, device_type="is_pc",
+                 bot_process_id=None, timezone_id=None, device_type="is_pc", hardware_concurrency=2,
                  has_touch="no_touch", has_mouse="no_mouse", languages=["en-US", "en"], user_agent=None, hardware=None,
                  platform={}, screen_width=1920, screen_height=1080, device_pixel_ratio=1, cookies=list(),
                  identity_id=None, cookies_update_callback=None):
@@ -39,6 +39,7 @@ class BrowserInterface:
         self.languages = languages
         self.user_agent = user_agent
         self.hardware = hardware
+        self.hardware_concurrency=hardware_concurrency
         self.platform = platform
         self.screen_width = screen_width
         self.screen_height = screen_height
@@ -418,6 +419,7 @@ class BrowserInterface:
         devtools_primary.clear_all_cookies(self.web_browser_driver)
         # Sets cookies from identity
         devtools_primary.set_all_cookies(self.web_browser_driver, self.cookies)
+        devtools_primary.set_hardware_concurrency(self.web_browser_driver, self.hardware_concurrency)
         # If identity has a user agent, change browser user agent to identity's
         if self.user_agent:
             print(
