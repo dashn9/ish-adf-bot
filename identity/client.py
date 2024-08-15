@@ -237,20 +237,50 @@ class Identity:
             random.randint(0, len(self.identity.referrals) - 1)
         ]
 
-    def form_user_agent(self, os, os_version, model, browser_name, browser_version):
+    def form_user_agent(
+        self,
+        os: str,
+        os_version: str,
+        model: str,
+        browser_name: str,
+        browser_version: list,
+    ):
+        def standard_browser_version_replacer(ua: str, browser_version: list):
+            return (
+                ua.replace("<apple_web_kit_version>", browser_version[0])
+                .replace("<browser_version>", browser_version[1])
+                .replace("<safari_version>", browser_version[2])
+            )
+
+        def edge_browser_version_replacer(ua: str, browser_version: list):
+            return (
+                ua.replace("<apple_web_kit_version>", browser_version[0])
+                .replace("<chrome_version>", browser_version[1])
+                .replace("<safari_version>", browser_version[2])
+                .replace("<browser_version>", browser_version[3])
+            )
+
         BROWSER_TEMPLATES = {
             "CHROME_ANDROID": "Mozilla/5.0 (Linux; <os> <os_version>; <model>) AppleWebKit/<apple_web_kit_version> (KHTML, like Gecko) Chrome/<browser_version> Mobile Safari/<safari_version>",
-            "CHROME_IOS": "Mozilla/5.0 (<os>; CPU iPhone OS <os_version> like Mac OS X) AppleWebKit/<apple_web_kit_version> (KHTML, like Gecko) CriOS/<browser_version> Mobile/<model> Safari/<safari_version>",
-            "CHROME_MAC": "Mozilla/5.0 (<os>; Intel Mac OS X <os_version>) AppleWebKit/<apple_web_kit_version> (KHTML, like Gecko) Chrome/<browser_version> Safari/<safari_version>",
+            "CHROME_IPHONE": "Mozilla/5.0 (<os>; CPU iPhone OS <os_version> like Mac OS X) AppleWebKit/<apple_web_kit_version> (KHTML, like Gecko) CriOS/<browser_version> Mobile/<model> Safari/<safari_version>",
+            "CHROME_MACINTOSH": "Mozilla/5.0 (<os>; Intel Mac OS X <os_version>) AppleWebKit/<apple_web_kit_version> (KHTML, like Gecko) Chrome/<browser_version> Safari/<safari_version>",
             # The archtecture on the windows ua below should also be subjected to change, however no provision was made for it because all windows device is x64 as per the generator.
             # This was done considering the fact that most windows pc follow the (Windows NT 10.0; Win64; x64) pattern
             "CHROME_WINDOWS": "Mozilla/5.0 (<os> NT <os_version>; Win64; x64) AppleWebKit/<apple_web_kit_version> (KHTML, like Gecko) Chrome/<browser_version> Safari/<safari_Version>",
             "EDGE_WINDOWS": "Mozilla/5.0 (<os> NT <os_version>; Win64; x64) AppleWebKit/<apple_web_kit_version> (KHTML, like Gecko) Chrome/<chrome_version> Safari/<safari_version> Edg/<browser_version>",
-            "SAFARI_MAC": "Mozilla/5.0 (<os>; Intel Mac OS X <os_version>) AppleWebKit/<apple_web_kit_version> (KHTML, like Gecko) Version/<browser_version> Safari/<safari_version>",
-            "SAFARI_IOS": "Mozilla/5.0 (<os>; CPU iPhone OS <os_version> like Mac OS X) AppleWebKit/<apple_web_kit_version> (KHTML, like Gecko) Version/<browser_version> Mobile/15E148 Safari/<safari_version>",
+            "SAFARI_MACINTOSH": "Mozilla/5.0 (<os>; Intel Mac OS X <os_version>) AppleWebKit/<apple_web_kit_version> (KHTML, like Gecko) Version/<browser_version> Safari/<safari_version>",
+            "SAFARI_IPHONE": "Mozilla/5.0 (<os>; CPU iPhone OS <os_version> like Mac OS X) AppleWebKit/<apple_web_kit_version> (KHTML, like Gecko) Version/<browser_version> Mobile/15E148 Safari/<safari_version>",
         }
-        if browser_name == "chrome":
-            pass
+        user_agent = (
+            BROWSER_TEMPLATES[browser_name.upper() + "_" + os.upper()]
+            .replace("<os>", os)
+            .replace("<os_version>", os_version.replace(".", "_"))
+            .replace("<model>", model)
+        )
+        if browser_name == "edge":
+            return edge_browser_version_replacer(user_agent, browser_version)
+        else:
+            return standard_browser_version_replacer(user_agent, browser_version)
 
     def disconnect_all_vpn(self):
         if Identity.ovpn_process is not None:
