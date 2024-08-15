@@ -140,10 +140,10 @@ def return_fingerprintables_spoof_js_code(
             }\n\
             if("'
         + navigator_platform
-        + '" && navigator.navigator_platform != "'
+        + '" && navigator.platform != "'
         + navigator_platform
         + '"){\n \
-                Object.defineProperty(Navigator.prototype, "navigator_platform", {\n \
+                Object.defineProperty(Navigator.prototype, "platform", {\n \
                     "value":"'
         + navigator_platform
         + '"\n \
