@@ -32,6 +32,7 @@ class Identity:
         webgl_fp_offset=None,
         hardware_concurrency=None,
         memory=None,
+        device_model=None,
         has_mouse=None,
         has_battery=None,
         has_touch=None,
@@ -67,6 +68,7 @@ class Identity:
         self.webgl_fp_offset = webgl_fp_offset
         self.hardware_concurrency = hardware_concurrency
         self.memory = memory
+        self.device_model = device_model
         self.has_mouse = has_mouse
         self.has_battery = has_battery
         self.has_touch = has_touch
@@ -127,6 +129,7 @@ class Identity:
         self.webgl_fp_offset = identity["FINGERPRINT"]["webgl_offset"]
         self.hardware_concurrency = identity["HARDWARE_CONCURRENCY"]
         self.memory = identity["MEMORY"]
+        self.device_model = identity["DEVICE_MODEL"]
         self.has_mouse = identity["HAS_MOUSE"]
         self.has_battery = identity["HAS_BATTERY"]
         self.has_touch = identity["HAS_TOUCH"]
@@ -166,7 +169,11 @@ class Identity:
     def auto_initiate_identity(self, method, method_value):
         self.resolve_identity_from_cloud(method, method_value)
         self.user_agent = self.user_agent or self.form_user_agent(
-            self.browser_name, self.os_version, self.browser_version
+            self.os,
+            self.os_version,
+            self.device_model,
+            self.browser_name,
+            self.browser_version,
         )
         self.resolve_timezone()
         # self.connect_vpn(self.vpn_client, self.ovpn_file_name)
@@ -241,7 +248,7 @@ class Identity:
         self,
         os: str,
         os_version: str,
-        model: str,
+        device_model: str,
         browser_name: str,
         browser_version: list,
     ):
@@ -275,7 +282,7 @@ class Identity:
             BROWSER_TEMPLATES[browser_name.upper() + "_" + os.upper()]
             .replace("<os>", os)
             .replace("<os_version>", os_version.replace(".", "_"))
-            .replace("<model>", model)
+            .replace("<model>", device_model)
         )
         if browser_name == "edge":
             return edge_browser_version_replacer(user_agent, browser_version)
