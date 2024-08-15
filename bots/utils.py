@@ -32,7 +32,7 @@ def return_fingerprintables_spoof_js_code(
         12,
         "Intel(R) HD Graphics",
     ),
-    timezone=["Etc/GMT", 0, "AM Coordinated Time"],
+    browser_vendor="",
     hardware_specs={"hardware_concurrency": 8, "memory": 8},
     has_battery=False,
     referer="",
@@ -128,9 +128,15 @@ def return_fingerprintables_spoof_js_code(
         + '"\n \
                 });\n \
             }\n \
-            if (navigator.userAgent.indexOf(\'Firefox\') > -1) {\n \
-                Object.defineProperty(Navigator.prototype, "webdriver", {\n \
-                    "value": false\n \
+        }\n \
+        var browserSpecsInject = function() {\n\
+            if ("'
+        + browser_vendor
+        + '") {\n \
+                Object.defineProperty(Navigator.prototype, "vendor", {\n \
+                    "value": "'
+        + browser_vendor
+        + '"\n \
                 }); \n\
             }\n\
         }\n \
@@ -429,7 +435,7 @@ def return_fingerprintables_spoof_js_code(
         };\n\
         var script_1 = document.createElement("script");\n\
         script_1.textContent = "(" + canvas_inject + ")();(" + audiocontext_inject + \
-        ")();(" + webgl_inject + ")();(" + font_inject + ")();(" + hardwareSpecsInject + ")();";\n\
+        ")();(" + webgl_inject + ")();(" + font_inject + ")();(" + hardwareSpecsInject + ")();(" + browserSpecsInject + ")();";\n\
         document.documentElement.appendChild(script_1);\n\
         window.top.document.documentElement.appendChild(script_1);\n\
         script_1.remove();\n \

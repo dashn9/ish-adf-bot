@@ -180,7 +180,11 @@ class NetworkRunner:
                                 12,
                                 self.identity.gpu_renderer,
                             ),
-                            timezone=self.identity.timezone,
+                            browser_vendor=(
+                                "Apple Computer, Inc."
+                                if self.identity.browser_name == "safari"
+                                else ""
+                            ),
                             font_width_offset=self.identity.font_fp_offset[0],
                             font_height_offset=self.identity.font_fp_offset[1],
                             navigator_platform=self.identity.platform.get(
