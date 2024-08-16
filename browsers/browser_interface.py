@@ -347,10 +347,6 @@ class BrowserInterface:
             with open(prefs_file, encoding="latin1", mode="w") as f:
                 json.dump(un_dot_prefs, f)
 
-            # pylint: disable=protected-access
-            # remove the experimental_options to avoid an error
-            del options._experimental_options["prefs"]
-
     async def open_web_browser(self):
         open_browser_in_full_screen = True
         window_size = (bot_constants.SCREEN_WIDTH, bot_constants.SCREEN_HEIGHT)
@@ -369,8 +365,6 @@ class BrowserInterface:
                 '--disable-remote-fonts',
                 '--disable-extensions',
                 '--disable-gpu'])
-            # browser_config.add_experimental_option('prefs',
-            #                                         {'intl.accept_languages': ','.join(self.languages)})
             if browser_constants.IGNORE_SSL:
                 browser_config.add_argument('--ignore-certificate-errors')
             if config.CONTAINERIZED:
@@ -398,26 +392,25 @@ class BrowserInterface:
             self.activate_mobile()
         print(f"Bot Process Id {self.bot_process_id} <:::> Setting Page To Always Be In Focus")
         print(f"Bot Process Id {self.bot_process_id} <:::> Setting Cookies From Identity")
+        print(f"Bot Process Id {self.bot_process_id} <:::> Setting Timezone From Identity")
+
         # Delete existing cookies
+        await devtools_primary.clear_all_cookies(self.web_browser_driver)
         # Sets cookies from identity
-        await asyncio.gather(
-            devtools_primary.clear_all_cookies(self.web_browser_driver),
-            devtools_primary.set_all_cookies(self.web_browser_driver, self.cookies),
-            devtools_primary.set_hardware_concurrency(self.web_browser_driver, self.hardware_concurrency),
-            devtools_primary.set_timezone(self.web_browser_driver, self.timezone_id)
-        )
+        await devtools_primary.set_all_cookies(self.web_browser_driver, self.cookies)
+        await devtools_primary.set_hardware_concurrency(self.web_browser_driver, self.hardware_concurrency)
+        # Set Timezone
+        await devtools_primary.set_timezone(self.web_browser_driver, self.timezone_id)
         # If identity has a user agent, change browser user agent to identity's
         if self.user_agent:
             print(
                 f"Bot Process Id {self.bot_process_id} <:::> Setting User Agent: {self.user_agent} From Identity")
             await devtools_primary.change_user_agent(
                 self.web_browser_driver,
-                self.user_agent, self.platform)
-            print(f"Bot Process Id {self.bot_process_id} <:::> Setting Timezone From Identity")
-        # Set Timezone
+                self.user_agent, self.platform, self.languages)
         # self.web_browser_driver.set_window_position(0, 0)
         if not open_browser_in_full_screen:
-            self.web_browser_driver.main_tab.set_window_size(0, 0, *window_size)
+            await self.web_browser_driver.main_tab.set_window_size(0, 0, *window_size)
 
         self.web_browser_driver.request_interceptor = self.request_interceptor
         self.web_browser_driver.response_interceptor = self.response_interceptor
