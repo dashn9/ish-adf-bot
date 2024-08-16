@@ -397,14 +397,15 @@ class BrowserInterface:
             print(f"Bot Process Id {self.bot_process_id} <:::> Device Name:", self.hardware)
             self.activate_mobile()
         print(f"Bot Process Id {self.bot_process_id} <:::> Setting Page To Always Be In Focus")
-        # Sets Browser to always be active
-        # devtools_primary.activate_all_focus(self.web_browser_driver)
         print(f"Bot Process Id {self.bot_process_id} <:::> Setting Cookies From Identity")
         # Delete existing cookies
-        await devtools_primary.clear_all_cookies(self.web_browser_driver)
         # Sets cookies from identity
-        await devtools_primary.set_all_cookies(self.web_browser_driver, self.cookies)
-        await devtools_primary.set_hardware_concurrency(self.web_browser_driver, self.hardware_concurrency)
+        await asyncio.gather(
+            devtools_primary.clear_all_cookies(self.web_browser_driver),
+            devtools_primary.set_all_cookies(self.web_browser_driver, self.cookies),
+            devtools_primary.set_hardware_concurrency(self.web_browser_driver, self.hardware_concurrency),
+            devtools_primary.set_timezone(self.web_browser_driver, self.timezone_id)
+        )
         # If identity has a user agent, change browser user agent to identity's
         if self.user_agent:
             print(
@@ -412,9 +413,8 @@ class BrowserInterface:
             await devtools_primary.change_user_agent(
                 self.web_browser_driver,
                 self.user_agent, self.platform)
-        print(f"Bot Process Id {self.bot_process_id} <:::> Setting Timezone From Identity")
+            print(f"Bot Process Id {self.bot_process_id} <:::> Setting Timezone From Identity")
         # Set Timezone
-        await devtools_primary.set_timezone(self.web_browser_driver, self.timezone_id)
         # self.web_browser_driver.set_window_position(0, 0)
         if not open_browser_in_full_screen:
             self.web_browser_driver.main_tab.set_window_size(0, 0, *window_size)

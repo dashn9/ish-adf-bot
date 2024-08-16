@@ -32,22 +32,23 @@ async def change_user_agent(
     },
     language=["en-US", "en"],
 ):
-    await web_driver.connection.send(
+    await web_driver.main_tab.send(
         cdp.emulation.set_user_agent_override(
-            user_agent, language, platform.get("navigator_platform")
+            user_agent=user_agent,
+            accept_language=",".join(language),
+            platform=platform["navigator_platform"],
+            # user_agent_metadata=None,
         )
     )
-    await web_driver.connection.send(cdp.emulation.set_locale_override("en_GB"))
+    await web_driver.main_tab.send(cdp.emulation.set_locale_override(language[0]))
 
 
 async def set_hardware_concurrency(web_driver: Browser, hc=4):
-    await web_driver.connection.send(
-        cdp.emulation.set_hardware_concurrency_override(hc)
-    )
+    await web_driver.main_tab.send(cdp.emulation.set_hardware_concurrency_override(hc))
 
 
 async def set_timezone(web_driver: Browser, timezone="Etc/GMT"):
-    await web_driver.connection.send(cdp.emulation.set_timezone_override(timezone))
+    await web_driver.main_tab.send(cdp.emulation.set_timezone_override(timezone))
 
 
 async def get_all_cookies(web_driver: Browser):
