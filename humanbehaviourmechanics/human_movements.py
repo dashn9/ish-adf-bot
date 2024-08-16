@@ -13,7 +13,7 @@ from bots import utils
 
 
 class HumanMovements:
-    async def __init__(self):
+    def __init__(self):
         self._keyboard = Keyboard(self.web_browser_driver)
         pyautogui.FAILSAFE = False
         self._touch = None
@@ -401,7 +401,7 @@ class HumanMovements:
                     self.keyboard.down(K_Keys["ArrowDown"])
                 else:
                     self.keyboard.down(K_Keys["ArrowUp"])
-                asyncio.sleep(random.uniform(0.05, 0.45))
+                await asyncio.sleep(random.uniform(0.05, 0.45))
 
         async def scroll_with_touch(direction, duration):
             if direction:
@@ -431,11 +431,11 @@ class HumanMovements:
                             - utils.clean_negative(offset_to_adjust_to)
                             < bot_constants.PX_VALUE_TO_CHECK_WHEN_SCROLL_TO_POINT
                         ):
-                            asyncio.sleep(random.uniform(0.01, 0.267))
+                            await asyncio.sleep(random.uniform(0.01, 0.267))
                             self.keyboard.up(K_Keys["ArrowUp"])
-                            asyncio.sleep(random.uniform(0.15, 0.6))
+                            await asyncio.sleep(random.uniform(0.15, 0.6))
                         else:
-                            asyncio.sleep(0.3)
+                            await asyncio.sleep(0.3)
                         element_coordinates = self.get_element_location_window_offset(
                             html_web_element
                         )
@@ -459,11 +459,11 @@ class HumanMovements:
                             - utils.clean_negative(element_coordinates["y_offset"])
                             < bot_constants.PX_VALUE_TO_CHECK_WHEN_SCROLL_TO_POINT
                         ):
-                            asyncio.sleep(random.uniform(0.01, 0.267))
+                            await asyncio.sleep(random.uniform(0.01, 0.267))
                             self.keyboard.up(K_Keys["ArrowDown"])
-                            asyncio.sleep(random.uniform(0.15, 0.6))
+                            await asyncio.sleep(random.uniform(0.15, 0.6))
                         else:
-                            asyncio.sleep(0.3)
+                            await asyncio.sleep(0.3)
                         element_coordinates = self.get_element_location_window_offset(
                             html_web_element
                         )
@@ -486,7 +486,7 @@ class HumanMovements:
         ]
 
         offset_adjuster(offset_to_adjust_to, html_web_element)
-        asyncio.sleep(time_to_sleep)
+        await asyncio.sleep(time_to_sleep)
         offset_adjuster(original_y_offset, html_web_element)
 
     async def read_with_arrow_keys(
@@ -507,7 +507,7 @@ class HumanMovements:
                 old_element_coordinates = self.get_element_location_window_offset(
                     html_web_element
                 )
-                asyncio.sleep(0.1)
+                await asyncio.sleep(0.1)
                 element_coordinates = self.get_element_location_window_offset(
                     html_web_element
                 )
@@ -524,7 +524,7 @@ class HumanMovements:
                 old_element_coordinates = self.get_element_location_window_offset(
                     html_web_element
                 )
-                asyncio.sleep(0.1)
+                await asyncio.sleep(0.1)
                 element_coordinates = self.get_element_location_window_offset(
                     html_web_element
                 )
@@ -676,9 +676,9 @@ class HumanMovements:
             :return: True
             """
             self.keyboard.down_persistent(key)
-            asyncio.sleep(random.uniform(1.1, 1.75))
+            await asyncio.sleep(random.uniform(1.1, 1.75))
             self.keyboard.up(key)
-            asyncio.sleep(random.uniform(0.5, 1.5))
+            await asyncio.sleep(random.uniform(0.5, 1.5))
 
         async def scroll_with_touch(direction, duration):
             if direction:

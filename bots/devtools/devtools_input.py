@@ -12,7 +12,7 @@ from bots import utils
 
 
 class Keyboard:
-    async def __init__(self, webdriver: remote_webdriver.WebDriver):
+    def __init__(self, webdriver: remote_webdriver.WebDriver):
         self.webdriver = webdriver
         self.modifiers = 0
         self.is_key_down = False
@@ -61,10 +61,10 @@ class Keyboard:
         async def inner_loop():
             try:
                 self.down(key, options, True)
-                asyncio.sleep(random.uniform(0.5, 0.52))
+                await asyncio.sleep(random.uniform(0.5, 0.52))
                 while self.is_key_down:
                     self.down(key, options, True)
-                    asyncio.sleep(random.uniform(0.04, 0.07))
+                    await asyncio.sleep(random.uniform(0.04, 0.07))
                     # self.down_key_number_of_consecutive_runs += 1
                 self.down_key_number_of_consecutive_runs = 0
             except Exception:
@@ -127,7 +127,7 @@ class Keyboard:
             self.pressed_keys.discard(description["code"])
 
             while self.down_key_number_of_consecutive_runs != 0:
-                asyncio.sleep(0.1)
+                await asyncio.sleep(0.1)
 
             self.webdriver.execute_cdp_cmd(
                 "Input.dispatchKeyEvent",
@@ -154,18 +154,18 @@ class Keyboard:
             else:
                 self.send_character(char)
             if delay:
-                asyncio.sleep(delay)
+                await asyncio.sleep(delay)
 
     async def press(self, key, options=(0,)):
         delay = options
         self.down(key, options)
         if delay:
-            asyncio.sleep(delay)
+            await asyncio.sleep(delay)
         self.up(key)
 
 
 class Mouse:
-    async def __init__(self, webdriver: remote_webdriver.WebDriver, keyboard: Keyboard):
+    def __init__(self, webdriver: remote_webdriver.WebDriver, keyboard: Keyboard):
         self.webdriver = webdriver
         self.keyboard = keyboard
         self.x = 0
@@ -208,7 +208,7 @@ class Mouse:
                     deltaY=p[1] if yDirection else -p[1],
                 ),
             )
-            asyncio.sleep(p[0] / 1000)
+            await asyncio.sleep(p[0] / 1000)
 
     # Irrespective, a huge load of optimizations is still needed here after brushing my math and bitwise skills
     async def mouse_wheel(
@@ -265,14 +265,14 @@ class Mouse:
                     deltaY=deltaYToUse if (yDirection) else -deltaYToUse,
                 ),
             )
-            asyncio.sleep(random.uniform(latency[0], latency[1]) / 1000)
+            await asyncio.sleep(random.uniform(latency[0], latency[1]) / 1000)
 
     async def click(self, x, y, options={"delay": 0}):
         delay = options["delay"]
         self.move(x, y)
         self.down(options)
         if delay:
-            asyncio.sleep(delay)
+            await asyncio.sleep(delay)
         self.up(options)
 
     async def down(self, options={"button": "left", "click_count": 1}):
@@ -328,7 +328,7 @@ class Touchscreen:
             "Input.dispatchTouchEvent",
             dict(type="touchStart", touchPoints=touch_points),
         )
-        asyncio.sleep(random.uniform(0.01, 0.04))
+        await asyncio.sleep(random.uniform(0.01, 0.04))
         self.webdriver.execute_cdp_cmd(
             "Input.dispatchTouchEvent", dict(type="touchEnd", touchPoints=[])
         )
@@ -409,7 +409,7 @@ class Touchscreen:
                 )
             # Makes sure i is not out of index
             if i < len(generated_durations):
-                asyncio.sleep(generated_durations[i])
+                await asyncio.sleep(generated_durations[i])
             else:
-                asyncio.sleep(random.choice(generated_durations))
+                await asyncio.sleep(random.choice(generated_durations))
         return True

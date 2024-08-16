@@ -463,7 +463,7 @@ class Identity:
             print(
                 "VPN Could Not Prove Connected For Some Other Reason, Switching VPN File And Reconnecting"
             )
-            asyncio.sleep(0.8)
+            await asyncio.sleep(0.8)
             self.improvised_public_ip = True
             config_file = utils.fetch_random_file_name_from_directory(
                 config_dir, "ovpn"

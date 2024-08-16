@@ -269,7 +269,7 @@ class BrowserInterface:
         :param time_interval_to_check: number of seconds to wait for before checking, set to zero if wanted instantly
         :return: True if page changed, else false
         """
-        asyncio.sleep(time_interval_to_check)
+        await asyncio.sleep (time_interval_to_check)
         # Switch to the new window and capture its handle
         if self.current_tab_length != len(self.web_browser_driver.window_handles):
             self.web_browser_driver.switch_to.window(self.web_browser_driver.current_window_handle)
@@ -302,7 +302,7 @@ class BrowserInterface:
         return devtools_primary.get_all_cookies(self.web_browser_driver)
 
     async def quit_browser_after_max_alive(self, sleep_time=bot_constants.BOT_MIN_ALIVE_TIME):
-        asyncio.sleep(sleep_time)
+        await asyncio.sleep (sleep_time)
         if hasattr(self, "web_browser_driver"):
             if time.time() - self.time_activated > bot_constants.BOT_MAX_ALIVE_TIME + random.uniform(-6.5, 6.5):
                 print(f"Identity: {self.identity_id} On Process: {self.bot_process_id} Could Not Perform "
@@ -375,7 +375,6 @@ class BrowserInterface:
                 browser_config.add_argument('--ignore-certificate-errors')
             if config.CONTAINERIZED:
                 browser_config.add_argument('--no-sandbox')
-            self._handle_prefs(browser_config)
             if self.user_agent:
                 browser_config.add_argument(f"--user-agent={self.user_agent}")
             browser_config.binary_location = browser_constants.CHROME_BINARY_LOCATION
@@ -386,10 +385,9 @@ class BrowserInterface:
                     browser_config.add_argument("--start-maximized")
             else:
                 browser_config.add_argument(f"--window-size={window_size[0]},{window_size[1]}")
-            browser_config.binary_location = bot_constants.FULL_DIRECTORY_PATH+browser_constants.CHROME_BINARY_LOCATION
+            browser_config.browser_executable_path=bot_constants.FULL_DIRECTORY_PATH+browser_constants.CHROME_BINARY_LOCATION
             self.web_browser_driver = await uc.start(
                 headless=False,
-                browser_executable_path=bot_constants.FULL_DIRECTORY_PATH+bot_constants.CHROME_WEBDRIVER_LOCATION,
                 config=browser_config)
 
         print(f"Bot Process Id {self.bot_process_id} <:::> Web Browser Opened")
@@ -416,7 +414,7 @@ class BrowserInterface:
                 self.user_agent, self.platform)
         print(f"Bot Process Id {self.bot_process_id} <:::> Setting Timezone From Identity")
         # Set Timezone
-        devtools_primary.set_timezone(self.web_browser_driver, self.timezone_id)
+        await devtools_primary.set_timezone(self.web_browser_driver, self.timezone_id)
         # self.web_browser_driver.set_window_position(0, 0)
         if not open_browser_in_full_screen:
             self.web_browser_driver.main_tab.set_window_size(0, 0, *window_size)

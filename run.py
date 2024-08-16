@@ -62,7 +62,7 @@ async def run_bot(
     await web_bot.open_web_browser()
     try:
         web_bot.time_activated = time.time()
-        web_bot.web_browser_driver.get(page_info.get("page_url"))
+        await web_bot.web_browser_driver.get(page_info.get("page_url"))
 
         if random.random() >= identity.ad_keywords_click_probability:
             identity.ad_keywords = None
@@ -81,7 +81,7 @@ async def run_bot(
             in_page_ad_links_name=page_info["in_page_ad_link_elements_name"],
             ad_keywords=identity.ad_keywords,
         )
-        asyncio.sleep(random.uniform(0, 1))
+        await asyncio.sleep(random.uniform(0, 1))
         if boc.ENGAGE_READER:
             if web_bot.identity.device_type == "is_pc" and random.random() < 0.2:
                 web_bot.move_mouse_to_random_area_on_screen()
@@ -94,7 +94,7 @@ async def run_bot(
                 == "ad_clicked"
             ):
                 try:
-                    asyncio.sleep(random.uniform(0.7, 1.5))
+                    await asyncio.sleep(random.uniform(0.7, 1.5))
                     body_element = WebDriverWait(web_bot.web_browser_driver, 4).until(
                         EC.presence_of_element_located((By.TAG_NAME, "body"))
                     )
@@ -134,19 +134,18 @@ async def run_bot(
                 web_bot.move_mouse_to_fool_exit_point()
         else:
             # Just a feature for testing, bot doesn't engage if engage-reader was set to false
-            asyncio.sleep(
+            await asyncio.sleep(
                 random.randint(boc.BOT_MIN_ALIVE_TIME, boc.BOT_MAX_ALIVE_TIME)
             )
 
         try:
-            if web_bot.web_browser_driver.session_id:
-                print("Updating Cookies To Cloud")
-                web_bot.update_cookies_to_cloud()
-                web_bot.release_proxies()
-                web_bot.proxy_requests_session.close()
-                web_bot.cached_requests_session.close()
-                web_bot.web_browser_driver.quit()
-                DataController.ping_is_alive(BOT_ID)
+            print("Updating Cookies To Cloud")
+            web_bot.update_cookies_to_cloud()
+            web_bot.release_proxies()
+            web_bot.proxy_requests_session.close()
+            web_bot.cached_requests_session.close()
+            web_bot.web_browser_driver.stop()
+            DataController.ping_is_alive(BOT_ID)
         except ConnectionRefusedError:
             print(
                 "Most likely the Cookie Update job has been done by the daemon responsible for keeping reading "

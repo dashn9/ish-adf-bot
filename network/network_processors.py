@@ -286,7 +286,7 @@ class NetworkRunner:
             except (SSLError, ProxyError):
                 # fix against ip leaks
                 if generate_empty_response_on_fail and retries < 1:
-                    asyncio.sleep(0.5)
+                    await asyncio.sleep(0.5)
                     return network_through_proxy(retries=retries + 1)
                 else:
                     response = main_requests.Response()

@@ -44,7 +44,7 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
                 key = K_Keys["ArrowUp"]
             self.read_with_arrow_keys(html_web_element, px_to_adjust_by, key, direction)
             # Wait to complete scroll
-            asyncio.sleep(0.12)
+            await asyncio.sleep(0.12)
         elif mode == "wheel":
             if random.random() < 0.65:
                 element_screen_position = (
@@ -123,7 +123,7 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
                         "Set Function Asynchronous Parameter To False, If Expecting Dict Of Mouse Coordinates"
                     )
                 kwargs["present_mouse_points"] = present_mouse_points
-                asyncio.sleep(random.uniform(0, 1))
+                await asyncio.sleep(random.uniform(0, 1))
                 read_with_mouse_to_scrollbar()
         kwargs["read_mode_time_used"] = time.time() - read_mode_time_used
         return kwargs
@@ -138,7 +138,7 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
     ):
         # This is to make up for the edge case, in the event there is no reason to simulate a read
         if total_px_to_adjust_by <= 0:
-            asyncio.sleep(read_time)
+            await asyncio.sleep(read_time)
             return True
         # Stamping the initial time before content will be read or adjusted by with px_to_adjust_by
         read_mode_initial_time_stamp = time.time()
@@ -223,7 +223,7 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
                 time_to_randomly_wait_before_scrolling_up = random.uniform(
                     0.01, time_to_pause_activity * 0.17
                 )
-                asyncio.sleep(time_to_randomly_wait_before_scrolling_up)
+                await asyncio.sleep(time_to_randomly_wait_before_scrolling_up)
 
                 px_to_move_by = browser_inner_size.get("height") * random.uniform(
                     0.15, 0.35
@@ -249,7 +249,7 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
                 )
 
                 #    print("Time to pause activity one ==>", time_to_pause_activity)
-                asyncio.sleep(max(0, time_to_pause_activity))
+                await asyncio.sleep(max(0, time_to_pause_activity))
 
                 # Attempt to return page to original point before going up
                 kwargs["read_by_mode_data"] = self.read_by_mode(
@@ -270,9 +270,9 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
                 #    print("Time to pause activity two ==>", time_to_pause_activity)
 
                 # Finally, sleep for the remaining time if remaining
-                asyncio.sleep(max(0, time_to_pause_activity))
+                await asyncio.sleep(max(0, time_to_pause_activity))
             else:
-                asyncio.sleep(time_to_pause_activity)
+                await asyncio.sleep(time_to_pause_activity)
 
         # Store read_by_mode data at each function iteration to be repassed, reason is for read_by_mode
         # mouse_to_scrollbar mode
@@ -404,7 +404,7 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
             "y_offset"
         )
         # This sleep is to simulate a pause at the beginning of the article
-        asyncio.sleep(random.uniform(2.45, 5.24))
+        await asyncio.sleep(random.uniform(2.45, 5.24))
         remaining_reading_content_percentage = content_read_percentage
         browser_inner_size = self.get_browser_inner_size()
 

@@ -17,7 +17,7 @@ from humanbehaviourmechanics.human_movements import HumanMovements
 
 
 class SmartAdsInteractions:
-    async def __init__(
+    def __init__(
         self,
         no_of_clicks=0,
     ):
@@ -62,7 +62,7 @@ class SmartAdsInteractions:
                     return False
             if not ads_dimensions:
                 return
-            asyncio.sleep(0.5)
+            await asyncio.sleep(0.5)
             if not open_vignette:
                 self.ad_click(random.choice(ads_dimensions), revert_back=False)
             else:
@@ -70,7 +70,7 @@ class SmartAdsInteractions:
             print(
                 f"Bot Process Id {self.bot_process_id} <:::> Vignette ad trigger attempted"
             )
-            asyncio.sleep(0.5)
+            await asyncio.sleep(0.5)
             self.trigger_vignette()
         except TimeoutException:
             # I no longer use Expected conditions in the iframe_check for locating elements, so this branch of code may
@@ -113,7 +113,7 @@ class SmartAdsInteractions:
                     self.trigger_vignette()
             elif self.ad_to_click == "in_page" and self.in_page_ad_links_name:
                 self.trigger_vignette()
-                asyncio.sleep(0.4)
+                await asyncio.sleep(0.4)
                 ads_dimensions = self.locate_ad_elements_in_iframe(
                     ads_elements_type=self.in_page_ad_links_type,
                     ads_elements_name=self.in_page_ad_links_name,
@@ -161,7 +161,7 @@ class SmartAdsInteractions:
                             f"Try again"
                         )
             if ad_click_success and switch_focus_to_new_tab:
-                asyncio.sleep(1)
+                await asyncio.sleep(1)
                 self.web_browser_driver.switch_to.window(
                     self.web_browser_driver.window_handles[-1]
                 )
@@ -268,7 +268,7 @@ class SmartAdsInteractions:
                 max_overshoot=35,
                 probability_of_overshoot=round(random.random(), 2),
             )
-            asyncio.sleep(random.uniform(0.1, 0.4))
+            await asyncio.sleep(random.uniform(0.1, 0.4))
             pyautogui.click()
             if revert_back:
                 self.revert_to_main_page()
