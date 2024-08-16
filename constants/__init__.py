@@ -8,7 +8,7 @@ configParser = configparser.ConfigParser()
 configParser.read(boc.FULL_DIRECTORY_PATH + "/config.ini")
 
 
-async def load_configurations():
+def load_configurations():
     if "OPTIONS" in configParser:
         options = configParser["OPTIONS"]
         boc.NORDVPN_OVPN_FILE_PATH = options.get(

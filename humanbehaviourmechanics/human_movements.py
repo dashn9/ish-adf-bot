@@ -379,9 +379,7 @@ class HumanMovements:
                     probability_of_overshoot=round(random.random(), 2),
                 )
         else:
-            self.browser_action_chains.move_to_element_with_offset(
-                html_web_element, 20, 20
-            ).perform()
+            html_web_element.scroll_into_view()
 
     async def scroll_to_percentage_in_element(
         self, html_web_element, percentage_to_scroll_to, time_to_sleep=1
@@ -775,7 +773,7 @@ class HumanMovements:
                         )
 
         else:
-            self.browser_action_chains.move_to_element(html_web_element)
+            html_web_element.scroll_into_view()
 
     async def send_mouse_to_scrollbar(self, is_asychronous=False):
         scroll_bar = self.get_scroll_bar_coordinates(2)

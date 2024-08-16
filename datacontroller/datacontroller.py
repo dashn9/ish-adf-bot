@@ -9,7 +9,7 @@ class DataController:
     server_addr = IDENTITY_API_BASE_HOST
     timeout = 12
 
-    async def __init__(self):
+    def __init__(self):
         pass
 
     async def fetch_an_identity(self, method, value):

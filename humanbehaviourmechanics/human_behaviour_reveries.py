@@ -1,7 +1,7 @@
 import ctypes
 import pyautogui
 import random
-import time
+import asyncio
 from multiprocessing import Value
 
 from selenium.common import StaleElementReferenceException
@@ -47,8 +47,8 @@ class HumanBehaviourReveries:
     ):
         if HumanBehaviourReveries.active_on_mouse_movement.value < 0:
             HumanBehaviourReveries.active_on_mouse_movement.value = self.bot_process_id
-            self.bring_window_to_front()
-            self.simulate_human_mouse_move_behavior_to_area(
+            asyncio.create_task(self.bring_window_to_front())
+            await self.simulate_human_mouse_move_behavior_to_area(
                 bounds["x"],
                 bounds["y"],
                 bounds["width"],

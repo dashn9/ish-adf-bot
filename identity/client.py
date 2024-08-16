@@ -2,7 +2,7 @@ import json
 import random
 import string
 import subprocess
-import time
+import asyncio
 
 from datacontroller.datacontroller import DataController
 from constants import bot_constants
@@ -12,7 +12,7 @@ from bots import utils
 class Identity:
     ovpn_process = None
 
-    async def __init__(
+    def __init__(
         self,
         id=None,
         device_type="",
@@ -109,7 +109,7 @@ class Identity:
         self.proxy_release_url = None
 
     async def resolve_identity_from_cloud(self, method, value):
-        identity = self.data_controller.fetch_an_identity(method, value)
+        identity = await self.data_controller.fetch_an_identity(method, value)
         if not identity:
             raise ValueError(
                 "Identity Fetched Does Not Appear To Be What It Is, Something Has To Be Wrong With Given"
@@ -167,17 +167,16 @@ class Identity:
         self._raw_identity = identity
 
     async def auto_initiate_identity(self, method, method_value):
-        self.resolve_identity_from_cloud(method, method_value)
-        self.user_agent = self.user_agent or self.form_user_agent(
+        await self.resolve_identity_from_cloud(method, method_value)
+        # I necessarily do not need to await this call, however it's a CPU bound task
+        self.user_agent = self.user_agent or await self.form_user_agent(
             self.os,
             self.platform.get("version", None) or self.os_version,
             self.device_model,
             self.browser_name,
             self.browser_version,
         )
-        self.resolve_timezone()
-        # self.connect_vpn(self.vpn_client, self.ovpn_file_name)
-        self.resolve_referer()
+        await asyncio.gather(self.resolve_timezone(), self.resolve_referer())
 
     async def resolve_timezone(self):
         resolved_proxy_url = self.proxy_url if bot_constants.USE_PROXY else None
@@ -252,14 +251,14 @@ class Identity:
         browser_name: str,
         browser_version: list,
     ):
-        async def standard_browser_version_replacer(ua: str, browser_version: list):
+        def standard_browser_version_replacer(ua: str, browser_version: list):
             return (
                 ua.replace("<apple_web_kit_version>", browser_version[0])
                 .replace("<browser_version>", browser_version[1])
                 .replace("<safari_version>", browser_version[2])
             )
 
-        async def edge_browser_version_replacer(ua: str, browser_version: list):
+        def edge_browser_version_replacer(ua: str, browser_version: list):
             return (
                 ua.replace("<apple_web_kit_version>", browser_version[0])
                 .replace("<chrome_version>", browser_version[1])

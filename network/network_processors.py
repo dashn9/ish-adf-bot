@@ -15,7 +15,7 @@ from constants import config
 
 
 class NetworkRunner:
-    async def __init__(self, bot_process_id, identity: Identity, use_proxy=False):
+    def __init__(self, bot_process_id, identity: Identity, use_proxy=False):
         self.cached_requests_session = requests_cache.CachedSession(
             bot_constants.FULL_DIRECTORY_PATH + "/caches/request_caches/requests_cache"
         )

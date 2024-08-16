@@ -1,13 +1,13 @@
+import asyncio
 import json
 import os
 import random
 import time
 import tempfile
 from functools import reduce
-from selenium.webdriver import ActionChains
 from threading import Thread
 
-from selenium.webdriver.remote.webdriver import WebElement
+from nodriver import Element as WebElement
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
@@ -21,7 +21,7 @@ from constants import bot_constants, browser_constants, config
 
 
 class BrowserInterface:
-    async def __init__(self, browser_to_use_id=browser_constants.CHROME_ID,
+    def __init__(self, browser_to_use_id=browser_constants.CHROME_ID,
                  bot_process_id=None, timezone_id=None, device_type="is_pc", hardware_concurrency=2,
                  has_touch="no_touch", has_mouse="no_mouse", languages=["en-US", "en"], user_agent=None, hardware=None,
                  platform={}, screen_width=1920, screen_height=1080, device_pixel_ratio=1, cookies=list(),
@@ -47,7 +47,6 @@ class BrowserInterface:
         self.cookies = cookies
         self.cookies_update_callback = cookies_update_callback
         self.identity_id = identity_id
-        self.browser_action_chains = None
 
     async def wait_for_element_visible(self, locator):
         """
@@ -79,7 +78,7 @@ class BrowserInterface:
         return: Return True On Success
         """
         try:
-            self.web_browser_driver.execute_script(f"window.open();")
+            self.web_browser_driver.main_tab.evaluate(f"window.open();")
             self.web_browser_driver.switch_to.window(self.web_browser_driver.window_handles[-1])
             if url:
                 self.web_browser_driver.get(url)
@@ -122,13 +121,13 @@ class BrowserInterface:
         return False
 
     async def get_browser_window_body_size(self):
-        return dict(width=self.web_browser_driver.execute_script("return document.body.getBoundingClientRect().width"),
-                    height=self.web_browser_driver.execute_script(
+        return dict(width=await self.web_browser_driver.main_tab.evaluate("return document.body.getBoundingClientRect().width"),
+                    height=await self.web_browser_driver.main_tab.evaluate(
                         "return document.body.getBoundingClientRect().height"))
 
     async def get_browser_inner_size(self):
-        return dict(width=self.web_browser_driver.execute_script("return window.innerWidth"),
-                    height=self.web_browser_driver.execute_script("return window.innerHeight"))
+        return dict(width=await self.web_browser_driver.main_tab.evaluate("return window.innerWidth"),
+                    height=await self.web_browser_driver.main_tab.evaluate("return window.innerHeight"))
 
     async def get_scroll_bar_coordinates(self, relative_to=0):
         """
@@ -136,20 +135,20 @@ class BrowserInterface:
         :param relative_to: To Determine The Boundaries By Which To Calculate The Positions
         :return: The Position And Dimensions Of The ScrollBar In A Dictionary, False If No Scroll Bar Exists
         """
-        browser_window_body_size = self.get_browser_window_body_size()
+        browser_window_body_size = await self.get_browser_window_body_size()
 
-        browser_inner_size = self.get_browser_inner_size()
+        browser_inner_size = await self.get_browser_inner_size()
 
         if browser_window_body_size.get("height") <= browser_inner_size.get("height"):
             # No Scrollbar
             return False
 
         # Fetch Browser Document Inner Offset
-        window_page_y_offset = self.web_browser_driver.execute_script("return window.pageYOffset")
+        window_page_y_offset = self.web_browser_driver.main_tab.evaluate("return window.pageYOffset")
         window_page_y_offset = 1 if window_page_y_offset <= 0 else window_page_y_offset
 
-        browser_outer_size = dict(width=self.web_browser_driver.execute_script("return window.outerWidth"),
-                                  height=self.web_browser_driver.execute_script("return window.outerHeight"))
+        browser_outer_size = dict(width=self.web_browser_driver.main_tab.evaluate("return window.outerWidth"),
+                                  height=self.web_browser_driver.main_tab.evaluate("return window.outerHeight"))
 
         scroll_bar_x_position = browser_window_body_size.get("width")
         scroll_bar_y_position = utils.fetch_percentage_value(
@@ -207,13 +206,13 @@ class BrowserInterface:
         :return: Offset Locations Of Element(tuple) And Browser(tuple) In a Dict()
         """
         # Getting HTML Web Element Coordinates Which Are Relative From The Window Point And Dimensions
-        web_element_location_dimensions = html_web_element.rect
+        web_element_location_dimensions = html_web_element.ge
 
         # Fetch Browser Document Inner Offset
-        window_page_y_offset = self.web_browser_driver.execute_script("return window.pageYOffset")
-        window_page_x_offset = self.web_browser_driver.execute_script("return window.pageXOffset")
+        window_page_y_offset = self.web_browser_driver.main_tab.evaluate("return window.pageYOffset")
+        window_page_x_offset = self.web_browser_driver.main_tab.evaluate("return window.pageXOffset")
 
-        browser_inner_size = self.get_browser_inner_size()
+        browser_inner_size = await self.get_browser_inner_size()
         browser_window_rect = self.web_browser_driver.get_window_rect()
         web_element_x_offset = web_element_location_dimensions.get("x") + browser_window_rect.get("x") \
                                + (browser_window_rect.get("width") - browser_inner_size["width"]) \
@@ -233,7 +232,7 @@ class BrowserInterface:
         This method calculates the dimensions of the document page of a browser relative to the screen
         :return: A dictionary holding document dimensions
         """
-        browser_inner_size = self.get_browser_inner_size()
+        browser_inner_size = await self.get_browser_inner_size()
         browser_window_rect = self.web_browser_driver.get_window_rect()
         return dict(y=browser_window_rect["y"] + (browser_window_rect["height"] - browser_inner_size["height"]),
                     x=browser_window_rect["x"] + (browser_window_rect["width"] - browser_inner_size["width"]))
@@ -245,22 +244,21 @@ class BrowserInterface:
         :return: Offset Locations Of Element(tuple) And Browser(tuple) In a Dict()
         """
         # Getting HTML Web Element Coordinates Which Are Relative From The Window Point) And Dimensions
-        web_element_location_dimensions = html_web_element.rect
+        web_element_location_dimensions = await html_web_element.get_position()
 
         # Fetch Browser Document Inner Offset
-        window_page_y_offset = self.web_browser_driver.execute_script("return window.pageYOffset")
-        window_page_x_offset = self.web_browser_driver.execute_script("return window.pageXOffset")
+        window_page_y_offset = self.web_browser_driver.main_tab.evaluate("return window.pageYOffset")
+        window_page_x_offset = self.web_browser_driver.main_tab.evaluate("return window.pageXOffset")
 
         web_element_x_offset = web_element_location_dimensions.get("x") - window_page_x_offset
         web_element_y_offset = web_element_location_dimensions.get("y") - window_page_y_offset
 
-        web_element_bottom = web_element_y_offset + web_element_location_dimensions.get(
-            "height")
+        web_element_bottom = web_element_y_offset + web_element_location_dimensions.height
         return {"x_offset": web_element_x_offset, "y_offset": web_element_y_offset, "bottom": web_element_bottom}
 
     async def get_window_document_offsets(self):
-        return {"y_offset": self.web_browser_driver.execute_script("return window.pageYOffset"),
-                "x_offset": self.web_browser_driver.execute_script("return window.pageXOffset")}
+        return {"y_offset": self.web_browser_driver.main_tab.evaluate("return window.pageYOffset"),
+                "x_offset": self.web_browser_driver.main_tab.evaluate("return window.pageXOffset")}
 
     async def bring_window_to_front(self):
         self.web_browser_driver.switch_to.window(self.web_browser_driver.current_window_handle)
@@ -364,14 +362,13 @@ class BrowserInterface:
         # Opens a Chrome browser
         if self.browser_to_use_id == browser_constants.CHROME_ID:
             print(f"Bot Process Id {self.bot_process_id} <:::> Opening Chrome Browser")
-            browser_config = uc.Config()
-            browser_config.browser_args['--disable-background-networking',
+            browser_config = uc.Config(browser_args=['--disable-background-networking',
                 '--disable-background-timer-throttling',
                 '--disable-backgrounding-occluded-windows',
                 '--enable-logging=0',
                 '--disable-remote-fonts',
                 '--disable-extensions',
-                '--disable-gpu']
+                '--disable-gpu'])
             # browser_config.add_experimental_option('prefs',
             #                                         {'intl.accept_languages': ','.join(self.languages)})
             if browser_constants.IGNORE_SSL:
@@ -392,7 +389,7 @@ class BrowserInterface:
             browser_config.binary_location = bot_constants.FULL_DIRECTORY_PATH+browser_constants.CHROME_BINARY_LOCATION
             self.web_browser_driver = await uc.start(
                 headless=False,
-                driver_executable_path=bot_constants.FULL_DIRECTORY_PATH+bot_constants.CHROME_WEBDRIVER_LOCATION,
+                browser_executable_path=bot_constants.FULL_DIRECTORY_PATH+bot_constants.CHROME_WEBDRIVER_LOCATION,
                 config=browser_config)
 
         print(f"Bot Process Id {self.bot_process_id} <:::> Web Browser Opened")
@@ -420,14 +417,10 @@ class BrowserInterface:
         print(f"Bot Process Id {self.bot_process_id} <:::> Setting Timezone From Identity")
         # Set Timezone
         devtools_primary.set_timezone(self.web_browser_driver, self.timezone_id)
-        self.web_browser_driver.implicitly_wait(bot_constants.IMPLICITLY_WAIT_TIME)
         # self.web_browser_driver.set_window_position(0, 0)
         if not open_browser_in_full_screen:
             self.web_browser_driver.main_tab.set_window_size(0, 0, *window_size)
 
         self.web_browser_driver.request_interceptor = self.request_interceptor
         self.web_browser_driver.response_interceptor = self.response_interceptor
-        self.browser_action_chains = ActionChains(self.web_browser_driver)
-        t = Thread(target=self.quit_browser_after_max_alive)
-        t.daemon = True
-        t.start()
+        asyncio.create_task(self.quit_browser_after_max_alive())

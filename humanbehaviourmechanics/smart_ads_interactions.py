@@ -1,7 +1,8 @@
-import pyautogui
 import random
 import time
+import asyncio
 
+import pyautogui
 from selenium.common.exceptions import (
     TimeoutException,
     WebDriverException,
@@ -48,12 +49,12 @@ class SmartAdsInteractions:
     async def trigger_vignette(self, open_vignette=False):
         try:
             if not open_vignette:
-                ads_dimensions = self.locate_ad_elements_in_iframe(
+                ads_dimensions = await self.locate_ad_elements_in_iframe(
                     ads_elements_type=self.vignette_ad_close_type,
                     ads_elements_name=self.vignette_ad_close_name,
                 )
             else:
-                ads_dimensions = self.locate_ad_elements_in_iframe(
+                ads_dimensions = await self.locate_ad_elements_in_iframe(
                     ads_elements_type=self.vignette_ad_open_type,
                     ads_elements_name=self.vignette_ad_open_name,
                 )
@@ -175,7 +176,7 @@ class SmartAdsInteractions:
     ):
         async def iframe_check():
             try:
-                iframe = self.web_browser_driver.find_element(By.TAG_NAME, "iframe")
+                iframe = self.web_browser_driver.main_tab.query_selector("iframe")
                 if self.device_type == "is_smartphone":
                     iframe_offset = self.get_element_location_window_offset(iframe)
                 else:

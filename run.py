@@ -47,36 +47,19 @@ async def restart_plug():
 if FETCH_BY == "scr":
     FETCH_BY_VALUE = [boc.SCREEN_WIDTH, boc.SCREEN_HEIGHT]
 
-identity = Identity()
-identity.auto_initiate_identity(FETCH_BY, FETCH_BY_VALUE)
 
-page_info = DataController.fetch_active_random_url()
-page_content_element_type = By.ID
-page_content_element_name = page_info.get("page_content_element_name")
-related_articles_elements_type = By.CLASS_NAME
-related_articles_elements_name = page_info.get("related_articles_elements_name")
-if page_info.get("page_content_element_type") == "class":
-    page_content_element_type = By.CLASS_NAME
-elif page_info.get("page_content_element_type") == "tag_name":
-    page_content_element_type = By.TAG_NAME
-
-if page_info.get("related_articles_elements_type") == "id":
-    related_articles_elements_type = By.ID
-elif page_info.get("related_articles_elements_type") == "tag_name":
-    related_articles_elements_type = By.TAG_NAME
-
-
-boc.PROXY_WHITELISTED_DOMAINS = page_info.get("proxy_domain_whitelists", "*")
-
-
-async def run_bot(identity, process_id):
+async def run_bot(
+    identity: Identity,
+    page_info: dict,
+    process_id,
+):
     web_bot = WebBot(
         identity=identity,
         browser_to_use_id=brc.CHROME_ID,
         bot_process_id=process_id,
         no_of_clicks=page_info["page_clicks"],
     )
-    web_bot.open_web_browser()
+    await web_bot.open_web_browser()
     try:
         web_bot.time_activated = time.time()
         web_bot.web_browser_driver.get(page_info.get("page_url"))
@@ -88,7 +71,7 @@ async def run_bot(identity, process_id):
         if ad_click_probability <= identity.ad_click_probability:
             ad_to_click = identity.ad_type_to_click
 
-        web_bot.set_ad_behaviour_environment(
+        await web_bot.set_ad_behaviour_environment(
             ad_to_click=ad_to_click,
             vignette_ad_close_type=page_info["vignette_close_ad_elements_type"],
             vignette_ad_close_name=page_info["vignette_close_ad_elements_name"],
@@ -191,4 +174,16 @@ async def run_bot(identity, process_id):
     restart_plug()
 
 
-asyncio.run(run_bot(identity, 0))
+async def main():
+    identity = Identity()
+
+    await identity.auto_initiate_identity(FETCH_BY, FETCH_BY_VALUE)
+
+    page_info = await DataController.fetch_active_random_url()
+
+    boc.PROXY_WHITELISTED_DOMAINS = page_info.get("proxy_domain_whitelists", "*")
+
+    await run_bot(identity, page_info, 0)
+
+
+asyncio.run(main())

@@ -2,10 +2,12 @@ import ctypes
 import pyautogui
 import random
 import time
+import asyncio
 from multiprocessing import Value
 
 from selenium.webdriver.common.by import By
-from selenium.webdriver.remote import webdriver as remote_webdriver
+
+from nodriver import Element as WebElement
 
 from bots import utils as global_utils
 from constants import bot_constants, device_constants
@@ -18,7 +20,7 @@ from humanbehaviourmechanics.smart_ads_interactions import SmartAdsInteractions
 class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourReveries):
     active_on_mouse_movement = Value(ctypes.c_int, -1)
 
-    async def __init__(self, reading_speed=900, no_of_clicks=0):
+    def __init__(self, reading_speed=900, no_of_clicks=0):
         self.reading_speed = reading_speed
         HumanMovements.__init__(self)
         SmartAdsInteractions.__init__(self, no_of_clicks)
@@ -26,7 +28,7 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
 
     async def read_by_mode(
         self,
-        html_web_element: remote_webdriver.WebElement,
+        html_web_element: WebElement,
         px_to_adjust_by,
         mode="arrow_keys",
         direction=True,
@@ -141,11 +143,13 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
         # Stamping the initial time before content will be read or adjusted by with px_to_adjust_by
         read_mode_initial_time_stamp = time.time()
 
-        if self.smart_ad_click():
+        if await self.smart_ad_click():
             return "ad_clicked"
 
-        element_coordinates = self.get_element_location_window_offset(html_web_element)
-        browser_inner_size = self.get_browser_inner_size()
+        element_coordinates = await self.get_element_location_window_offset(
+            html_web_element
+        )
+        browser_inner_size = await self.get_browser_inner_size()
 
         element_base_offset = element_coordinates.get("y_offset")
 
@@ -235,7 +239,7 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
 
                 # modifying time_to_pause_activity on how long to wait for after navigating up. expected mean time to
                 # be around 45% which averagely should not be more than half of time_to_pause_activity
-                time_to_pause_activity = global_utils.fetch_percentage_value(
+                time_to_pause_activity = await global_utils.fetch_percentage_value(
                     time_to_pause_activity,
                     random.uniform(35, 55)
                     - (
@@ -320,7 +324,7 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
 
     async def calculate_and_generate_page_read_time(
         self,
-        html_web_element_to_read: remote_webdriver.WebElement = None,
+        html_web_element_to_read: WebElement = None,
         reading_speed=700,
         offset=20,
     ):
@@ -346,7 +350,7 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
         # Convert To Seconds And Return
         return round(seconds_to_read)
 
-    async def read_element_content(self, html_web_element: remote_webdriver.WebElement):
+    async def read_element_content(self, html_web_element: WebElement):
         """
         This Method Scrolls The Web Page To Put Requested Web Element In View
         :param html_web_element: HTML Web Element To Scroll To
@@ -359,7 +363,7 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
 
         async def read(
             read_time,
-            html_web_element: remote_webdriver.WebElement,
+            html_web_element: WebElement,
             mode,
             percentage_of_content_to_read=100,
         ):
@@ -375,13 +379,14 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
             nonlocal px_owing
             # Get The Total Pixels To Move By Using The percentage_of_content_to_read On html_web_element Height
             total_px_to_adjust_by = (
-                global_utils.fetch_percentage_value(
-                    html_web_element.rect["height"], percentage_of_content_to_read
+                await global_utils.fetch_percentage_value(
+                    await html_web_element.get_position().height,
+                    percentage_of_content_to_read,
                 )
                 + px_owing
             )
             px_owing = min(0, total_px_to_adjust_by)
-            return self.smart_human_like_content_navigator(
+            return await self.smart_human_like_content_navigator(
                 read_time, html_web_element, total_px_to_adjust_by, mode
             )
 
