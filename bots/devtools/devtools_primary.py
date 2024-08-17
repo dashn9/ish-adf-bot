@@ -1,3 +1,6 @@
+import base64
+
+from typing import Callable, Optional, List, Dict
 from nodriver import Browser, cdp
 
 
@@ -57,6 +60,58 @@ async def get_all_cookies(web_driver: Browser):
 
 async def clear_all_cookies(web_driver: Browser):
     await web_driver.cookies.clear()
+
+
+async def enable_network_interception(web_driver: Browser):
+    await web_driver.connection.send(cdp.fetch.enable())
+
+
+async def add_request_interception(
+    web_driver: Browser, req_fufiller: Callable[[cdp.fetch.RequestPaused], bool]
+):
+    web_driver.connection.add_handler(cdp.fetch.RequestPaused, req_fufiller)
+
+
+async def continue_request(
+    web_driver: Browser,
+    request_id: str,
+    url: Optional[str] = None,
+    method: Optional[str] = None,
+    post_data: Optional[str] = None,
+    headers: Optional[List[Dict[str, str]]] = None,
+    intercept_response: Optional[bool] = None,
+):
+    await web_driver.connection.send(
+        cdp.fetch.continue_request(
+            request_id=request_id,
+            url=url,
+            method=method,
+            post_data=(base64.b64encode(post_data).decode() if post_data else None),
+            headers=headers,
+            intercept_response=intercept_response,
+        )
+    )
+
+
+async def fulfill_request(
+    web_driver: Browser,
+    request_id: str,
+    response_code: int,
+    response_headers: Optional[List[Dict[str, str]]] = None,
+    binary_response_headers: Optional[str] = None,
+    body: Optional[str] = None,
+    response_phrase: Optional[str] = None,
+):
+    await web_driver.connection.send(
+        cdp.fetch.fulfill_request(
+            request_id=request_id,
+            response_code=response_code,
+            response_headers=response_headers,
+            binary_response_headers=binary_response_headers,
+            body=base64.b64encode(body).decode() if body else None,
+            response_phrase=response_phrase,
+        )
+    )
 
 
 async def set_all_cookies(web_driver: Browser, cookies):

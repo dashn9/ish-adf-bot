@@ -1,16 +1,6 @@
-undetected_chromedriver
-selenium
-selenium_wire
+nodriver
+aiohttp-client-cache
+aiosqlite
 pyautogui
 pyclick
 requests_cache
-
-# These dependencies are necessary to make the application dependencies work properly
-
-# Selenium-wire is no longer maintained as of January 2024 and the project depends on package blinker, 
-# specifically file blinker._saferef that is no longer available in latest blinker versions 1.8.0, 1.8.1 and 1.8.2 apparently.
-blinker<1.8.0
-
-# undetected_chromedriver requires a module called disutils which was deprecated in Python3.10 and removed in Python3.12
-# Installing this fixes the issue
-setuptools

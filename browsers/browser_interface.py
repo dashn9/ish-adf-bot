@@ -412,6 +412,7 @@ class BrowserInterface:
         if not open_browser_in_full_screen:
             await self.web_browser_driver.main_tab.set_window_size(0, 0, *window_size)
 
-        self.web_browser_driver.request_interceptor = self.request_interceptor
+        await devtools_primary.enable_network_interception(self.web_browser_driver)
+        await devtools_primary.add_request_interception(self.web_browser_driver, self.request_interceptor)
         self.web_browser_driver.response_interceptor = self.response_interceptor
         asyncio.create_task(self.quit_browser_after_max_alive())
