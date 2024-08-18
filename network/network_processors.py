@@ -42,7 +42,7 @@ class NetworkRunner:
     @asynccontextmanager
     async def proxy_cached_session(self):
         async with CachedSession(
-            cache_name=SQLiteBackend(
+            cache=SQLiteBackend(
                 bot_constants.FULL_DIRECTORY_PATH
                 + "/caches/request_caches/proxy_requests_cache"
             ),
@@ -57,7 +57,7 @@ class NetworkRunner:
             try:
                 async with self.proxy_cached_session() as session:
                     print(  # add to config,
-                        session.request(
+                        await session.request(
                             url=self.identity.proxy_release_url,
                             method="GET",
                             proxies=self.proxy,
@@ -74,7 +74,7 @@ class NetworkRunner:
             # self.referer_use_times += 1
 
     async def track_request_size(self, request: cdp.network.Request):
-        request_size = len(request.content or "") / 1024
+        request_size = len(request.post_data or "") / 1024
         self.total_request_size += request_size
 
     async def print_total_usage(self):
@@ -131,6 +131,7 @@ class NetworkRunner:
         :return: True On Success, False On Failure
         """
         if response:
+            body = await response.text()
             try:
                 if (
                     (
@@ -141,9 +142,6 @@ class NetworkRunner:
                     and request.method == "GET"
                     and response.status == 200
                 ):
-                    print("here")
-                    body = await response.text()
-                    print(body[:100])
                     if (
                         body.find("<!DOCTYPE") == 0
                         or body.find("<html") == 0
@@ -211,9 +209,8 @@ class NetworkRunner:
                                     r"(<script>)|(<script .*?>)",
                                     True,
                                 )
-                            body = body.encode("utf-8")
                             return body
-                return response.content
+                return body
             except Exception:
                 pass
             self.identity.referrer = ""
@@ -253,7 +250,7 @@ class NetworkRunner:
                                     cdp.fetch.HeaderEntry(k, v)
                                     for k, v in response.headers.items()
                                 ],
-                                body=response_body,
+                                body=response_body.encode(),
                             )
                         )
                         return True
@@ -279,22 +276,27 @@ class NetworkRunner:
                     )
                 return False
 
-        asyncio.create_task(self.track_request_size(request))
+        await self.track_request_size(request)
         if config.PRINT_NETWORK:
             print(f"Request url: {request.url}[{request.method}]")
-            self.print_total_usage()
+            await self.print_total_usage()
         await self.inject_referer_into_header(request)
         if bot_constants.PROXY_WHITELISTED_DOMAINS == "*":
             if utils.url_ends_with(
                 request, bot_constants.PROXY_BLACKLISTED_EXTENSIONS
             ) or utils.has_string_in(reqHost, bot_constants.PROXY_BLACKLISTED_DOMAINS):
-                await devtools_primary.continue_request(
-                    self.web_browser_driver,
-                    pausedRequest.request_id,
-                    headers=request.headers,
+                asyncio.create_task(
+                    devtools_primary.continue_request(
+                        self.web_browser_driver,
+                        pausedRequest.request_id,
+                        headers=[
+                            cdp.fetch.HeaderEntry(k, v)
+                            for k, v in request.headers.items()
+                        ],
+                    )
                 )
             else:
-                network_through_proxy()
+                asyncio.create_task(network_through_proxy())
         # fetching driver.current_url while a page is loading posed some issues, you can find alternate ways to
         # implement the check of if current url equates browser active loading url
         elif not (
@@ -310,16 +312,14 @@ class NetworkRunner:
                 reqHost, bot_constants.PROXY_BLACKLISTED_DOMAINS
             )
         ):
-            print(pausedRequest.request_id)
-            asyncio.create_task(network_through_proxy())
-            # asyncio.create_task(
-            #     devtools_primary.continue_request(
-            #         self.web_browser_driver,
-            #         pausedRequest.request_id,
-            #         headers=[
-            #             cdp.fetch.HeaderEntry(k, v) for k, v in request.headers.items()
-            #         ],
-            #     )
-            # )
+            asyncio.create_task(
+                devtools_primary.continue_request(
+                    self.web_browser_driver,
+                    pausedRequest.request_id,
+                    headers=[
+                        cdp.fetch.HeaderEntry(k, v) for k, v in request.headers.items()
+                    ],
+                )
+            )
         else:
-            pass
+            asyncio.create_task(network_through_proxy())
