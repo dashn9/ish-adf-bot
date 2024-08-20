@@ -40,6 +40,7 @@ class NetworkRunner:
             )
 
     @asynccontextmanager
+    # TODO: Disable caching
     async def proxy_cached_session(self):
         async with CachedSession(
             cache=SQLiteBackend(
