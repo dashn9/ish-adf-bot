@@ -359,7 +359,7 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
         time_started = time.time()
         # There is a potential that the browser inner size might not be fully deducted from the content height to read
         # from. Therefore, the remaining should be adjusted unto the rest
-        px_owing = -self.get_browser_inner_size()["height"]
+        px_owing = -(await self.get_browser_inner_size())["height"]
 
         async def read(
             read_time,
@@ -420,7 +420,7 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
                     f"Article"
                 )
                 random_max = 100 - remaining_reading_content_percentage
-                self.scroll_to_percentage_in_element(
+                await self.scroll_to_percentage_in_element(
                     html_web_element,
                     random.uniform(1, random_max),
                     random.uniform(0.9, 2),

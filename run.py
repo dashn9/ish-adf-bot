@@ -86,25 +86,23 @@ async def run_bot(
             if web_bot.identity.device_type == "is_pc" and random.random() < 0.2:
                 web_bot.move_mouse_to_random_area_on_screen()
             if (
-                web_bot.read_element_content(
-                    web_bot.web_browser_driver.find_element(
-                        page_content_element_type, page_content_element_name
+                await web_bot.read_element_content(
+                    await web_bot.web_browser_driver.main_tab.select(
+                        page_info["page_content_element"]
                     )
                 )
                 == "ad_clicked"
             ):
                 try:
                     await asyncio.sleep(random.uniform(0.7, 1.5))
-                    body_element = WebDriverWait(web_bot.web_browser_driver, 4).until(
-                        EC.presence_of_element_located((By.TAG_NAME, "body"))
-                    )
-                    web_bot.read_element_content(body_element)
+                    body_element = web_bot.web_browser_driver.main_tab.select("body", 4)
+                    await web_bot.read_element_content(body_element)
                     while random.random() < identity.page_depth:
                         web_bot.time_activated = time.time()
                         web_bot.open_link_in_elements([body_element])
-                        body_element = WebDriverWait(
-                            web_bot.web_browser_driver, 4
-                        ).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
+                        body_element = web_bot.web_browser_driver.main_tab.select(
+                            "body", 4
+                        )
                         web_bot.read_element_content(body_element)
                 except TimeoutException:
                     print(
@@ -118,15 +116,14 @@ async def run_bot(
                         web_bot.time_activated = time.time()
                         web_bot.no_of_clicks = page_info.get("page_clicks")
                         web_bot.open_link_in_elements(
-                            web_bot.web_browser_driver.find_elements(
-                                related_articles_elements_type,
-                                related_articles_elements_name,
+                            web_bot.web_browser_driver.main_tab.select_all(
+                                page_info["related_articles_elements"]
                             )
                         )
 
                         web_bot.read_element_content(
-                            web_bot.web_browser_driver.find_element(
-                                page_content_element_type, page_content_element_name
+                            web_bot.web_browser_driver.main_tab.select(
+                                page_info["page_content_element"]
                             )
                         )
                         identity.page_depth = identity.page_depth / 2
@@ -142,7 +139,7 @@ async def run_bot(
             print("Updating Cookies To Cloud")
             web_bot.update_cookies_to_cloud()
             web_bot.release_proxies()
-            web_bot.proxy_requests_session.close()
+            web_bot.proxy_cache_session.close()
             web_bot.cached_requests_session.close()
             web_bot.web_browser_driver.stop()
             DataController.ping_is_alive(BOT_ID)
