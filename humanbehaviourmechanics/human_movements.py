@@ -1,6 +1,7 @@
 import pytweening
 import random
 import asyncio
+from threading import Thread
 
 import pyautogui
 from nodriver import Element as WebElement
@@ -474,7 +475,7 @@ class HumanMovements:
         # Element Height - Browser Window Makes It Possible To Eject Browser Dimensions From Calculations
         workable_height = html_web_element.rect.get(
             "height"
-        ) - self.web_browser_driver.get_window_rect().get("height")
+        ) - self.web_browser_driver.main_tab.get_window().get("height")
 
         offset_to_adjust_to = utils.fetch_percentage_value(
             workable_height, percentage_to_scroll_to
@@ -687,8 +688,8 @@ class HumanMovements:
                 px_to_adjust_by = random.randint(-500, -1)
             self.read_with_touch(px_to_adjust_by, duration)
 
-        element_browser_coordinates = self.get_element_window_location_screen_offsets(
-            html_web_element
+        element_browser_coordinates = (
+            await self.get_element_window_location_screen_offsets(html_web_element)
         )
 
         if simulate_human_behaviour:

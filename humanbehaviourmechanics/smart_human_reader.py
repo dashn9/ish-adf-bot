@@ -90,7 +90,7 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
                         (
                             px_to_adjust_by
                             / self.web_browser_driver.execute_script(
-                                "return document.body.getBoundingClientRect().height"
+                                "document.body.getBoundingClientRect().height"
                             )
                         )
                         * browser_inner_size_height
@@ -390,7 +390,7 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
                 read_time, html_web_element, total_px_to_adjust_by, mode
             )
 
-        seconds_to_read = self.calculate_and_generate_page_read_time(
+        seconds_to_read = await self.calculate_and_generate_page_read_time(
             html_web_element, self.reading_speed, random.randint(-15, 12)
         )
         content_read_percentage = random.randint(85, 100)
@@ -399,8 +399,10 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
             content_read_percentage,
             seconds_to_read,
         )
-        self.scroll_element_into_vertical_view(html_web_element, element_scroll_to=0)
-        px_owing += self.get_element_location_window_offset(html_web_element).get(
+        await self.scroll_element_into_vertical_view(
+            html_web_element, element_scroll_to=0
+        )
+        px_owing += await self.get_element_location_window_offset(html_web_element).get(
             "y_offset"
         )
         # This sleep is to simulate a pause at the beginning of the article
@@ -423,7 +425,7 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
                 await self.scroll_to_percentage_in_element(
                     html_web_element,
                     random.uniform(1, random_max),
-                    random.uniform(0.9, 2),
+                    random.uniform(0.9, 10),
                 )
 
             # Release Mouse Hold If Mode In Last Read Was Mouse To ScrollBar

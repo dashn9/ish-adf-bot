@@ -121,13 +121,13 @@ class BrowserInterface:
         return False
 
     async def get_browser_window_body_size(self):
-        return dict(width=await self.web_browser_driver.main_tab.evaluate("return document.body.getBoundingClientRect().width"),
+        return dict(width=await self.web_browser_driver.main_tab.evaluate("document.body.getBoundingClientRect().width"),
                     height=await self.web_browser_driver.main_tab.evaluate(
-                        "return document.body.getBoundingClientRect().height"))
+                        "document.body.getBoundingClientRect().height"))
 
     async def get_browser_inner_size(self):
-        return dict(width=await self.web_browser_driver.main_tab.evaluate("return window.innerWidth"),
-                    height=await self.web_browser_driver.main_tab.evaluate("return window.innerHeight"))
+        return dict(width=await self.web_browser_driver.main_tab.evaluate("window.innerWidth"),
+                    height=await self.web_browser_driver.main_tab.evaluate("window.innerHeight"))
 
     async def get_scroll_bar_coordinates(self, relative_to=0):
         """
@@ -144,11 +144,11 @@ class BrowserInterface:
             return False
 
         # Fetch Browser Document Inner Offset
-        window_page_y_offset = self.web_browser_driver.main_tab.evaluate("return window.pageYOffset")
+        window_page_y_offset = self.web_browser_driver.main_tab.evaluate("window.pageYOffset")
         window_page_y_offset = 1 if window_page_y_offset <= 0 else window_page_y_offset
 
-        browser_outer_size = dict(width=self.web_browser_driver.main_tab.evaluate("return window.outerWidth"),
-                                  height=self.web_browser_driver.main_tab.evaluate("return window.outerHeight"))
+        browser_outer_size = dict(width=self.web_browser_driver.main_tab.evaluate("window.outerWidth"),
+                                  height=self.web_browser_driver.main_tab.evaluate("window.outerHeight"))
 
         scroll_bar_x_position = browser_window_body_size.get("width")
         scroll_bar_y_position = utils.fetch_percentage_value(
@@ -170,7 +170,7 @@ class BrowserInterface:
 
         # Bound To Screen
         if relative_to == 2:
-            browser_rect = self.web_browser_driver.get_window_rect()
+            browser_rect = self.web_browser_driver.main_tab.get_window()
             return {
                 "x_pos": scroll_bar_x_position + browser_rect.get("x") +
                          (browser_outer_size.get("width") - browser_inner_size.get("width")),
@@ -181,7 +181,7 @@ class BrowserInterface:
             }
         # Bound To Browser Window
         elif relative_to == 1:
-            browser_rect = self.web_browser_driver.get_window_rect()
+            browser_rect = self.web_browser_driver.main_tab.get_window()
             return {
                 "x_pos": scroll_bar_x_position + (browser_outer_size.get("width") - browser_inner_size.get("width")),
                 "y_pos": scroll_bar_y_position + (browser_outer_size.get("height") - browser_inner_size.get("height")),
@@ -206,26 +206,26 @@ class BrowserInterface:
         :return: Offset Locations Of Element(tuple) And Browser(tuple) In a Dict()
         """
         # Getting HTML Web Element Coordinates Which Are Relative From The Window Point And Dimensions
-        web_element_location_dimensions = html_web_element.ge
+        web_element_location_dimensions = await html_web_element.get_position()
 
         # Fetch Browser Document Inner Offset
-        window_page_y_offset = self.web_browser_driver.main_tab.evaluate("return window.pageYOffset")
-        window_page_x_offset = self.web_browser_driver.main_tab.evaluate("return window.pageXOffset")
+        window_page_y_offset = await self.web_browser_driver.main_tab.evaluate("window.pageYOffset", await_promise=True)
+        window_page_x_offset = await self.web_browser_driver.main_tab.evaluate("window.pageXOffset", await_promise=True)
 
         browser_inner_size = await self.get_browser_inner_size()
-        browser_window_rect = self.web_browser_driver.get_window_rect()
-        web_element_x_offset = web_element_location_dimensions.get("x") + browser_window_rect.get("x") \
-                               + (browser_window_rect.get("width") - browser_inner_size["width"]) \
+        browser_window_rect = (await self.web_browser_driver.main_tab.get_window())[1]
+        web_element_x_offset = web_element_location_dimensions.x + browser_window_rect.left \
+                               + (browser_window_rect.width - browser_inner_size["width"]) \
                                - window_page_x_offset
-        web_element_y_offset = web_element_location_dimensions.get("y") + browser_window_rect.get("y") \
-                               + (browser_window_rect.get("height") - browser_inner_size["height"]) \
+        web_element_y_offset = web_element_location_dimensions.y + browser_window_rect.top \
+                               + (browser_window_rect.height - browser_inner_size["height"]) \
                                - window_page_y_offset
-        browser_window_rect_bottom = browser_window_rect.get("height") + browser_window_rect.get("y")
-        web_element_bottom = web_element_y_offset + web_element_location_dimensions.get("height")
+        browser_window_rect_bottom = browser_window_rect.height + browser_window_rect.top
+        web_element_bottom = web_element_y_offset + web_element_location_dimensions.height
         return {"html_web_element": (web_element_x_offset, web_element_y_offset,
-                                     web_element_bottom, web_element_location_dimensions.get("height")),
+                                     web_element_bottom, web_element_location_dimensions.height),
                 "browser_window_rect": (
-                    browser_window_rect.get("x"), browser_window_rect.get("y"), browser_window_rect_bottom)}
+                    browser_window_rect.left, browser_window_rect.top, browser_window_rect_bottom)}
 
     async def get_document_offset_from_screen(self):
         """
@@ -233,7 +233,7 @@ class BrowserInterface:
         :return: A dictionary holding document dimensions
         """
         browser_inner_size = await self.get_browser_inner_size()
-        browser_window_rect = self.web_browser_driver.get_window_rect()
+        browser_window_rect = self.web_browser_driver.main_tab.get_window()
         return dict(y=browser_window_rect["y"] + (browser_window_rect["height"] - browser_inner_size["height"]),
                     x=browser_window_rect["x"] + (browser_window_rect["width"] - browser_inner_size["width"]))
 
@@ -247,8 +247,8 @@ class BrowserInterface:
         web_element_location_dimensions = await html_web_element.get_position()
 
         # Fetch Browser Document Inner Offset
-        window_page_y_offset = self.web_browser_driver.main_tab.evaluate("return window.pageYOffset")
-        window_page_x_offset = self.web_browser_driver.main_tab.evaluate("return window.pageXOffset")
+        window_page_y_offset = self.web_browser_driver.main_tab.evaluate("window.pageYOffset")
+        window_page_x_offset = self.web_browser_driver.main_tab.evaluate("window.pageXOffset")
 
         web_element_x_offset = web_element_location_dimensions.get("x") - window_page_x_offset
         web_element_y_offset = web_element_location_dimensions.get("y") - window_page_y_offset
@@ -257,8 +257,8 @@ class BrowserInterface:
         return {"x_offset": web_element_x_offset, "y_offset": web_element_y_offset, "bottom": web_element_bottom}
 
     async def get_window_document_offsets(self):
-        return {"y_offset": self.web_browser_driver.main_tab.evaluate("return window.pageYOffset"),
-                "x_offset": self.web_browser_driver.main_tab.evaluate("return window.pageXOffset")}
+        return {"y_offset": self.web_browser_driver.main_tab.evaluate("window.pageYOffset"),
+                "x_offset": self.web_browser_driver.main_tab.evaluate("window.pageXOffset")}
 
     async def bring_window_to_front(self):
         self.web_browser_driver.switch_to.window(self.web_browser_driver.current_window_handle)
