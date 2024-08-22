@@ -139,7 +139,7 @@ async def run_bot(
             print("Updating Cookies To Cloud")
             web_bot.update_cookies_to_cloud()
             web_bot.release_proxies()
-            web_bot.proxy_cache_session.close()
+            web_bot.proxy_cached_session.close()
             web_bot.cached_requests_session.close()
             web_bot.web_browser_driver.stop()
             DataController.ping_is_alive(BOT_ID)

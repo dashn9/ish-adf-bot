@@ -42,31 +42,35 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
             key = K_Keys["ArrowDown"]
             if not direction:
                 key = K_Keys["ArrowUp"]
-            self.read_with_arrow_keys(html_web_element, px_to_adjust_by, key, direction)
+            await self.read_with_arrow_keys(
+                html_web_element, px_to_adjust_by, key, direction
+            )
             # Wait to complete scroll
             await asyncio.sleep(0.12)
         elif mode == "wheel":
             if random.random() < 0.65:
                 element_screen_position = (
-                    self.get_element_window_location_screen_offsets(html_web_element)
+                    await self.get_element_window_location_screen_offsets(
+                        html_web_element
+                    )
                 )
-                self.move_mouse_to_random_area_on_screen(
+                await self.move_mouse_to_random_area_on_screen(
                     {
                         "x": element_screen_position["html_web_element"][0],
-                        "y": self.get_document_offset_from_screen()["y"],
-                        "width": html_web_element.rect["width"],
+                        "y": (await self.get_document_offset_from_screen())["y"],
+                        "width": (await html_web_element.get_position()).width,
                         "height": min(
                             element_screen_position["html_web_element"][2],
-                            self.get_browser_inner_size()["height"],
+                            (await self.get_browser_inner_size())["height"],
                         ),
                     }
                 )
             if random.random() < 0.22:
-                self.mouse.mouse_wheel_with_bezier_animation(
+                await self.mouse.mouse_wheel_with_bezier_animation(
                     *pyautogui.position(), px_to_adjust_by, direction
                 )
             else:
-                self.mouse.mouse_wheel(
+                await self.mouse.mouse_wheel(
                     *pyautogui.position(),
                     px_to_adjust_by,
                     deltaY=self.identity.mouse_delta_y,
@@ -76,11 +80,13 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
         elif mode == "touch":
             if not direction:
                 px_to_adjust_by *= -1
-            self.read_with_touch(px_to_adjust_by)
+            await self.read_with_touch(px_to_adjust_by)
         elif mode == "mouse_to_scrollbar":
 
             async def read_with_mouse_to_scrollbar():
-                browser_inner_size_height = self.get_browser_inner_size()["height"]
+                browser_inner_size_height = await self.get_browser_inner_size()[
+                    "height"
+                ]
                 mouse_x, mouse_y = pyautogui.position()
                 mouse_x += global_utils.fetch_percentage_value(
                     browser_inner_size_height, random.randint(0, 1)
@@ -103,7 +109,7 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
                 print("mouse_y ==>", mouse_y)
                 kwargs["present_mouse_points"]["x"] = mouse_x
                 kwargs["present_mouse_points"]["y"] = mouse_y
-                self.read_with_mouse_to_scrollbar(
+                await self.read_with_mouse_to_scrollbar(
                     {
                         "x": mouse_x,
                         "y": mouse_y,
@@ -115,7 +121,7 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
                 )
 
             if "present_mouse_points" in kwargs:
-                read_with_mouse_to_scrollbar()
+                await read_with_mouse_to_scrollbar()
             else:
                 present_mouse_points = self.send_mouse_to_scrollbar()
                 if not isinstance(present_mouse_points, dict):
@@ -124,7 +130,7 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
                     )
                 kwargs["present_mouse_points"] = present_mouse_points
                 await asyncio.sleep(random.uniform(0, 1))
-                read_with_mouse_to_scrollbar()
+                await read_with_mouse_to_scrollbar()
         kwargs["read_mode_time_used"] = time.time() - read_mode_time_used
         return kwargs
 
@@ -229,7 +235,7 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
                     0.15, 0.35
                 )
 
-                kwargs["read_by_mode_data"] = self.read_by_mode(
+                kwargs["read_by_mode_data"] = await self.read_by_mode(
                     html_web_element,
                     px_to_move_by,
                     mode,
@@ -239,7 +245,7 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
 
                 # modifying time_to_pause_activity on how long to wait for after navigating up. expected mean time to
                 # be around 45% which averagely should not be more than half of time_to_pause_activity
-                time_to_pause_activity = await global_utils.fetch_percentage_value(
+                time_to_pause_activity = global_utils.fetch_percentage_value(
                     time_to_pause_activity,
                     random.uniform(35, 55)
                     - (
@@ -252,7 +258,7 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
                 await asyncio.sleep(max(0, time_to_pause_activity))
 
                 # Attempt to return page to original point before going up
-                kwargs["read_by_mode_data"] = self.read_by_mode(
+                kwargs["read_by_mode_data"] = await self.read_by_mode(
                     html_web_element,
                     px_to_move_by,
                     mode,
@@ -276,7 +282,7 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
 
         # Store read_by_mode data at each function iteration to be repassed, reason is for read_by_mode
         # mouse_to_scrollbar mode
-        kwargs["read_by_mode_data"] = self.read_by_mode(
+        kwargs["read_by_mode_data"] = await self.read_by_mode(
             html_web_element,
             px_to_adjust_by,
             mode,
@@ -293,7 +299,9 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
 
         # print("read mode duration ==>", read_mode_time_used)
 
-        element_coordinates = self.get_element_location_window_offset(html_web_element)
+        element_coordinates = await self.get_element_location_window_offset(
+            html_web_element
+        )
         # Changing The Value Of px_to_adjust_by To The Amount Of px Actually Adjusted
         kwargs["px_adjusted_by"] = element_base_offset - element_coordinates.get(
             "y_offset"
@@ -318,7 +326,7 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
         else:
             kwargs["px_adjusted_at_0_count"] = 0
 
-        return self.smart_human_like_content_navigator(
+        return await self.smart_human_like_content_navigator(
             read_time, html_web_element, total_px_to_adjust_by, mode, **kwargs
         )
 
@@ -338,11 +346,11 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
         :return: Returns Amount Of Seconds To Read Content For
         """
         if not html_web_element_to_read:
-            html_web_element_to_read = self.web_browser_driver.find_element(
-                By.TAG_NAME, "article"
+            html_web_element_to_read = self.web_browser_driver.main_tab.select(
+                "article"
             )
 
-        all_element_words = html_web_element_to_read.text.split()
+        all_element_words = html_web_element_to_read.text_all.split()
         words_len = len(all_element_words)
         seconds_to_read = (words_len / reading_speed) * 60
         seconds_to_read += seconds_to_read * offset / 100
@@ -379,8 +387,8 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
             nonlocal px_owing
             # Get The Total Pixels To Move By Using The percentage_of_content_to_read On html_web_element Height
             total_px_to_adjust_by = (
-                await global_utils.fetch_percentage_value(
-                    await html_web_element.get_position().height,
+                global_utils.fetch_percentage_value(
+                    (await html_web_element.get_position()).height,
                     percentage_of_content_to_read,
                 )
                 + px_owing
@@ -408,14 +416,11 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
         # This sleep is to simulate a pause at the beginning of the article
         await asyncio.sleep(random.uniform(2.45, 5.24))
         remaining_reading_content_percentage = content_read_percentage
-        browser_inner_size = self.get_browser_inner_size()
-
+        browser_inner_size = await self.get_browser_inner_size()
         mode = ""
-        while (
-            remaining_reading_content_percentage > 0
-            and self.get_element_location_window_offset(html_web_element).get("bottom")
-            > browser_inner_size.get("height")
-        ):
+        while remaining_reading_content_percentage > 0 and (
+            await self.get_element_location_window_offset(html_web_element)
+        ).get("bottom") > browser_inner_size.get("height"):
             if remaining_reading_content_percentage < 50 and random.random() < 0.08:
                 print(
                     f"Bot Process Id {self.bot_process_id} <:::> Current Activity --> Scrolling To random.m Point On "
@@ -453,7 +458,7 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
                         self.identity.os is not device_constants.MAC_OS
                     ) and random.random() <= 0.05:
                         mode = "mouse_to_scrollbar"
-                    self.bring_window_to_front()
+                    asyncio.create_task(self.bring_window_to_front())
 
             if remaining_reading_content_percentage < 26:
                 next_read_sequence_percentage = remaining_reading_content_percentage
@@ -482,7 +487,7 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
             )
 
             if (
-                read(
+                await read(
                     next_read_sequence_time,
                     html_web_element,
                     mode,

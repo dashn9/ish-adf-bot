@@ -26,7 +26,7 @@ class HumanBehaviourReveries:
         if HumanBehaviourReveries.active_on_mouse_movement.value < 0:
             HumanBehaviourReveries.active_on_mouse_movement.value = self.bot_process_id
             self.bring_window_to_front()
-            self.simulate_human_mouse_move_behavior_to_point(
+            await self.simulate_human_mouse_move_behavior_to_point(
                 random.randint(0, bot_constants.SCREEN_WIDTH), 4
             )
             await asyncio.sleep(0.5)
@@ -47,7 +47,7 @@ class HumanBehaviourReveries:
     ):
         if HumanBehaviourReveries.active_on_mouse_movement.value < 0:
             HumanBehaviourReveries.active_on_mouse_movement.value = self.bot_process_id
-            asyncio.create_task(self.bring_window_to_front())
+            await self.bring_window_to_front()
             await self.simulate_human_mouse_move_behavior_to_area(
                 bounds["x"],
                 bounds["y"],

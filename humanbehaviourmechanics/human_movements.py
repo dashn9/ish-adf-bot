@@ -29,20 +29,20 @@ class HumanMovements:
 
     @property
     def keyboard(self):
-        if self._keyboard and self._keyboard.webdriver is None:
-            self._keyboard.webdriver = self.web_browser_driver
+        if self._keyboard and self._keyboard.web_browser_driver is None:
+            self._keyboard.web_browser_driver = self.web_browser_driver
         return self._keyboard
 
     @property
     def mouse(self):
-        if self._mouse and self._mouse.webdriver is None:
-            self._mouse.webdriver = self.web_browser_driver
+        if self._mouse and self._mouse.web_browser_driver is None:
+            self._mouse.web_browser_driver = self.web_browser_driver
         return self._mouse
 
     @property
     def touch(self):
-        if self._touch and self._touch.webdriver is None:
-            self._touch.webdriver = self.web_browser_driver
+        if self._touch and self._touch.web_browser_driver is None:
+            self._touch.web_browser_driver = self.web_browser_driver
         return self._touch
 
     @staticmethod
@@ -209,7 +209,7 @@ class HumanMovements:
             t.daemon = True
             return t.start()
         else:
-            return move_operations()
+            return await move_operations()
 
     async def simulate_human_mouse_move_behavior_to_point(
         self,
@@ -344,7 +344,7 @@ class HumanMovements:
             t.daemon = True
             return t.start()
         else:
-            return move_operations()
+            return await move_operations()
 
     async def move_pointing_device_to_element(
         self, html_web_element: WebElement, simulate_human_behaviour=True
@@ -369,7 +369,7 @@ class HumanMovements:
                     area_height=html_web_element.rect["height"],
                 )
 
-                self.simulate_human_mouse_move_behavior_to_area(
+                await self.simulate_human_mouse_move_behavior_to_area(
                     el_pos["area_x"] + 1,
                     el_pos["area_y"] + 1,
                     el_pos["area_width"] - 2,
@@ -426,7 +426,7 @@ class HumanMovements:
                         )
                 else:
                     while offset_to_adjust_to >= element_coordinates["y_offset"]:
-                        self.keyboard.down_persistent(K_Keys["ArrowUp"])
+                        await self.keyboard.down_persistent(K_Keys["ArrowUp"])
                         if (
                             utils.clean_negative(element_coordinates["y_offset"])
                             - utils.clean_negative(offset_to_adjust_to)
@@ -440,9 +440,9 @@ class HumanMovements:
                         element_coordinates = self.get_element_location_window_offset(
                             html_web_element
                         )
-                    self.keyboard.up(K_Keys["ArrowUp"])
+                    await self.keyboard.up(K_Keys["ArrowUp"])
                     if random.random() > 0.5:
-                        random_miscellaneous_key_presses(0.75)
+                        await random_miscellaneous_key_presses(0.75)
             elif offset_to_adjust_to < element_coordinates["y_offset"]:
                 if isinstance(self.touch, Touchscreen):
                     while offset_to_adjust_to <= element_coordinates["y_offset"]:
@@ -454,7 +454,7 @@ class HumanMovements:
                         )
                 else:
                     while offset_to_adjust_to <= element_coordinates["y_offset"]:
-                        self.keyboard.down_persistent(K_Keys["ArrowDown"])
+                        await self.keyboard.down_persistent(K_Keys["ArrowDown"])
                         if (
                             utils.clean_negative(offset_to_adjust_to)
                             - utils.clean_negative(element_coordinates["y_offset"])
@@ -470,7 +470,7 @@ class HumanMovements:
                         )
                     self.keyboard.up(K_Keys["ArrowDown"])
                     if random.random() > 0.5:
-                        random_miscellaneous_key_presses(0.25)
+                        await random_miscellaneous_key_presses(0.25)
 
         # Element Height - Browser Window Makes It Possible To Eject Browser Dimensions From Calculations
         workable_height = html_web_element.rect.get(
@@ -497,7 +497,7 @@ class HumanMovements:
         key=K_Keys["ArrowDown"],
         direction_to_move=True,
     ):
-        self.keyboard.down_persistent(key)
+        await self.keyboard.down_persistent(key)
         element_coordinates = self.get_element_location_window_offset(html_web_element)
         old_element_coordinates = element_coordinates
         boundary = element_coordinates.get("y_offset") - boundary
@@ -558,7 +558,7 @@ class HumanMovements:
                 pyautogui.mouseUp()
                 pyautogui.mouseDown()
 
-        self.simulate_human_mouse_move_behavior_to_point(
+        await self.simulate_human_mouse_move_behavior_to_point(
             coordinates_offset_overshoot["x"],
             coordinates_offset_overshoot["y"],
             coordinates_offset_overshoot["x_offset_percentage"],
@@ -778,7 +778,7 @@ class HumanMovements:
 
     async def send_mouse_to_scrollbar(self, is_asychronous=False):
         scroll_bar = self.get_scroll_bar_coordinates(2)
-        return self.simulate_human_mouse_move_behavior_to_area(
+        return await self.simulate_human_mouse_move_behavior_to_area(
             scroll_bar["x_pos"] + 2,
             scroll_bar["y_pos"] + 2,
             scroll_bar["width"],

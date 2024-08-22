@@ -79,7 +79,7 @@ class BrowserInterface:
         """
         try:
             await self.web_browser_driver.main_tab.evaluate(f"window.open();", await_promise=True)
-            self.web_browser_driver.switch_to.window(self.web_browser_driver.window_handles[-1])
+            self.web_browser_driver.switch_to.window(self.web_browser_driver.tabs[-1])
             if url:
                 self.web_browser_driver.get(url)
             return self.web_browser_driver.current_window_handle
@@ -101,7 +101,7 @@ class BrowserInterface:
             else:
                 if not self.opened_browser_urls:  # If first Url To Browser,
                     # Open New And Terminate First Because It Has No Name Identifier
-                    self.opened_browser_urls[url_name] = self.web_browser_driver.window_handles[0]
+                    self.opened_browser_urls[url_name] = self.web_browser_driver.tabs[0]
                     self.web_browser_driver.get(url)
                 else:
                     url_id = self.open_new_tab(url)
@@ -233,9 +233,9 @@ class BrowserInterface:
         :return: A dictionary holding document dimensions
         """
         browser_inner_size = await self.get_browser_inner_size()
-        browser_window_rect = self.web_browser_driver.main_tab.get_window()
-        return dict(y=browser_window_rect["y"] + (browser_window_rect["height"] - browser_inner_size["height"]),
-                    x=browser_window_rect["x"] + (browser_window_rect["width"] - browser_inner_size["width"]))
+        browser_window_rect = (await self.web_browser_driver.main_tab.get_window())[1]
+        return dict(y=browser_window_rect.top + (browser_window_rect.height - browser_inner_size["height"]),
+                    x=browser_window_rect.left + (browser_window_rect.width - browser_inner_size["width"]))
 
     async def get_element_location_window_offset(self, html_web_element: WebElement):
         """
@@ -271,9 +271,9 @@ class BrowserInterface:
         """
         await asyncio.sleep (time_interval_to_check)
         # Switch to the new window and capture its handle
-        if self.current_tab_length != len(self.web_browser_driver.window_handles):
+        if self.current_tab_length != len(self.web_browser_driver.tabs):
             self.web_browser_driver.switch_to.window(self.web_browser_driver.current_window_handle)
-            self.current_tab_length = len(self.web_browser_driver.window_handles)
+            self.current_tab_length = len(self.web_browser_driver.tabs)
             if recurse:
                 self.revert_to_main_page(recurse, time_interval_to_check)
             return True

@@ -11,15 +11,15 @@ from bots import utils
 
 
 class Keyboard:
-    def __init__(self, web_browser: Browser):
-        self.web_browser = web_browser
+    def __init__(self, web_browser_driver: Browser):
+        self.web_browser_driver = web_browser_driver
         self.modifiers = 0
         self.is_key_down = False
         self.down_key_number_of_consecutive_runs = 0
         self.pressed_keys = set()
 
     async def down(self, key, options={"text": "", "keypad": False}, simple=False):
-        description = self.key_description_for_string(key)
+        description = await self.key_description_for_string(key)
 
         pressed_keys = self.pressed_keys
         auto_repeat = False
@@ -40,9 +40,9 @@ class Keyboard:
             type = "keyDown" if text else "rawKeyDown"
             if "location" in description and description["location"] != 3:
                 is_keypad = False
-        await self.web_browser.main_tab.send(
+        await self.web_browser_driver.main_tab.send(
             cdp.input_.dispatch_key_event(
-                type=type,
+                type_=type,
                 modifiers=self.modifiers,
                 windows_virtual_key_code=description["key_code"],
                 code=description["code"],
@@ -58,10 +58,10 @@ class Keyboard:
     async def down_persistent(self, key, options={"text": ""}):
         async def inner_loop():
             try:
-                self.down(key, options, True)
+                await self.down(key, options, True)
                 await asyncio.sleep(random.uniform(0.5, 0.52))
                 while self.is_key_down:
-                    self.down(key, options, True)
+                    await self.down(key, options, True)
                     await asyncio.sleep(random.uniform(0.04, 0.07))
                     # self.down_key_number_of_consecutive_runs += 1
                 self.down_key_number_of_consecutive_runs = 0
@@ -69,8 +69,7 @@ class Keyboard:
                 pass
 
         if not self.is_key_down:
-            self.is_key_down = True
-            return Thread(target=inner_loop).start()
+            asyncio.create_task(inner_loop())
 
     async def modifier_bit(self, key):
         if key == "Alt":
@@ -127,9 +126,9 @@ class Keyboard:
             while self.down_key_number_of_consecutive_runs != 0:
                 await asyncio.sleep(0.1)
 
-            await self.web_browser.main_tab.send(
+            await self.web_browser_driver.main_tab.send(
                 cdp.input_.dispatch_key_event(
-                    type="keyUp",
+                    type_="k_eyUp",
                     modifiers=self.modifiers,
                     key=description["key"],
                     windows_virtual_key_code=description["key_code"],
@@ -139,7 +138,7 @@ class Keyboard:
             )
 
     async def send_character(self, char: str):
-        await self.web_browser.main_tab.send(cdp.input_.insert_text(text=char))
+        await self.web_browser_driver.main_tab.send(cdp.input_.insert_text(text=char))
 
     async def type(self, text: str, options={"delay": 0}):
         delay = 0
@@ -162,8 +161,8 @@ class Keyboard:
 
 
 class Mouse:
-    def __init__(self, web_browser: Browser, keyboard: Keyboard):
-        self.web_browser = web_browser
+    def __init__(self, web_browser_driver: Browser, keyboard: Keyboard):
+        self.web_browser_driver = web_browser_driver
         self.keyboard = keyboard
         self.x = 0
         self.y = 0
@@ -175,9 +174,9 @@ class Mouse:
         self.x = x
         self.y = y
         for i in range(steps):
-            await self.web_browser.main_tab.send(
+            await self.web_browser_driver.main_tab.send(
                 cdp.input_.dispatch_mouse_event(
-                    type="mouseMoved",
+                    type_="mouseMoved",
                     x=from_x + (self.x - from_x) * (i / steps),
                     y=from_y + (self.y - from_y) * (i / steps),
                     modifiers=self.keyboard.modifiers,
@@ -193,9 +192,9 @@ class Mouse:
             int(px_to_adjust_by), random.randint(50, 200)
         )
         for p in plot:
-            await self.web_browser.main_tab.send(
+            await self.web_browser_driver.main_tab.send(
                 cdp.input_.dispatch_mouse_event(
-                    type="mouseWheel",
+                    type_="mouseWheel",
                     x=x,
                     y=y,
                     modifiers=self.keyboard.modifiers,
@@ -249,9 +248,9 @@ class Mouse:
                 deltaY_modifier += 1
                 i += 1
             deltaYToUse = deltaY * deltaY_modifier
-            await self.web_browser.main_tab.send(
+            await self.web_browser_driver.main_tab.send(
                 cdp.input_.dispatch_mouse_event(
-                    type="mouseWheel",
+                    type_="mouseWheel",
                     x=x,
                     y=y,
                     modifiers=self.keyboard.modifiers,
@@ -273,9 +272,9 @@ class Mouse:
         button = options["button"]
         click_count = options["click_count"]
         self.button = button
-        await self.web_browser.main_tab.send(
+        await self.web_browser_driver.main_tab.send(
             cdp.input_.dispatch_mouse_event(
-                type="mousePressed",
+                type_="mousePressed",
                 button=button,
                 x=self.x,
                 y=self.y,
@@ -288,9 +287,9 @@ class Mouse:
         button = options["button"]
         click_count = options["click_count"]
         self.button = "none"
-        await self.web_browser.main_tab.send(
+        await self.web_browser_driver.main_tab.send(
             cdp.input_.dispatch_mouse_event(
-                type="mouseReleased",
+                type_="mouseReleased",
                 button=button,
                 x=self.x,
                 y=self.y,
@@ -301,29 +300,29 @@ class Mouse:
 
 
 class Touchscreen:
-    async def __init__(self, web_browser: Browser, keyboard: Keyboard):
-        self.web_browser = web_browser
+    async def __init__(self, web_browser_driver: Browser, keyboard: Keyboard):
+        self.web_browser_driver = web_browser_driver
         self.keyboard = keyboard
 
     async def tap(self, x, y):
         # Touches appear to be lost during the first frame after navigation.
         # This waits a frame before sending the tap.
         # @see https:#crbug.com/613219
-        # await self.web_browser.main_tab.send('_runtime.evaluate', dict(
+        # await self.web_browser_driver.main_tab.send('_runtime.evaluate', dict(
         #    expression='new Promise(x => requestAnimation_frame(() => requestAnimation_frame(x)))',
         #    awaitPromise=True
         # ))
 
         touch_points = [{"x": round(x), "y": round(y)}]
         print("tapped screen @:", touch_points)
-        await self.web_browser.main_tab.send(
+        await self.web_browser_driver.main_tab.send(
             cdp.input_.dispatch_touch_event(
-                type="touchStart", touch_points=touch_points
+                type_="touchStart", touch_points=touch_points
             )
         )
         await asyncio.sleep(random.uniform(0.01, 0.04))
-        await self.web_browser.main_tab.send(
-            cdp.input_.dispatch_touch_event(type="touchEnd", touch_points=[])
+        await self.web_browser_driver.main_tab.send(
+            cdp.input_.dispatch_touch_event(type_="touchEnd", touch_points=[])
         )
 
     async def simulate_human_touch_movement_with_mouse(
@@ -377,23 +376,23 @@ class Touchscreen:
         for i in range(len(points)):
             touch_points = [{"x": points[i][0], "y": points[i][1]}]
             if i == 0:
-                await self.web_browser.main_tab.send(
+                await self.web_browser_driver.main_tab.send(
                     cdp.input_.dispatch_touch_event(
-                        type="touchStart",
+                        type_="touchStart",
                         touch_points=[{"x": points[0][0], "y": points[0][1]}],
                     )
                 )
             else:
-                await self.web_browser.main_tab.send(
+                await self.web_browser_driver.main_tab.send(
                     cdp.input_.dispatch_touch_event(
-                        type="touchMove",
+                        type_="touchMove",
                         touch_points=touch_points,
                     )
                 )
             if i >= len(points) - 1:
-                await self.web_browser.main_tab.send(
+                await self.web_browser_driver.main_tab.send(
                     cdp.input_.dispatch_touch_event(
-                        type="touchEnd",
+                        type_="touchEnd",
                         touch_points=[],
                     )
                 )
