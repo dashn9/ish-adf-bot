@@ -402,9 +402,9 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
         await self.scroll_element_into_vertical_view(
             html_web_element, element_scroll_to=0
         )
-        px_owing += await self.get_element_location_window_offset(html_web_element).get(
-            "y_offset"
-        )
+        px_owing += (
+            await self.get_element_location_window_offset(html_web_element)
+        ).get("y_offset")
         # This sleep is to simulate a pause at the beginning of the article
         await asyncio.sleep(random.uniform(2.45, 5.24))
         remaining_reading_content_percentage = content_read_percentage

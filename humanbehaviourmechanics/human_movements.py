@@ -28,19 +28,19 @@ class HumanMovements:
         super().__init__()
 
     @property
-    async def keyboard(self):
+    def keyboard(self):
         if self._keyboard and self._keyboard.webdriver is None:
             self._keyboard.webdriver = self.web_browser_driver
         return self._keyboard
 
     @property
-    async def mouse(self):
+    def mouse(self):
         if self._mouse and self._mouse.webdriver is None:
             self._mouse.webdriver = self.web_browser_driver
         return self._mouse
 
     @property
-    async def touch(self):
+    def touch(self):
         if self._touch and self._touch.webdriver is None:
             self._touch.webdriver = self.web_browser_driver
         return self._touch
@@ -661,7 +661,7 @@ class HumanMovements:
         """
 
         async def has_page_offset_changed():
-            document_offsets = self.get_window_document_offsets()
+            document_offsets = await self.get_window_document_offsets()
             document_offsets = [
                 document_offsets["x_offset"],
                 document_offsets["y_offset"],
@@ -676,9 +676,9 @@ class HumanMovements:
             Use Directional Keys To Scroll To Element
             :return: True
             """
-            self.keyboard.down_persistent(key)
+            await self.keyboard.down_persistent(key)
             await asyncio.sleep(random.uniform(1.1, 1.75))
-            self.keyboard.up(key)
+            await self.keyboard.up(key)
             await asyncio.sleep(random.uniform(0.5, 1.5))
 
         async def scroll_with_touch(direction, duration):
@@ -686,7 +686,7 @@ class HumanMovements:
                 px_to_adjust_by = random.randint(1, 500)
             if not direction:
                 px_to_adjust_by = random.randint(-500, -1)
-            self.read_with_touch(px_to_adjust_by, duration)
+            await self.read_with_touch(px_to_adjust_by, duration)
 
         element_browser_coordinates = (
             await self.get_element_window_location_screen_offsets(html_web_element)
@@ -703,13 +703,13 @@ class HumanMovements:
                         >= element_browser_coordinates["browser_window_rect"][1]
                     ):
                         if isinstance(self.touch, Touchscreen):
-                            scroll_with_touch(True, 1)
+                            await scroll_with_touch(True, 1)
                         else:
-                            scroll(K_Keys["ArrowDown"])
-                        if not has_page_offset_changed():
+                            await scroll(K_Keys["ArrowDown"])
+                        if not await has_page_offset_changed():
                             return True
                         element_browser_coordinates = (
-                            self.get_element_window_location_screen_offsets(
+                            await self.get_element_window_location_screen_offsets(
                                 html_web_element
                             )
                         )
@@ -722,13 +722,13 @@ class HumanMovements:
                         <= element_browser_coordinates["browser_window_rect"][1]
                     ):
                         if isinstance(self.touch, Touchscreen):
-                            scroll_with_touch(False, 1)
+                            await scroll_with_touch(False, 1)
                         else:
                             scroll(K_Keys["ArrowUp"])
                         if not has_page_offset_changed():
                             return True
                         element_browser_coordinates = (
-                            self.get_element_window_location_screen_offsets(
+                            await self.get_element_window_location_screen_offsets(
                                 html_web_element
                             )
                         )
@@ -743,9 +743,9 @@ class HumanMovements:
                         >= element_browser_coordinates["browser_window_rect"][2]
                     ):
                         if isinstance(self.touch, Touchscreen):
-                            scroll_with_touch(True, 1)
+                            await scroll_with_touch(True, 1)
                         else:
-                            scroll(K_Keys["ArrowDown"])
+                            await scroll(K_Keys["ArrowDown"])
                         if not has_page_offset_changed():
                             return True
                         element_browser_coordinates = (
@@ -762,9 +762,9 @@ class HumanMovements:
                         <= element_browser_coordinates["browser_window_rect"][1]
                     ):
                         if isinstance(self.touch, Touchscreen):
-                            scroll_with_touch(False, 1)
+                            await scroll_with_touch(False, 1)
                         else:
-                            scroll(K_Keys["ArrowUp"])
+                            await scroll(K_Keys["ArrowUp"])
                         if not has_page_offset_changed():
                             return True
                         element_browser_coordinates = (
@@ -774,7 +774,7 @@ class HumanMovements:
                         )
 
         else:
-            html_web_element.scroll_into_view()
+            await html_web_element.scroll_into_view()
 
     async def send_mouse_to_scrollbar(self, is_asychronous=False):
         scroll_bar = self.get_scroll_bar_coordinates(2)

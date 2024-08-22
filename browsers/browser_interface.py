@@ -78,7 +78,7 @@ class BrowserInterface:
         return: Return True On Success
         """
         try:
-            self.web_browser_driver.main_tab.evaluate(f"window.open();")
+            await self.web_browser_driver.main_tab.evaluate(f"window.open();", await_promise=True)
             self.web_browser_driver.switch_to.window(self.web_browser_driver.window_handles[-1])
             if url:
                 self.web_browser_driver.get(url)
@@ -121,13 +121,13 @@ class BrowserInterface:
         return False
 
     async def get_browser_window_body_size(self):
-        return dict(width=await self.web_browser_driver.main_tab.evaluate("document.body.getBoundingClientRect().width"),
+        return dict(width=await self.web_browser_driver.main_tab.evaluate("document.body.getBoundingClientRect().width", await_promise=True),
                     height=await self.web_browser_driver.main_tab.evaluate(
-                        "document.body.getBoundingClientRect().height"))
+                        "document.body.getBoundingClientRect().height", await_promise=True))
 
     async def get_browser_inner_size(self):
-        return dict(width=await self.web_browser_driver.main_tab.evaluate("window.innerWidth"),
-                    height=await self.web_browser_driver.main_tab.evaluate("window.innerHeight"))
+        return dict(width=await self.web_browser_driver.main_tab.evaluate("window.innerWidth", await_promise=True),
+                    height=await self.web_browser_driver.main_tab.evaluate("window.innerHeight", await_promise=True))
 
     async def get_scroll_bar_coordinates(self, relative_to=0):
         """
@@ -144,11 +144,11 @@ class BrowserInterface:
             return False
 
         # Fetch Browser Document Inner Offset
-        window_page_y_offset = self.web_browser_driver.main_tab.evaluate("window.pageYOffset")
+        window_page_y_offset = await self.web_browser_driver.main_tab.evaluate("window.pageYOffset")
         window_page_y_offset = 1 if window_page_y_offset <= 0 else window_page_y_offset
 
-        browser_outer_size = dict(width=self.web_browser_driver.main_tab.evaluate("window.outerWidth"),
-                                  height=self.web_browser_driver.main_tab.evaluate("window.outerHeight"))
+        browser_outer_size = dict(width=await self.web_browser_driver.main_tab.evaluate("window.outerWidth", await_promise=True),
+                                  height=await self.web_browser_driver.main_tab.evaluate("window.outerHeight", await_promise=True))
 
         scroll_bar_x_position = browser_window_body_size.get("width")
         scroll_bar_y_position = utils.fetch_percentage_value(
@@ -247,18 +247,18 @@ class BrowserInterface:
         web_element_location_dimensions = await html_web_element.get_position()
 
         # Fetch Browser Document Inner Offset
-        window_page_y_offset = self.web_browser_driver.main_tab.evaluate("window.pageYOffset")
-        window_page_x_offset = self.web_browser_driver.main_tab.evaluate("window.pageXOffset")
+        window_page_y_offset = await self.web_browser_driver.main_tab.evaluate("window.pageYOffset", await_promise=True)
+        window_page_x_offset = await self.web_browser_driver.main_tab.evaluate("window.pageXOffset", await_promise=True)
 
-        web_element_x_offset = web_element_location_dimensions.get("x") - window_page_x_offset
-        web_element_y_offset = web_element_location_dimensions.get("y") - window_page_y_offset
+        web_element_x_offset = web_element_location_dimensions.x - window_page_x_offset
+        web_element_y_offset = web_element_location_dimensions.y - window_page_y_offset
 
         web_element_bottom = web_element_y_offset + web_element_location_dimensions.height
         return {"x_offset": web_element_x_offset, "y_offset": web_element_y_offset, "bottom": web_element_bottom}
 
     async def get_window_document_offsets(self):
-        return {"y_offset": self.web_browser_driver.main_tab.evaluate("window.pageYOffset"),
-                "x_offset": self.web_browser_driver.main_tab.evaluate("window.pageXOffset")}
+        return {"y_offset": await self.web_browser_driver.main_tab.evaluate("window.pageYOffset", await_promise=True),
+                "x_offset": await self.web_browser_driver.main_tab.evaluate("window.pageXOffset", await_promise=True)}
 
     async def bring_window_to_front(self):
         self.web_browser_driver.switch_to.window(self.web_browser_driver.current_window_handle)
