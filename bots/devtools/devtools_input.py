@@ -56,7 +56,8 @@ class Keyboard:
         )
 
     async def down_persistent(self, key, options={"text": ""}):
-        async def inner_loop():
+        if not self.is_key_down:
+            self.is_key_down = True
             try:
                 await self.down(key, options, True)
                 await asyncio.sleep(random.uniform(0.5, 0.52))
@@ -67,9 +68,6 @@ class Keyboard:
                 self.down_key_number_of_consecutive_runs = 0
             except Exception:
                 pass
-
-        if not self.is_key_down:
-            asyncio.create_task(inner_loop())
 
     async def modifier_bit(self, key):
         if key == "Alt":
@@ -128,7 +126,7 @@ class Keyboard:
 
             await self.web_browser_driver.main_tab.send(
                 cdp.input_.dispatch_key_event(
-                    type_="k_eyUp",
+                    type_="keyUp",
                     modifiers=self.modifiers,
                     key=description["key"],
                     windows_virtual_key_code=description["key_code"],

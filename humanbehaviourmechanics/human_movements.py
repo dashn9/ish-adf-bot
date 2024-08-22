@@ -676,7 +676,7 @@ class HumanMovements:
             Use Directional Keys To Scroll To Element
             :return: True
             """
-            await self.keyboard.down_persistent(key)
+            asyncio.create_task(self.keyboard.down_persistent(key))
             await asyncio.sleep(random.uniform(1.1, 1.75))
             await self.keyboard.up(key)
             await asyncio.sleep(random.uniform(0.5, 1.5))

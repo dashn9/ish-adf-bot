@@ -171,38 +171,17 @@ class SmartAdsInteractions:
         except TimeoutException:
             print(f"Bot Process Id {self.bot_process_id} <:::> No ads found, Try again")
 
-    async def locate_ad_elements_in_iframe(
-        self, ads_elements_type, ads_elements_name: str
-    ):
+    async def locate_ad_elements_in_iframe(self, ads_elements):
         async def iframe_check():
-            try:
-                iframe = self.web_browser_driver.main_tab.select("iframe")
-                if self.device_type == "is_smartphone":
-                    iframe_offset = await self.get_element_location_window_offset(
-                        iframe
-                    )
-                else:
-                    iframe_offset = self.get_element_window_location_screen_offsets(
-                        iframe
-                    )["html_web_element"]
-                self.web_browser_driver.switch_to.frame(iframe)
-            except (WebDriverException, StaleElementReferenceException):
-                self.web_browser_driver.switch_to.default_content()
-                return False
+            iframe = self.web_browser_driver.main_tab.select("iframe")
+            if self.device_type == "is_smartphone":
+                iframe_offset = await self.get_element_location_window_offset(iframe)
+            else:
+                iframe_offset = (
+                    await self.get_element_window_location_screen_offsets(iframe)
+                )["html_web_element"]
             ads_elements = None
-            try:
-                ads_elements = self.web_browser_driver.find_elements(
-                    ads_elements_type, ads_elements_name
-                )
-            except (TimeoutException, InvalidArgumentException):
-                print(
-                    f"Bot Process Id {self.bot_process_id} <:::> Element parent body was found but ad elements to "
-                    f"interact with were not present"
-                )
-                self.web_browser_driver.switch_to.default_content()
-            if not ads_elements:
-                self.web_browser_driver.switch_to.default_content()
-                return
+            ads_elements = iframe.select_all(ads_elements)
             ads_elements_rect = []
             for ad_element in ads_elements:
                 rect = ad_element.rect.copy()
@@ -217,41 +196,24 @@ class SmartAdsInteractions:
             self.web_browser_driver.switch_to.default_content()
             return ads_elements_rect
 
-        if ads_elements_type == "xpath":
-            ads_elements_type = By.XPATH
-        elif ads_elements_type == "class":
-            ads_elements_type = By.CLASS_NAME
-        elif ads_elements_type == "id":
-            ads_elements_type = By.ID
-        else:
-            print(
-                f"Bot Process Id {self.bot_process_id} <:::> The ads type you are trying to locate is not supported"
-            )
-            return
-        if ads_elements_name.startswith("//iframe"):
-            ads_elements_name = ads_elements_name[8:]
+        if ads_elements.startswith("//iframe"):
+            ads_elements = ads_elements[8:]
             return await iframe_check()
 
     async def set_ad_behaviour_environment(
         self,
         ad_to_click,
-        vignette_ad_close_type,
-        vignette_ad_close_name,
-        vignette_ad_open_type,
-        vignette_ad_open_name,
-        in_page_ad_links_type,
-        in_page_ad_links_name,
+        vignette_ad_close,
+        vignette_ad_open,
+        in_page_ad_links_open,
         ad_keywords=None,
     ):
         self.ad_to_click = ad_to_click
 
-        self.vignette_ad_close_type = vignette_ad_close_type
-        self.vignette_ad_close_name = vignette_ad_close_name
-        self.vignette_ad_open_type = vignette_ad_open_type
-        self.vignette_ad_open_name = vignette_ad_open_name
+        self.vignette_ad_close = vignette_ad_close
+        self.vignette_ad_open = vignette_ad_open
 
-        self.in_page_ad_links_type = in_page_ad_links_type
-        self.in_page_ad_links_name = in_page_ad_links_name
+        self.in_page_ad_links_open = in_page_ad_links_open
         self.ad_keywords = ad_keywords
 
     async def close_ad(self):
