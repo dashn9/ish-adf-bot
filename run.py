@@ -73,12 +73,9 @@ async def run_bot(
 
         await web_bot.set_ad_behaviour_environment(
             ad_to_click=ad_to_click,
-            vignette_ad_close_type=page_info["vignette_close_ad_elements_type"],
-            vignette_ad_close_name=page_info["vignette_close_ad_elements_name"],
-            vignette_ad_open_type=page_info["vignette_open_ad_elements_type"],
-            vignette_ad_open_name=page_info["vignette_open_ad_elements_name"],
-            in_page_ad_links_type=page_info["in_page_ad_link_elements_type"],
-            in_page_ad_links_name=page_info["in_page_ad_link_elements_name"],
+            vignette_ad_close=page_info["vignette_close_ad_elements"],
+            vignette_ad_open=page_info["vignette_open_ad_elements"],
+            in_page_ad_links_open=page_info["in_page_open_ad_link_elements"],
             ad_keywords=identity.ad_keywords,
         )
         await asyncio.sleep(random.uniform(0, 1))

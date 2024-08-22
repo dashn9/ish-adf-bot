@@ -3,17 +3,7 @@ import time
 import asyncio
 
 import pyautogui
-from selenium.common.exceptions import (
-    TimeoutException,
-    WebDriverException,
-    InvalidArgumentException,
-)
-from selenium.common import StaleElementReferenceException
 from selenium.webdriver.common.by import By
-
-from bots import utils
-from browsers.browser_interface import BrowserInterface
-from humanbehaviourmechanics.human_movements import HumanMovements
 
 
 class SmartAdsInteractions:
@@ -26,13 +16,10 @@ class SmartAdsInteractions:
         self.probability_of_click = 0.45
         self.ad_to_click = False
 
-        self.vignette_ad_close_type = None
-        self.vignette_ad_close_name = None
-        self.vignette_ad_open_type = None
-        self.vignette_ad_open_name = None
+        self.vignette_ad_close = None
+        self.vignette_ad_open = None
 
-        self.in_page_ad_links_type = None
-        self.in_page_ad_links_name = None
+        self.in_page_ad_links_open = None
 
         self.ad_keywords = None
         self.ad_negative_keywords = None
@@ -47,38 +34,34 @@ class SmartAdsInteractions:
                 return False
 
     async def trigger_vignette(self, open_vignette=False):
-        try:
-            if not open_vignette:
-                ads_dimensions = await self.locate_ad_elements_in_iframe(
-                    ads_elements_type=self.vignette_ad_close_type,
-                    ads_elements_name=self.vignette_ad_close_name,
-                )
-            else:
-                ads_dimensions = await self.locate_ad_elements_in_iframe(
-                    ads_elements_type=self.vignette_ad_open_type,
-                    ads_elements_name=self.vignette_ad_open_name,
-                )
-                if await self.strip_ads_with_negative_keywords(ads_dimensions):
-                    return False
-            if not ads_dimensions:
-                return
-            await asyncio.sleep(0.5)
-            if not open_vignette:
-                await self.ad_click(random.choice(ads_dimensions), revert_back=False)
-            else:
-                await self.ad_click(random.choice(ads_dimensions))
-            print(
-                f"Bot Process Id {self.bot_process_id} <:::> Vignette ad trigger attempted"
+        if not open_vignette:
+            ads_dimensions = await self.locate_ad_elements_in_iframe(
+                ads_elements=self.vignette_ad_close,
             )
-            await asyncio.sleep(0.5)
-            await self.trigger_vignette()
-        except TimeoutException:
-            # I no longer use Expected conditions in the iframe_check for locating elements, so this branch of code may
-            # never be reached, look for other ways
-            print(
-                f"Bot Process Id {self.bot_process_id} <:::> No active vignette to close"
+        else:
+            ads_dimensions = await self.locate_ad_elements_in_iframe(
+                ads_elements=self.vignette_ad_open,
             )
+            if await self.strip_ads_with_negative_keywords(ads_dimensions):
+                return False
+        if not ads_dimensions:
             return
+        await asyncio.sleep(0.5)
+        if not open_vignette:
+            await self.ad_click(random.choice(ads_dimensions), revert_back=False)
+        else:
+            await self.ad_click(random.choice(ads_dimensions))
+        print(
+            f"Bot Process Id {self.bot_process_id} <:::> Vignette ad trigger attempted"
+        )
+        await asyncio.sleep(0.5)
+        await self.trigger_vignette()
+        # I no longer use Expected conditions in the iframe_check for locating elements, so this branch of code may
+        # never be reached, look for other ways
+        # print(
+        #     f"Bot Process Id {self.bot_process_id} <:::> No active vignette to close"
+        # )
+        return
 
     async def smart_ad_click(self, switch_focus_to_new_tab=True):
         ad_click_success = False
@@ -87,7 +70,7 @@ class SmartAdsInteractions:
         # Smart reader calls this function after each read loop, and searching for elements is expensive, hence this
         if (
             self.ad_to_click != "vignette"
-            and self.vignette_ad_close_name
+            and self.vignette_ad_close
             and self.track_vignette_close >= 3
         ):
             self.trigger_vignette()
@@ -95,85 +78,83 @@ class SmartAdsInteractions:
         else:
             self.track_vignette_close += 1
         tab_length = len(self.web_browser_driver.tabs)
-        try:
-            if self.ad_to_click == "vignette" and self.vignette_ad_open_name:
+        if self.ad_to_click == "vignette" and self.vignette_ad_open:
+            # Resetting time activated before loading, so ad page has more time to load
+            self.time_activated = time.time()
+            # This creates a possibility where the ad will be closed before eventually getting triggered. If
+            # migrating to adsense, you probably want to recheck
+            if random.random() < 0.03:
+                await self.trigger_vignette()
+                return
+            await self.trigger_vignette(open_vignette=True)
+            if tab_length != len(self.web_browser_driver.tabs):
+                self.ad_to_click = None
+                ad_click_success = True
+            else:  # the reason why this condition branch was added was because of the possibility trigger_vignette
+                # might not trigger, most likely because ad contained negative keywords
+                await self.trigger_vignette()
+        elif self.ad_to_click == "in_page" and self.in_page_ad_links_name:
+            await self.trigger_vignette()
+            await asyncio.sleep(0.4)
+            ads_dimensions = await self.locate_ad_elements_in_iframe(
+                ads_elements_type=self.in_page_ad_links_type,
+                ads_elements_name=self.in_page_ad_links_name,
+            )
+            if not ads_dimensions:
+                return
+
+            if (
+                not isinstance(self.ad_keywords, list)
+                or self.ad_with_keyword_wait_counter >= 1
+            ):
+                print(
+                    f"Bot Process Id {self.bot_process_id} <:::> Keywords won't be used as basis for ad click"
+                )
                 # Resetting time activated before loading, so ad page has more time to load
                 self.time_activated = time.time()
-                # This creates a possibility where the ad will be closed before eventually getting triggered. If
-                # migrating to adsense, you probably want to recheck
-                if random.random() < 0.03:
-                    await self.trigger_vignette()
-                    return
-                await self.trigger_vignette(open_vignette=True)
-                if tab_length != len(self.web_browser_driver.tabs):
-                    self.ad_to_click = None
+                if await self.ad_click(
+                    random.choice(ads_dimensions)
+                ) and tab_length != len(self.web_browser_driver.tabs):
                     ad_click_success = True
-                else:  # the reason why this condition branch was added was because of the possibility trigger_vignette
-                    # might not trigger, most likely because ad contained negative keywords
-                    await self.trigger_vignette()
-            elif self.ad_to_click == "in_page" and self.in_page_ad_links_name:
-                await self.trigger_vignette()
-                await asyncio.sleep(0.4)
-                ads_dimensions = await self.locate_ad_elements_in_iframe(
-                    ads_elements_type=self.in_page_ad_links_type,
-                    ads_elements_name=self.in_page_ad_links_name,
-                )
-                if not ads_dimensions:
-                    return
-
-                if (
-                    not isinstance(self.ad_keywords, list)
-                    or self.ad_with_keyword_wait_counter >= 1
-                ):
+                    self.ad_to_click = None
+            else:
+                for ad_dimensions in ads_dimensions:
+                    for keyword in self.ad_keywords:
+                        if keyword in ad_dimensions["text_content"]:
+                            # Resetting time activated before loading, so ad page has more time to load
+                            self.time_activated = time.time()
+                            if await self.ad_click(ad_dimensions) and tab_length != len(
+                                self.web_browser_driver.tabs
+                            ):
+                                ad_click_success = True
+                                self.ad_to_click = None
+                            print(
+                                f"Bot Process Id {self.bot_process_id} <:::> Keyword was used as a base to click "
+                                f"an ad"
+                            )
+                            break
+                    else:
+                        continue
+                    break
+                if self.ad_to_click:
+                    self.ad_with_keyword_wait_counter += 1
                     print(
-                        f"Bot Process Id {self.bot_process_id} <:::> Keywords won't be used as basis for ad click"
+                        f"Bot Process Id {self.bot_process_id} <:::> Ad with any of keywords wasn't found, "
+                        f"Try again"
                     )
-                    # Resetting time activated before loading, so ad page has more time to load
-                    self.time_activated = time.time()
-                    if await self.ad_click(
-                        random.choice(ads_dimensions)
-                    ) and tab_length != len(self.web_browser_driver.tabs):
-                        ad_click_success = True
-                        self.ad_to_click = None
-                else:
-                    for ad_dimensions in ads_dimensions:
-                        for keyword in self.ad_keywords:
-                            if keyword in ad_dimensions["text_content"]:
-                                # Resetting time activated before loading, so ad page has more time to load
-                                self.time_activated = time.time()
-                                if await self.ad_click(
-                                    ad_dimensions
-                                ) and tab_length != len(self.web_browser_driver.tabs):
-                                    ad_click_success = True
-                                    self.ad_to_click = None
-                                print(
-                                    f"Bot Process Id {self.bot_process_id} <:::> Keyword was used as a base to click "
-                                    f"an ad"
-                                )
-                                break
-                        else:
-                            continue
-                        break
-                    if self.ad_to_click:
-                        self.ad_with_keyword_wait_counter += 1
-                        print(
-                            f"Bot Process Id {self.bot_process_id} <:::> Ad with any of keywords wasn't found, "
-                            f"Try again"
-                        )
-            if ad_click_success and switch_focus_to_new_tab:
-                await asyncio.sleep(1)
-                self.web_browser_driver.switch_to.window(
-                    self.web_browser_driver.tabs[-1]
-                )
-            if self.device_type == "is_smartphone":
-                self.activate_mobile()
-            return ad_click_success
-        except TimeoutException:
-            print(f"Bot Process Id {self.bot_process_id} <:::> No ads found, Try again")
+        if ad_click_success and switch_focus_to_new_tab:
+            await asyncio.sleep(1)
+            self.web_browser_driver.switch_to.window(self.web_browser_driver.tabs[-1])
+        if self.device_type == "is_smartphone":
+            self.activate_mobile()
+        return ad_click_success
+        # print(f"Bot Process Id {self.bot_process_id} <:::> No ads found, Try again")
 
     async def locate_ad_elements_in_iframe(self, ads_elements):
         async def iframe_check():
-            iframe = self.web_browser_driver.main_tab.select("iframe")
+            iframe = await self.web_browser_driver.main_tab.select("iframe")
+            if not iframe:
+                return
             if self.device_type == "is_smartphone":
                 iframe_offset = await self.get_element_location_window_offset(iframe)
             else:
@@ -181,7 +162,7 @@ class SmartAdsInteractions:
                     await self.get_element_window_location_screen_offsets(iframe)
                 )["html_web_element"]
             ads_elements = None
-            ads_elements = iframe.select_all(ads_elements)
+            ads_elements = await iframe.select_all(ads_elements)
             ads_elements_rect = []
             for ad_element in ads_elements:
                 rect = ad_element.rect.copy()
@@ -191,7 +172,7 @@ class SmartAdsInteractions:
                 else:
                     rect["x"] = iframe_offset[0] + rect["x"]
                     rect["y"] = iframe_offset[1] + rect["y"]
-                rect["text_content"] = ad_element.text
+                rect["text_content"] = ad_element.text_all()
                 ads_elements_rect.append(rect)
             self.web_browser_driver.switch_to.default_content()
             return ads_elements_rect
@@ -235,7 +216,7 @@ class SmartAdsInteractions:
             await asyncio.sleep(random.uniform(0.1, 0.4))
             pyautogui.click()
             if revert_back:
-                self.revert_to_main_page()
+                await self.revert_to_main_page()
             await self.simulate_human_mouse_move_behavior_to_point(
                 previous_mouse_pos[0], previous_mouse_pos[1]
             )

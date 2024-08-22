@@ -671,11 +671,19 @@ class HumanMovements:
             else:
                 return True
 
-        async def scroll(key):
+        async def scroll(key, direction):
             """
             Use Directional Keys To Scroll To Element
             :return: True
             """
+            if random.random() < 0.85:
+                await self.mouse.mouse_wheel(
+                    *pyautogui.position(),
+                    random.randint(50, 200),
+                    deltaY=self.identity.mouse_delta_y,
+                    vary_deltaY_on_read=True,
+                    yDirection=direction,
+                )
             asyncio.create_task(self.keyboard.down_persistent(key))
             await asyncio.sleep(random.uniform(1.1, 1.75))
             await self.keyboard.up(key)
@@ -705,7 +713,7 @@ class HumanMovements:
                         if isinstance(self.touch, Touchscreen):
                             await scroll_with_touch(True, 1)
                         else:
-                            await scroll(K_Keys["ArrowDown"])
+                            await scroll(K_Keys["ArrowDown"], True)
                         if not await has_page_offset_changed():
                             return True
                         element_browser_coordinates = (
@@ -724,7 +732,7 @@ class HumanMovements:
                         if isinstance(self.touch, Touchscreen):
                             await scroll_with_touch(False, 1)
                         else:
-                            scroll(K_Keys["ArrowUp"])
+                            scroll(K_Keys["ArrowUp"], False)
                         if not has_page_offset_changed():
                             return True
                         element_browser_coordinates = (

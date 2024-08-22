@@ -261,7 +261,7 @@ class BrowserInterface:
                 "x_offset": await self.web_browser_driver.main_tab.evaluate("window.pageXOffset", await_promise=True)}
 
     async def bring_window_to_front(self):
-        self.web_browser_driver.main_tab.bring_to_front()
+        await self.web_browser_driver.main_tab.bring_to_front()
 
     async def revert_to_main_page(self, recurse=False, time_interval_to_check=0.4):
         """
