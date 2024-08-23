@@ -684,10 +684,11 @@ class HumanMovements:
                     vary_deltaY_on_read=True,
                     yDirection=direction,
                 )
-            asyncio.create_task(self.keyboard.down_persistent(key))
-            await asyncio.sleep(random.uniform(1.1, 1.75))
-            await self.keyboard.up(key)
-            await asyncio.sleep(random.uniform(0.5, 1.5))
+            else:
+                asyncio.create_task(self.keyboard.down_persistent(key))
+                await asyncio.sleep(random.uniform(1.1, 1.75))
+                await self.keyboard.up(key)
+                await asyncio.sleep(random.uniform(0.5, 1.5))
 
         async def scroll_with_touch(direction, duration):
             if direction:

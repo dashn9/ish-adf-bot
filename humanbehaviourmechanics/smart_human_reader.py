@@ -422,7 +422,7 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
         ).get("bottom") > browser_inner_size.get("height"):
             if remaining_reading_content_percentage < 50 and random.random() < 0.08:
                 print(
-                    f"Bot Process Id {self.bot_process_id} <:::> Current Activity --> Scrolling To random.m Point On "
+                    f"Bot Process Id {self.bot_process_id} <:::> Current Activity --> Scrolling To Random Point On "
                     f"Article"
                 )
                 random_max = 100 - remaining_reading_content_percentage
@@ -452,11 +452,6 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
                     SmartHumanReader.active_on_mouse_movement.value = (
                         self.bot_process_id
                     )
-                    # The scrollbar on mac os is not prominent, and also people seldom use it anymore these days.
-                    if (
-                        self.identity.os is not device_constants.MAC_OS
-                    ) and random.random() <= 0.05:
-                        mode = "mouse_to_scrollbar"
                     asyncio.create_task(self.bring_window_to_front())
 
             if remaining_reading_content_percentage < 26:
