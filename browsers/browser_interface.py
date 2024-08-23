@@ -181,7 +181,7 @@ class BrowserInterface:
             }
         # Bound To Browser Window
         elif relative_to == 1:
-            browser_rect = self.web_browser_driver.main_tab.get_window()
+            browser_rect = await self.web_browser_driver.main_tab.get_window()
             return {
                 "x_pos": scroll_bar_x_position + (browser_outer_size.get("width") - browser_inner_size.get("width")),
                 "y_pos": scroll_bar_y_position + (browser_outer_size.get("height") - browser_inner_size.get("height")),
@@ -214,6 +214,7 @@ class BrowserInterface:
 
         browser_inner_size = await self.get_browser_inner_size()
         browser_window_rect = (await self.web_browser_driver.main_tab.get_window())[1]
+
         web_element_x_offset = web_element_location_dimensions.x + browser_window_rect.left \
                                + (browser_window_rect.width - browser_inner_size["width"]) \
                                - window_page_x_offset

@@ -54,6 +54,17 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
                         html_web_element
                     )
                 )
+                print(
+                    {
+                        "x": element_screen_position["html_web_element"][0],
+                        "y": (await self.get_document_offset_from_screen())["y"],
+                        "width": (await html_web_element.get_position()).width,
+                        "height": min(
+                            element_screen_position["html_web_element"][2],
+                            (await self.get_browser_inner_size())["height"],
+                        ),
+                    }
+                )
                 await self.move_mouse_to_random_area_on_screen(
                     {
                         "x": element_screen_position["html_web_element"][0],

@@ -36,11 +36,11 @@ class SmartAdsInteractions:
     async def trigger_vignette(self, open_vignette=False):
         if not open_vignette:
             ads_dimensions = await self.locate_ad_elements_in_iframe(
-                ads_elements=self.vignette_ad_close,
+                ads_elements_selector=self.vignette_ad_close,
             )
         else:
             ads_dimensions = await self.locate_ad_elements_in_iframe(
-                ads_elements=self.vignette_ad_open,
+                ads_elements_selector=self.vignette_ad_open,
             )
             if await self.strip_ads_with_negative_keywords(ads_dimensions):
                 return False
@@ -73,7 +73,7 @@ class SmartAdsInteractions:
             and self.vignette_ad_close
             and self.track_vignette_close >= 3
         ):
-            self.trigger_vignette()
+            await self.trigger_vignette()
             self.track_vignette_close = 0
         else:
             self.track_vignette_close += 1
@@ -150,9 +150,10 @@ class SmartAdsInteractions:
         return ad_click_success
         # print(f"Bot Process Id {self.bot_process_id} <:::> No ads found, Try again")
 
-    async def locate_ad_elements_in_iframe(self, ads_elements):
+    async def locate_ad_elements_in_iframe(self, ads_elements_selector):
         async def iframe_check():
             iframe = await self.web_browser_driver.main_tab.select("iframe")
+            print(iframe)
             if not iframe:
                 return
             if self.device_type == "is_smartphone":
@@ -162,7 +163,7 @@ class SmartAdsInteractions:
                     await self.get_element_window_location_screen_offsets(iframe)
                 )["html_web_element"]
             ads_elements = None
-            ads_elements = await iframe.select_all(ads_elements)
+            ads_elements = await iframe.query_selector_all(ads_elements_selector)
             ads_elements_rect = []
             for ad_element in ads_elements:
                 rect = ad_element.rect.copy()
@@ -177,8 +178,8 @@ class SmartAdsInteractions:
             self.web_browser_driver.switch_to.default_content()
             return ads_elements_rect
 
-        if ads_elements.startswith("//iframe"):
-            ads_elements = ads_elements[8:]
+        if ads_elements_selector.startswith("//iframe"):
+            ads_elements_selector = ads_elements_selector[8:]
             return await iframe_check()
 
     async def set_ad_behaviour_environment(

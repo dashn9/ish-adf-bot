@@ -679,7 +679,7 @@ class HumanMovements:
             if random.random() < 0.85:
                 await self.mouse.mouse_wheel(
                     *pyautogui.position(),
-                    random.randint(50, 200),
+                    random.randint(10, 100),
                     deltaY=self.identity.mouse_delta_y,
                     vary_deltaY_on_read=True,
                     yDirection=direction,
