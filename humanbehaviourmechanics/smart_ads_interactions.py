@@ -93,12 +93,11 @@ class SmartAdsInteractions:
             else:  # the reason why this condition branch was added was because of the possibility trigger_vignette
                 # might not trigger, most likely because ad contained negative keywords
                 await self.trigger_vignette()
-        elif self.ad_to_click == "in_page" and self.in_page_ad_links_name:
+        elif self.ad_to_click == "in_page" and self.in_page_ad_links_open:
             await self.trigger_vignette()
             await asyncio.sleep(0.4)
             ads_dimensions = await self.locate_ad_elements_in_iframe(
-                ads_elements_type=self.in_page_ad_links_type,
-                ads_elements_name=self.in_page_ad_links_name,
+                ads_elements_selector=self.in_page_ad_links_open,
             )
             if not ads_dimensions:
                 return

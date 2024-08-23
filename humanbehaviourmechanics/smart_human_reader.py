@@ -37,7 +37,9 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
         px_to_adjust_by = max(px_to_adjust_by, 10)
         # Stamp the initial time before reading began
         read_mode_time_used = time.time()
-        mode = "wheel"
+        mode = "arrow_keys"
+        if random.random() < 0.1:
+            await self.move_mouse_to_random_area_on_element(html_web_element)
         if mode == "arrow_keys":
             key = K_Keys["ArrowDown"]
             if not direction:
@@ -48,22 +50,6 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
             # Wait to complete scroll
             await asyncio.sleep(0.12)
         elif mode == "wheel":
-            if random.random() < 0.65:
-                element_screen_position = await self.get_element_location_screen_offset(
-                    html_web_element
-                )
-                print(
-                    {
-                        "x": element_screen_position["html_web_element"]["x_offset"],
-                        "y": (await self.get_document_offset_from_screen())["y"],
-                        "width": (await html_web_element.get_position()).width,
-                        "height": min(
-                            element_screen_position["html_web_element"]["bottom"],
-                            (await self.get_browser_inner_size())["height"],
-                        ),
-                    }
-                )
-                await self.move_mouse_to_random_area_on_element(html_web_element)
             if random.random() < 0.22:
                 await self.mouse.mouse_wheel_with_bezier_animation(
                     *pyautogui.position(), px_to_adjust_by, direction
@@ -136,7 +122,7 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
     async def smart_human_like_content_navigator(
         self,
         read_time,
-        html_web_element,
+        html_web_element: WebElement,
         total_px_to_adjust_by,
         mode="arrow_keys",
         **kwargs,
@@ -420,6 +406,11 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
         while remaining_reading_content_percentage > 0 and (
             await self.get_element_location_window_offset(html_web_element)
         ).get("bottom") > browser_inner_size.get("height"):
+            print(
+                (await self.get_element_location_window_offset(html_web_element)).get(
+                    "bottom"
+                )
+            )
             if remaining_reading_content_percentage < 50 and random.random() < 0.08:
                 print(
                     f"Bot Process Id {self.bot_process_id} <:::> Current Activity --> Scrolling To Random Point On "

@@ -26,7 +26,7 @@ class HumanBehaviourReveries:
         """
         if HumanBehaviourReveries.active_on_mouse_movement.value < 0:
             HumanBehaviourReveries.active_on_mouse_movement.value = self.bot_process_id
-            self.bring_window_to_front()
+            await self.bring_window_to_front()
             await self.simulate_human_mouse_move_behavior_to_point(
                 random.randint(0, bot_constants.SCREEN_WIDTH), 4
             )
@@ -54,9 +54,9 @@ class HumanBehaviourReveries:
                 bounds["y"],
                 bounds["width"],
                 bounds["height"],
-                x_coordinates_offset_percentage=random.randint(0, 100),
-                y_coordinates_offset_percentage=random.randint(0, 100),
-                max_overshoot=35,
+                x_coordinates_offset_percentage=random.randint(8, 100),
+                y_coordinates_offset_percentage=random.randint(8, 100),
+                max_overshoot=5,
                 probability_of_overshoot=round(random.random(), 2),
             )
             await asyncio.sleep(0.5)
@@ -70,17 +70,6 @@ class HumanBehaviourReveries:
 
     async def move_mouse_to_random_area_on_element(self, element: WebElement):
         element_screen_position = await self.get_element_location_screen_offset(element)
-        print(
-            {
-                "x": element_screen_position["html_web_element"]["x_offset"],
-                "y": (await self.get_document_offset_from_screen())["y"],
-                "width": (await element.get_position()).width,
-                "height": min(
-                    element_screen_position["html_web_element"]["bottom"],
-                    (await self.get_browser_inner_size())["height"],
-                ),
-            }
-        )
         await self.move_mouse_to_random_area_on_screen(
             {
                 "x": element_screen_position["html_web_element"]["x_offset"],

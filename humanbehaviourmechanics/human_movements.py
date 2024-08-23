@@ -426,14 +426,16 @@ class HumanMovements:
                         )
                 else:
                     while offset_to_adjust_to >= element_coordinates["y_offset"]:
-                        await self.keyboard.down_persistent(K_Keys["ArrowUp"])
+                        asyncio.create_task(
+                            self.keyboard.down_persistent(K_Keys["ArrowUp"])
+                        )
                         if (
                             utils.clean_negative(element_coordinates["y_offset"])
                             - utils.clean_negative(offset_to_adjust_to)
                             < bot_constants.PX_VALUE_TO_CHECK_WHEN_SCROLL_TO_POINT
                         ):
                             await asyncio.sleep(random.uniform(0.01, 0.267))
-                            self.keyboard.up(K_Keys["ArrowUp"])
+                            await self.keyboard.up(K_Keys["ArrowUp"])
                             await asyncio.sleep(random.uniform(0.15, 0.6))
                         else:
                             await asyncio.sleep(0.3)
@@ -454,28 +456,30 @@ class HumanMovements:
                         )
                 else:
                     while offset_to_adjust_to <= element_coordinates["y_offset"]:
-                        await self.keyboard.down_persistent(K_Keys["ArrowDown"])
+                        asyncio.create_task(
+                            self.keyboard.down_persistent(K_Keys["ArrowDown"])
+                        )
                         if (
                             utils.clean_negative(offset_to_adjust_to)
                             - utils.clean_negative(element_coordinates["y_offset"])
                             < bot_constants.PX_VALUE_TO_CHECK_WHEN_SCROLL_TO_POINT
                         ):
                             await asyncio.sleep(random.uniform(0.01, 0.267))
-                            self.keyboard.up(K_Keys["ArrowDown"])
+                            await self.keyboard.up(K_Keys["ArrowDown"])
                             await asyncio.sleep(random.uniform(0.15, 0.6))
                         else:
                             await asyncio.sleep(0.3)
                         element_coordinates = self.get_element_location_window_offset(
                             html_web_element
                         )
-                    self.keyboard.up(K_Keys["ArrowDown"])
+                    await self.keyboard.up(K_Keys["ArrowDown"])
                     if random.random() > 0.5:
                         await random_miscellaneous_key_presses(0.25)
 
         # Element Height - Browser Window Makes It Possible To Eject Browser Dimensions From Calculations
-        workable_height = html_web_element.rect.get(
-            "height"
-        ) - self.web_browser_driver.main_tab.get_window().get("height")
+        workable_height = (
+            await html_web_element.get_position()
+        ).width - self.web_browser_driver.main_tab.get_window()[1].height
 
         offset_to_adjust_to = utils.fetch_percentage_value(
             workable_height, percentage_to_scroll_to
@@ -497,19 +501,21 @@ class HumanMovements:
         key=K_Keys["ArrowDown"],
         direction_to_move=True,
     ):
-        await self.keyboard.down_persistent(key)
-        element_coordinates = self.get_element_location_window_offset(html_web_element)
+        asyncio.create_task(self.keyboard.down_persistent(key))
+        element_coordinates = await self.get_element_location_window_offset(
+            html_web_element
+        )
         old_element_coordinates = element_coordinates
         boundary = element_coordinates.get("y_offset") - boundary
         offset_same_count = 0
 
         if direction_to_move:
             while element_coordinates.get("y_offset") >= boundary:
-                old_element_coordinates = self.get_element_location_window_offset(
+                old_element_coordinates = await self.get_element_location_window_offset(
                     html_web_element
                 )
                 await asyncio.sleep(0.1)
-                element_coordinates = self.get_element_location_window_offset(
+                element_coordinates = await self.get_element_location_window_offset(
                     html_web_element
                 )
 
@@ -522,11 +528,11 @@ class HumanMovements:
 
         elif not direction_to_move:
             while boundary >= element_coordinates.get("y_offset"):
-                old_element_coordinates = self.get_element_location_window_offset(
+                old_element_coordinates = await self.get_element_location_window_offset(
                     html_web_element
                 )
                 await asyncio.sleep(0.1)
-                element_coordinates = self.get_element_location_window_offset(
+                element_coordinates = await self.get_element_location_window_offset(
                     html_web_element
                 )
 
@@ -536,7 +542,7 @@ class HumanMovements:
                     "y_offset"
                 ):
                     offset_same_count += 1
-        self.keyboard.up(key)
+        await self.keyboard.up(key)
         return True
 
     async def read_with_mouse_to_scrollbar(

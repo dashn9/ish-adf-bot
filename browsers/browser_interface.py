@@ -210,15 +210,11 @@ class BrowserInterface:
 
         document_offset_from_screen = await self.get_document_offset_from_screen()
 
-        # Fetch Browser Document Inner Offset
-        window_page_y_offset, window_page_x_offset = (await self.get_window_document_offsets()).values()
-
         browser_window_rect = (await self.web_browser_driver.main_tab.get_window())[1]
 
-        web_element_x_offset = web_element_location_dimensions.x + document_offset_from_screen['x'] \
-                               - window_page_x_offset
-        web_element_y_offset = web_element_location_dimensions.y + document_offset_from_screen['y'] \
-                               - window_page_y_offset
+        web_element_x_offset = web_element_location_dimensions.x + document_offset_from_screen['x']
+        web_element_y_offset = web_element_location_dimensions.y + document_offset_from_screen['y']
+
         browser_window_rect_bottom = browser_window_rect.height + browser_window_rect.top
         web_element_bottom = web_element_y_offset + web_element_location_dimensions.height
         return {"html_web_element": {"x_offset": web_element_x_offset, "y_offset": web_element_y_offset,
@@ -246,11 +242,8 @@ class BrowserInterface:
         # Getting HTML Web Element Coordinates Which Are Relative From The Window Point) And Dimensions
         web_element_location_dimensions = await html_web_element.get_position()
 
-        # Fetch Browser Document Inner Offset
-        window_page_y_offset, window_page_x_offset = (await self.get_window_document_offsets()).values()
-
-        web_element_x_offset = web_element_location_dimensions.x - window_page_x_offset
-        web_element_y_offset = web_element_location_dimensions.y - window_page_y_offset
+        web_element_x_offset = web_element_location_dimensions.x
+        web_element_y_offset = web_element_location_dimensions.y
 
         web_element_bottom = web_element_y_offset + web_element_location_dimensions.height
         return {"x_offset": web_element_x_offset, "y_offset": web_element_y_offset, "bottom": web_element_bottom}
@@ -413,5 +406,4 @@ class BrowserInterface:
 
         await devtools_primary.enable_network_interception(self.web_browser_driver)
         await devtools_primary.add_request_interception(self.web_browser_driver, self.request_interceptor)
-        self.web_browser_driver.response_interceptor = self.response_interceptor
         asyncio.create_task(self.quit_browser_after_max_alive())
