@@ -359,12 +359,12 @@ class HumanMovements:
                 html_web_element, element_scroll_to=1
             )
             if not isinstance(self.touch, Touchscreen):
-                element_screen_position = (
-                    self.get_element_window_location_screen_offsets(html_web_element)
+                element_screen_position = self.get_element_location_screen_offset(
+                    html_web_element
                 )
                 el_pos = dict(
-                    area_x=element_screen_position["html_web_element"][0],
-                    area_y=element_screen_position["html_web_element"][1],
+                    area_x=element_screen_position["html_web_element"]["x_offset"],
+                    area_y=element_screen_position["html_web_element"]["y_offset"],
                     area_width=html_web_element.rect["width"],
                     area_height=html_web_element.rect["height"],
                 )
@@ -696,18 +696,18 @@ class HumanMovements:
                 px_to_adjust_by = random.randint(-500, -1)
             await self.read_with_touch(px_to_adjust_by, duration)
 
-        element_browser_coordinates = (
-            await self.get_element_window_location_screen_offsets(html_web_element)
+        element_browser_coordinates = await self.get_element_location_screen_offset(
+            html_web_element
         )
 
         if simulate_human_behaviour:
             if element_scroll_to == 0:
                 if (
-                    element_browser_coordinates["html_web_element"][1]
+                    element_browser_coordinates["html_web_element"]["y_offset"]
                     > element_browser_coordinates["browser_window_rect"][1]
                 ):
                     while (
-                        element_browser_coordinates["html_web_element"][1]
+                        element_browser_coordinates["html_web_element"]["y_offset"]
                         >= element_browser_coordinates["browser_window_rect"][1]
                     ):
                         if isinstance(self.touch, Touchscreen):
@@ -717,16 +717,16 @@ class HumanMovements:
                         if not await has_page_offset_changed():
                             return True
                         element_browser_coordinates = (
-                            await self.get_element_window_location_screen_offsets(
+                            await self.get_element_location_screen_offset(
                                 html_web_element
                             )
                         )
                 elif (
-                    element_browser_coordinates["html_web_element"][1]
+                    element_browser_coordinates["html_web_element"]["y_offset"]
                     < element_browser_coordinates["browser_window_rect"][1]
                 ):
                     while (
-                        element_browser_coordinates["html_web_element"][1]
+                        element_browser_coordinates["html_web_element"]["y_offset"]
                         <= element_browser_coordinates["browser_window_rect"][1]
                     ):
                         if isinstance(self.touch, Touchscreen):
@@ -736,18 +736,18 @@ class HumanMovements:
                         if not has_page_offset_changed():
                             return True
                         element_browser_coordinates = (
-                            await self.get_element_window_location_screen_offsets(
+                            await self.get_element_location_screen_offset(
                                 html_web_element
                             )
                         )
 
             elif element_scroll_to == 1:
                 if (
-                    element_browser_coordinates["html_web_element"][2]
+                    element_browser_coordinates["html_web_element"]["bottom"]
                     > element_browser_coordinates["browser_window_rect"][2]
                 ):
                     while (
-                        element_browser_coordinates["html_web_element"][2]
+                        element_browser_coordinates["html_web_element"]["bottom"]
                         >= element_browser_coordinates["browser_window_rect"][2]
                     ):
                         if isinstance(self.touch, Touchscreen):
@@ -757,16 +757,14 @@ class HumanMovements:
                         if not has_page_offset_changed():
                             return True
                         element_browser_coordinates = (
-                            self.get_element_window_location_screen_offsets(
-                                html_web_element
-                            )
+                            self.get_element_location_screen_offset(html_web_element)
                         )
                 elif (
-                    element_browser_coordinates["html_web_element"][1]
+                    element_browser_coordinates["html_web_element"]["y_offset"]
                     < element_browser_coordinates["browser_window_rect"][1]
                 ):
                     while (
-                        element_browser_coordinates["html_web_element"][1]
+                        element_browser_coordinates["html_web_element"]["y_offset"]
                         <= element_browser_coordinates["browser_window_rect"][1]
                     ):
                         if isinstance(self.touch, Touchscreen):
@@ -776,9 +774,7 @@ class HumanMovements:
                         if not has_page_offset_changed():
                             return True
                         element_browser_coordinates = (
-                            self.get_element_window_location_screen_offsets(
-                                html_web_element
-                            )
+                            self.get_element_location_screen_offset(html_web_element)
                         )
 
         else:
@@ -798,11 +794,11 @@ class HumanMovements:
             is_asychronous,
         )
 
-    async def click_trigger(self, x_coord=50, y_coord=50, device_type="is_pc"):
+    async def click_trigger(self, x_coord=50, y_coord=50, device_type="computer"):
         if device_type == "is_smartphone":
             self.human_movements.touch.tap(x_coord, y_coord)
             return True
-        elif device_type == "is_pc":
+        elif device_type == "computer":
             pyautogui.click()
             return True
         else:
@@ -811,7 +807,7 @@ class HumanMovements:
             )
             return False
 
-    async def smart_click_trigger(self, coordinates=(100, 100), device_type="is_pc"):
+    async def smart_click_trigger(self, coordinates=(100, 100), device_type="computer"):
         if self.no_of_clicks > 0:
             if random.uniform(0, 1) <= self.probability_of_click:
                 self.probability_of_click -= utils.fetch_percentage_value(

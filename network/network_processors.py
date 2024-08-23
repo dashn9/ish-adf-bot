@@ -55,18 +55,13 @@ class NetworkRunner:
         # release Proxyrack sticky session
         if self.identity.proxy_release_url:
             print(f"Bot Process Id {self.bot_process_id} <:::> Releasing proxy session")
-            try:
-                async with self.proxy_cached_session() as session:
-                    print(  # add to config,
-                        await session.request(
-                            url=self.identity.proxy_release_url,
-                            method="GET",
-                            proxies=self.proxy,
-                        ).json()
-                    )
-            except:
-                print(
-                    f"Bot Process Id {self.bot_process_id} <:::> An error occurred, might have failed to release"
+            async with self.proxy_cached_session() as session:
+                print(  # add to config,
+                    await session.request(
+                        url=self.identity.proxy_release_url,
+                        method="GET",
+                        proxies=self.proxy,
+                    ).json()
                 )
 
     async def inject_referer_into_header(self, request: cdp.network.Request):

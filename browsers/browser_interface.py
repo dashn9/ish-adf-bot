@@ -22,7 +22,7 @@ from constants import bot_constants, browser_constants, config
 
 class BrowserInterface:
     def __init__(self, browser_to_use_id=browser_constants.CHROME_ID,
-                 bot_process_id=None, timezone_id=None, device_type="is_pc", hardware_concurrency=2,
+                 bot_process_id=None, timezone_id=None, device_type="computer", hardware_concurrency=2,
                  has_touch="no_touch", has_mouse="no_mouse", languages=["en-US", "en"], user_agent=None, hardware=None,
                  platform={}, screen_width=1920, screen_height=1080, device_pixel_ratio=1, cookies=list(),
                  identity_id=None, cookies_update_callback=None):
@@ -199,7 +199,7 @@ class BrowserInterface:
         else:
             return False
 
-    async def get_element_window_location_screen_offsets(self, html_web_element: WebElement):
+    async def get_element_location_screen_offset(self, html_web_element: WebElement):
         """
         Calculate And Return Both Window And Element Location Offsets Relative To Screen
         :param html_web_element: Target HTML Element
@@ -208,35 +208,34 @@ class BrowserInterface:
         # Getting HTML Web Element Coordinates Which Are Relative From The Window Point And Dimensions
         web_element_location_dimensions = await html_web_element.get_position()
 
-        # Fetch Browser Document Inner Offset
-        window_page_y_offset = await self.web_browser_driver.main_tab.evaluate("window.pageYOffset", await_promise=True)
-        window_page_x_offset = await self.web_browser_driver.main_tab.evaluate("window.pageXOffset", await_promise=True)
+        document_offset_from_screen = await self.get_document_offset_from_screen()
 
-        browser_inner_size = await self.get_browser_inner_size()
+        # Fetch Browser Document Inner Offset
+        window_page_y_offset, window_page_x_offset = (await self.get_window_document_offsets()).values()
+
         browser_window_rect = (await self.web_browser_driver.main_tab.get_window())[1]
 
-        web_element_x_offset = web_element_location_dimensions.x + browser_window_rect.left \
-                               + (browser_window_rect.width - browser_inner_size["width"]) \
+        web_element_x_offset = web_element_location_dimensions.x + document_offset_from_screen['x'] \
                                - window_page_x_offset
-        web_element_y_offset = web_element_location_dimensions.y + browser_window_rect.top \
-                               + (browser_window_rect.height - browser_inner_size["height"]) \
+        web_element_y_offset = web_element_location_dimensions.y + document_offset_from_screen['y'] \
                                - window_page_y_offset
         browser_window_rect_bottom = browser_window_rect.height + browser_window_rect.top
         web_element_bottom = web_element_y_offset + web_element_location_dimensions.height
-        return {"html_web_element": (web_element_x_offset, web_element_y_offset,
-                                     web_element_bottom, web_element_location_dimensions.height),
+        return {"html_web_element": {"x_offset": web_element_x_offset, "y_offset": web_element_y_offset,
+                                    "width": web_element_location_dimensions, "height": web_element_location_dimensions.height, "bottom": web_element_bottom},
                 "browser_window_rect": (
                     browser_window_rect.left, browser_window_rect.top, browser_window_rect_bottom)}
 
     async def get_document_offset_from_screen(self):
         """
-        This method calculates the dimensions of the document page of a browser relative to the screen
+        This method calculates the dimensions of the document page of a browser relative to the screen. It might not be accurate, if there is an addition component in the tab e.g devtools
         :return: A dictionary holding document dimensions
         """
         browser_inner_size = await self.get_browser_inner_size()
         browser_window_rect = (await self.web_browser_driver.main_tab.get_window())[1]
         return dict(y=browser_window_rect.top + (browser_window_rect.height - browser_inner_size["height"]),
-                    x=browser_window_rect.left + (browser_window_rect.width - browser_inner_size["width"]))
+                    x=browser_window_rect.left + (browser_window_rect.width - browser_inner_size["width"]),
+                    width=browser_inner_size["width"], height=browser_inner_size["height"])
 
     async def get_element_location_window_offset(self, html_web_element: WebElement):
         """
@@ -248,8 +247,7 @@ class BrowserInterface:
         web_element_location_dimensions = await html_web_element.get_position()
 
         # Fetch Browser Document Inner Offset
-        window_page_y_offset = await self.web_browser_driver.main_tab.evaluate("window.pageYOffset", await_promise=True)
-        window_page_x_offset = await self.web_browser_driver.main_tab.evaluate("window.pageXOffset", await_promise=True)
+        window_page_y_offset, window_page_x_offset = (await self.get_window_document_offsets()).values()
 
         web_element_x_offset = web_element_location_dimensions.x - window_page_x_offset
         web_element_y_offset = web_element_location_dimensions.y - window_page_y_offset

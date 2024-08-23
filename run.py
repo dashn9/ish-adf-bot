@@ -80,8 +80,8 @@ async def run_bot(
         )
         await asyncio.sleep(random.uniform(0, 1))
         if boc.ENGAGE_READER:
-            if web_bot.identity.device_type == "is_pc" and random.random() < 0.2:
-                web_bot.move_mouse_to_random_area_on_screen()
+            if web_bot.identity.device_type == "computer":
+                await web_bot.move_mouse_to_random_area_on_document()
             if (
                 await web_bot.read_element_content(
                     await web_bot.web_browser_driver.main_tab.select(
@@ -124,8 +124,8 @@ async def run_bot(
                             )
                         )
                         identity.page_depth = identity.page_depth / 2
-            if web_bot.identity.device_type == "is_pc":
-                web_bot.move_mouse_to_fool_exit_point()
+            if web_bot.identity.device_type == "computer":
+                await web_bot.move_mouse_to_fool_exit_point()
         else:
             # Just a feature for testing, bot doesn't engage if engage-reader was set to false
             await asyncio.sleep(

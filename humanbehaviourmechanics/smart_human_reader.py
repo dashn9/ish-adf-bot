@@ -49,33 +49,21 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
             await asyncio.sleep(0.12)
         elif mode == "wheel":
             if random.random() < 0.65:
-                element_screen_position = (
-                    await self.get_element_window_location_screen_offsets(
-                        html_web_element
-                    )
+                element_screen_position = await self.get_element_location_screen_offset(
+                    html_web_element
                 )
                 print(
                     {
-                        "x": element_screen_position["html_web_element"][0],
+                        "x": element_screen_position["html_web_element"]["x_offset"],
                         "y": (await self.get_document_offset_from_screen())["y"],
                         "width": (await html_web_element.get_position()).width,
                         "height": min(
-                            element_screen_position["html_web_element"][2],
+                            element_screen_position["html_web_element"]["bottom"],
                             (await self.get_browser_inner_size())["height"],
                         ),
                     }
                 )
-                await self.move_mouse_to_random_area_on_screen(
-                    {
-                        "x": element_screen_position["html_web_element"][0],
-                        "y": (await self.get_document_offset_from_screen())["y"],
-                        "width": (await html_web_element.get_position()).width,
-                        "height": min(
-                            element_screen_position["html_web_element"][2],
-                            (await self.get_browser_inner_size())["height"],
-                        ),
-                    }
-                )
+                await self.move_mouse_to_random_area_on_element(html_web_element)
             if random.random() < 0.22:
                 await self.mouse.mouse_wheel_with_bezier_animation(
                     *pyautogui.position(), px_to_adjust_by, direction

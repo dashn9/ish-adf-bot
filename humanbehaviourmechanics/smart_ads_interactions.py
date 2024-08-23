@@ -152,17 +152,19 @@ class SmartAdsInteractions:
 
     async def locate_ad_elements_in_iframe(self, ads_elements_selector):
         async def iframe_check():
+            # Temporarily not using until can debug properly
+            return
             iframe = await self.web_browser_driver.main_tab.select("iframe")
-            print(iframe)
             if not iframe:
                 return
             if self.device_type == "is_smartphone":
                 iframe_offset = await self.get_element_location_window_offset(iframe)
             else:
-                iframe_offset = (
-                    await self.get_element_window_location_screen_offsets(iframe)
-                )["html_web_element"]
+                iframe_offset = (await self.get_element_location_screen_offset(iframe))[
+                    "html_web_element"
+                ]
             ads_elements = None
+            print(ads_elements_selector)
             ads_elements = await iframe.query_selector_all(ads_elements_selector)
             ads_elements_rect = []
             for ad_element in ads_elements:
@@ -179,7 +181,7 @@ class SmartAdsInteractions:
             return ads_elements_rect
 
         if ads_elements_selector.startswith("//iframe"):
-            ads_elements_selector = ads_elements_selector[8:]
+            ads_elements_selector = ads_elements_selector[10:]
             return await iframe_check()
 
     async def set_ad_behaviour_environment(
@@ -202,7 +204,7 @@ class SmartAdsInteractions:
         pass
 
     async def ad_click(self, ad_dimensions: dict, revert_back=False):
-        if self.device_type == "is_pc":
+        if self.device_type == "computer":
             previous_mouse_pos = pyautogui.position()
             await self.simulate_human_mouse_move_behavior_to_area(
                 ad_dimensions["x"],

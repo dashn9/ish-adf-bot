@@ -8,6 +8,7 @@
             "program": "./run.py",
             "console": "integratedTerminal",
             "envFile": ".venv",
+            "justMyCode": false,
             "args": []
         }
     ]

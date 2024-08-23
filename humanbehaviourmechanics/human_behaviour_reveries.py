@@ -6,6 +6,7 @@ from multiprocessing import Value
 
 from selenium.common import StaleElementReferenceException
 from selenium.webdriver.common.by import By
+from nodriver import Element as WebElement
 
 from browsers.browser_interface import BrowserInterface
 from constants import bot_constants
@@ -62,6 +63,35 @@ class HumanBehaviourReveries:
             HumanBehaviourReveries.active_on_mouse_movement.value = (
                 -self.bot_process_id if self.bot_process_id != 0 else -500
             )
+
+    async def move_mouse_to_random_area_on_document(self):
+        document_location = await self.get_document_offset_from_screen()
+        await self.move_mouse_to_random_area_on_screen(bounds=document_location)
+
+    async def move_mouse_to_random_area_on_element(self, element: WebElement):
+        element_screen_position = await self.get_element_location_screen_offset(element)
+        print(
+            {
+                "x": element_screen_position["html_web_element"]["x_offset"],
+                "y": (await self.get_document_offset_from_screen())["y"],
+                "width": (await element.get_position()).width,
+                "height": min(
+                    element_screen_position["html_web_element"]["bottom"],
+                    (await self.get_browser_inner_size())["height"],
+                ),
+            }
+        )
+        await self.move_mouse_to_random_area_on_screen(
+            {
+                "x": element_screen_position["html_web_element"]["x_offset"],
+                "y": (await self.get_document_offset_from_screen())["y"],
+                "width": (await element.get_position()).width,
+                "height": min(
+                    element_screen_position["html_web_element"]["bottom"],
+                    (await self.get_browser_inner_size())["height"],
+                ),
+            }
+        )
 
     async def open_link_in_elements(self, elements):
         links_to_follow = []
