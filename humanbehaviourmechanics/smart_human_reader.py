@@ -37,8 +37,7 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
         px_to_adjust_by = max(px_to_adjust_by, 10)
         # Stamp the initial time before reading began
         read_mode_time_used = time.time()
-        mode = "arrow_keys"
-        if random.random() < 0.1:
+        if random.random() < 0.5:
             await self.move_mouse_to_random_area_on_element(html_web_element)
         if mode == "arrow_keys":
             key = K_Keys["ArrowDown"]
@@ -50,7 +49,7 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
             # Wait to complete scroll
             await asyncio.sleep(0.12)
         elif mode == "wheel":
-            if random.random() < 0.22:
+            if random.random() < 0.62:
                 await self.mouse.mouse_wheel_with_bezier_animation(
                     *pyautogui.position(), px_to_adjust_by, direction
                 )
@@ -137,26 +136,25 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
         if await self.smart_ad_click():
             return "ad_clicked"
 
-        element_coordinates = await self.get_element_location_window_offset(
-            html_web_element
-        )
         browser_inner_size = await self.get_browser_inner_size()
 
-        element_base_offset = element_coordinates.get("y_offset")
+        element_base_offset = (await html_web_element.get_position()).y
 
         # The number of seconds to spend on each px
         avg_time_per_px = read_time / total_px_to_adjust_by
 
-        px_adjusted_by = kwargs.get("px_adjusted_by", 0)
-        if px_adjusted_by > total_px_to_adjust_by:
-            px_adjusted_by = total_px_to_adjust_by
-        read_mode_time_used = kwargs.get("read_mode_time_used", 0)
-        time_allocated_to_px_adjusted_by = min(
-            avg_time_per_px * px_adjusted_by, read_time
+        time_owed = kwargs.get("time_owed", 0)
+
+        print("time owed", time_owed)
+        px_to_adjust_by = round(
+            random.uniform(
+                browser_inner_size.get("height") / 1.4,
+                browser_inner_size.get("height"),
+            )
         )
-        time_allocated_time_used_margin = (
-            time_allocated_to_px_adjusted_by - read_mode_time_used
-        )
+
+        if kwargs.get("rem_px_to_adjust_by", total_px_to_adjust_by) < px_to_adjust_by:
+            px_to_adjust_by = kwargs.get("rem_px_to_adjust_by", total_px_to_adjust_by)
 
         # print("px adjusted by ===>", px_adjusted_by)
         # print("total px to adjust by ===>", total_px_to_adjust_by)
@@ -164,106 +162,34 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
         # print("time expected to have used based on px adjusted ==>", time_allocated_to_px_adjusted_by)
         # print("time expected time used margin ==>", time_allocated_time_used_margin)
 
-        time_to_pause_activity = 0
-        # if the margin between time allocated and time used to read is lesser than 0, do not wait and amplify
-        # px_to_adjust_by
-        if time_allocated_time_used_margin <= 0:
-            # Unlike calculation used for px_to_adjust_by below,amplify by setting destination to the lower ends of page
-            px_to_adjust_by = round(
-                random.uniform(
-                    browser_inner_size.get("height") / 1.4,
-                    browser_inner_size.get("height"),
-                )
-            )
+        time_to_pause_activity = px_to_adjust_by * avg_time_per_px
 
-            # Makes sure px_to_adjust_by is never greater than rem_px_to_adjust_by or total_px_to_adjust_by to try and
-            # put a lid on overshooting
-            if (
-                kwargs.get("rem_px_to_adjust_by", total_px_to_adjust_by)
-                < px_to_adjust_by
-            ):
-                px_to_adjust_by = kwargs.get(
-                    "rem_px_to_adjust_by", total_px_to_adjust_by
-                )
-        else:
-            # Use Portion of The Browser Inner Size to Determine How Long to Adjust PX by, and if the remaining px to
-            # adjust by is lesser than the browser inner size to use, use it so the navigation doesn't scroll the
-            # element out of desired offset
-            px_to_adjust_by = round(
-                random.uniform(1, browser_inner_size.get("height") / 1.4)
-            )
-
-            # Makes sure px_to_adjust_by is never greater than rem_px_to_adjust_by or total_px_to_adjust_by to try and
-            # put a lid on overshooting
-            if (
-                kwargs.get("rem_px_to_adjust_by", total_px_to_adjust_by)
-                < px_to_adjust_by
-            ):
-                px_to_adjust_by = kwargs.get(
-                    "rem_px_to_adjust_by", total_px_to_adjust_by
-                )
-
-            # This is the time activity will be suspended for as thou it's trying to human read the content
-            time_to_pause_activity = time_allocated_time_used_margin
-
-            # navigate up as thou looking for forgotten content, feature to reinforce human reading behaviour
+        # navigate up as thou looking for forgotten content, feature to reinforce human reading behaviour
+        if time_owed >= 0:
             if random.random() < 0.2:
-                # Humans might wait at very different durations before scrolling up to check for some content-text,
-                # the sleep below attempts to simulate that by taking no more than a minimal amount which would
-                # inevitably affect the read_mode_time_used
-                time_to_randomly_wait_before_scrolling_up = random.uniform(
-                    0.01, time_to_pause_activity * 0.17
-                )
-                await asyncio.sleep(time_to_randomly_wait_before_scrolling_up)
-
-                px_to_move_by = browser_inner_size.get("height") * random.uniform(
-                    0.15, 0.35
-                )
+                await asyncio.sleep(random.uniform(0.4, 1.4))
 
                 kwargs["read_by_mode_data"] = await self.read_by_mode(
                     html_web_element,
-                    px_to_move_by,
+                    browser_inner_size.get("height") * random.uniform(0.15, 0.35),
                     mode,
                     False,
                     **kwargs.get("read_by_mode_data", {}),
                 )
 
-                # modifying time_to_pause_activity on how long to wait for after navigating up. expected mean time to
-                # be around 45% which averagely should not be more than half of time_to_pause_activity
-                time_to_pause_activity = global_utils.fetch_percentage_value(
-                    time_to_pause_activity,
-                    random.uniform(35, 55)
-                    - (
-                        +(kwargs["read_by_mode_data"]["read_mode_time_used"])
-                        + time_to_randomly_wait_before_scrolling_up / 2
-                    ),
-                )
-
-                #    print("Time to pause activity one ==>", time_to_pause_activity)
-                await asyncio.sleep(max(0, time_to_pause_activity))
+                await asyncio.sleep(random.uniform(0.5, 2.5))
 
                 # Attempt to return page to original point before going up
                 kwargs["read_by_mode_data"] = await self.read_by_mode(
                     html_web_element,
-                    px_to_move_by,
+                    browser_inner_size.get("height") * random.uniform(0.15, 0.35),
                     mode,
                     True,
                     **kwargs.get("read_by_mode_data", {}),
                 )
+            time_to_pause_activity = 0
 
-                # Recalibrate time_to_pause_activity and deduct time used navigating down
-                time_to_pause_activity = time_allocated_time_used_margin - (
-                    time_to_pause_activity
-                    + kwargs["read_by_mode_data"]["read_mode_time_used"]
-                    + time_to_randomly_wait_before_scrolling_up / 2
-                )
-
-                #    print("Time to pause activity two ==>", time_to_pause_activity)
-
-                # Finally, sleep for the remaining time if remaining
-                await asyncio.sleep(max(0, time_to_pause_activity))
-            else:
-                await asyncio.sleep(time_to_pause_activity)
+        await asyncio.sleep(time_to_pause_activity)
 
         # Store read_by_mode data at each function iteration to be repassed, reason is for read_by_mode
         # mouse_to_scrollbar mode
@@ -275,41 +201,28 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
             **kwargs.get("read_by_mode_data", {}),
         )
 
-        # Recalculating read_mode_time_used to show time spent adjusting or navigating the content,
-        # recur time_allocated_time_used_margin to it if in deficit, so it doesn't forget it's behind if so,
-        # adding time_to_pause_activity to offset the time waited for and leave only read_mode_time_used
-        kwargs["read_mode_time_used"] = (
-            time.time() - read_mode_initial_time_stamp
-        ) + time_to_pause_activity
-
-        # print("read mode duration ==>", read_mode_time_used)
-
-        element_coordinates = await self.get_element_location_window_offset(
-            html_web_element
-        )
         # Changing The Value Of px_to_adjust_by To The Amount Of px Actually Adjusted
-        kwargs["px_adjusted_by"] = element_base_offset - element_coordinates.get(
-            "y_offset"
+        kwargs["px_adjusted_by"] = (
+            element_base_offset - (await html_web_element.get_position()).y
         )
-        # Calculating Remaining Px, making sure that it's not lesser than 0 at any given point
+
+        kwargs["time_owed"] = (
+            time_owed
+            + (time.time() - read_mode_initial_time_stamp)
+            - (kwargs["px_adjusted_by"] * avg_time_per_px)
+        )
+
         kwargs["rem_px_to_adjust_by"] = (
-            kwargs.get("rem_px_to_adjust_by", total_px_to_adjust_by) - px_adjusted_by
+            kwargs.get("rem_px_to_adjust_by", total_px_to_adjust_by)
+            - kwargs["px_adjusted_by"]
         )
 
-        # print("remaining px to adjust by ==>", kwargs["rem_px_to_adjust_by"])
-
-        if kwargs["rem_px_to_adjust_by"] <= 0:
+        # if px_to_adjust_by is greater than px_adjusted_by by a margin of 100(acceptable margin) it means it couldn't go further because it's now at document end
+        if (
+            kwargs["rem_px_to_adjust_by"] <= 0
+            or (px_to_adjust_by - kwargs["px_adjusted_by"]) >= 100
+        ):
             return True
-
-        if kwargs.get("px_adjusted_at_0_count", 0) > 1:
-            return True
-
-        if px_adjusted_by == 0:
-            kwargs["px_adjusted_at_0_count"] = (
-                kwargs.get("px_adjusted_at_0_count", 0) + 1
-            )
-        else:
-            kwargs["px_adjusted_at_0_count"] = 0
 
         return await self.smart_human_like_content_navigator(
             read_time, html_web_element, total_px_to_adjust_by, mode, **kwargs
@@ -345,43 +258,11 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
 
     async def read_element_content(self, html_web_element: WebElement):
         """
-        This Method Scrolls The Web Page To Put Requested Web Element In View
+        Intelligently reads an Element, Flunctuating heights on the elements could cause instability
         :param html_web_element: HTML Web Element To Scroll To
         :return: Return True When Scroll Is Complete
         """
         time_started = time.time()
-        # There is a potential that the browser inner size might not be fully deducted from the content height to read
-        # from. Therefore, the remaining should be adjusted unto the rest
-        px_owing = -(await self.get_browser_inner_size())["height"]
-
-        async def read(
-            read_time,
-            html_web_element: WebElement,
-            mode,
-            percentage_of_content_to_read=100,
-        ):
-            """
-            Send Information To Looper To Read Content By Set Amount Of Content And Time
-            :param read_time: Amount Of Time To Move Through Content
-            :param html_web_element: HTML Web Element To Scroll To
-            :param mode: Mode Of Navigation To Use, Usable Values are (arrow_keys, touch, mouse_to_scrollbar,
-            mouse_scroll)
-            :param percentage_of_content_to_read: Percentage Of Article Height To Stop At
-            :return: True
-            """
-            nonlocal px_owing
-            # Get The Total Pixels To Move By Using The percentage_of_content_to_read On html_web_element Height
-            total_px_to_adjust_by = (
-                global_utils.fetch_percentage_value(
-                    (await html_web_element.get_position()).height,
-                    percentage_of_content_to_read,
-                )
-                + px_owing
-            )
-            px_owing = min(0, total_px_to_adjust_by)
-            return await self.smart_human_like_content_navigator(
-                read_time, html_web_element, total_px_to_adjust_by, mode
-            )
 
         seconds_to_read = await self.calculate_and_generate_page_read_time(
             html_web_element, self.reading_speed, random.randint(-15, 12)
@@ -395,9 +276,9 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
         await self.scroll_element_into_vertical_view(
             html_web_element, element_scroll_to=0
         )
-        px_owing += (
-            await self.get_element_location_window_offset(html_web_element)
-        ).get("y_offset")
+        (await self.get_element_location_window_offset(html_web_element)).get(
+            "y_offset"
+        )
         # This sleep is to simulate a pause at the beginning of the article
         await asyncio.sleep(random.uniform(2.45, 5.24))
         remaining_reading_content_percentage = content_read_percentage
@@ -406,11 +287,6 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
         while remaining_reading_content_percentage > 0 and (
             await self.get_element_location_window_offset(html_web_element)
         ).get("bottom") > browser_inner_size.get("height"):
-            print(
-                (await self.get_element_location_window_offset(html_web_element)).get(
-                    "bottom"
-                )
-            )
             if remaining_reading_content_percentage < 50 and random.random() < 0.08:
                 print(
                     f"Bot Process Id {self.bot_process_id} <:::> Current Activity --> Scrolling To Random Point On "
@@ -471,12 +347,17 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
                 remaining_reading_content_percentage,
             )
 
+            # Get The Total Pixels To Move By Using The percentage_of_content_to_read On html_web_element Height
+            total_px_to_adjust_by = global_utils.fetch_percentage_value(
+                (await html_web_element.get_position()).height,
+                next_read_sequence_percentage,
+            )
             if (
-                await read(
+                await self.smart_human_like_content_navigator(
                     next_read_sequence_time,
                     html_web_element,
+                    total_px_to_adjust_by,
                     mode,
-                    next_read_sequence_percentage,
                 )
                 == "ad_clicked"
             ):

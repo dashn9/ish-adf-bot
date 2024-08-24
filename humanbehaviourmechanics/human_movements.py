@@ -477,22 +477,22 @@ class HumanMovements:
                         await random_miscellaneous_key_presses(0.25)
 
         # Element Height - Browser Window Makes It Possible To Eject Browser Dimensions From Calculations
-        workable_height = (
-            await html_web_element.get_position()
-        ).width - self.web_browser_driver.main_tab.get_window()[1].height
+        workable_height = (await html_web_element.get_position()).width - (
+            await self.web_browser_driver.main_tab.get_window()
+        )[1].height
 
         offset_to_adjust_to = utils.fetch_percentage_value(
             workable_height, percentage_to_scroll_to
         )
         offset_to_adjust_to *= -1
 
-        original_y_offset = self.get_element_location_window_offset(html_web_element)[
-            "y_offset"
-        ]
+        original_y_offset = (
+            await self.get_element_location_window_offset(html_web_element)
+        )["y_offset"]
 
-        offset_adjuster(offset_to_adjust_to, html_web_element)
+        await offset_adjuster(offset_to_adjust_to, html_web_element)
         await asyncio.sleep(time_to_sleep)
-        offset_adjuster(original_y_offset, html_web_element)
+        await offset_adjuster(original_y_offset, html_web_element)
 
     async def read_with_arrow_keys(
         self,
@@ -506,7 +506,11 @@ class HumanMovements:
             html_web_element
         )
         old_element_coordinates = element_coordinates
-        boundary = element_coordinates.get("y_offset") - boundary
+        boundary = (
+            element_coordinates.get("y_offset") - boundary
+            if direction_to_move
+            else element_coordinates.get("y_offset") + boundary
+        )
         offset_same_count = 0
 
         if direction_to_move:
@@ -514,7 +518,7 @@ class HumanMovements:
                 old_element_coordinates = await self.get_element_location_window_offset(
                     html_web_element
                 )
-                await asyncio.sleep(0.1)
+                await asyncio.sleep(0.3)
                 element_coordinates = await self.get_element_location_window_offset(
                     html_web_element
                 )
@@ -531,7 +535,7 @@ class HumanMovements:
                 old_element_coordinates = await self.get_element_location_window_offset(
                     html_web_element
                 )
-                await asyncio.sleep(0.1)
+                await asyncio.sleep(0.3)
                 element_coordinates = await self.get_element_location_window_offset(
                     html_web_element
                 )
@@ -686,8 +690,8 @@ class HumanMovements:
                 await self.mouse.mouse_wheel(
                     *pyautogui.position(),
                     random.randint(10, 100),
+                    is_reading=False,
                     deltaY=self.identity.mouse_delta_y,
-                    vary_deltaY_on_read=True,
                     yDirection=direction,
                 )
             else:
