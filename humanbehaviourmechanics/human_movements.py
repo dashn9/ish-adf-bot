@@ -65,286 +65,95 @@ class HumanMovements:
 
     async def simulate_human_mouse_move_behavior_to_area(
         self,
-        x_coordinates,
-        y_coordinates,
+        x_coordinate,
+        y_coordinate,
         area_width=1,
         area_height=1,
-        x_coordinates_offset_percentage=0,
-        y_coordinates_offset_percentage=0,
-        max_overshoot=0,
         probability_of_overshoot=0.0,
-        is_small_distance=False,
-        move_to_new_thread=False,
     ):
         """
         A Method To Simulate Human Mouse Behaviour To Specific Element On Screen. Powered By Pyclick and PyAutoGUI.
         Pass 1st and 2nd Argument To Click On a Specific Area. Pass Only The Next Six To Click On a Point Within an Area
-        :param x_coordinates: The X coordinates On Screen Of Area
+        :param x_coordinate: The X coordinates On Screen Of Area
         If Clickable Area Exists, Make Sure It's Within Boundaries
-        :param y_coordinates: The Y coordinates On Screen To Move Of Area.
+        :param y_coordinate: The Y coordinates On Screen To Move Of Area.
         If Clickable Area Exists, Make Sure It's Within Boundaries
         :param area_width: The Surface Width of The Element You Want to Get To On Screen.
         :param area_height: The Surface Height of The Element You Want to Get To On Screen.
-        :param x_coordinates_offset_percentage:
-        By How Many Percent Deviation To Move From The X Coordinates In Relation To Area Width.
-        Max is 100%
-        :param y_coordinates_offset_percentage:
-        By How Many Percent Deviation To Move From The Y Coordinates In Relation To Area Height
-        Max is 100%
-        :param max_overshoot: A Random Percentage Number Will Be Generated Not Greater Than The Value For Both X and Y
-        Coordinates Which Will Make The Mouse Overshoot Beyond The Set Coordinates and Back. Max is 100%
         :param probability_of_overshoot: Probability The Mouse Will Overshoot. 0 - Will Never Happen, 1 - Will Always Happen
-        :param is_small_distance: Advisable To Set To True If ToMoveTo From Mouse Original Position Is Not Far Apart
-        :param move_to_new_thread: Move Operations To Another Thread, If True
-        :return: True When Done
+        :return: coordinates moved to
         """
-        screen_size = pyautogui.size()
-        if x_coordinates >= screen_size[0]:
-            x_coordinates = screen_size[0] - 2
-        if y_coordinates >= screen_size[1]:
-            y_coordinates = screen_size[1] - 2
+        if area_width > 1 and area_height > 1:
+            x_coordinate = int(random.uniform(x_coordinate, area_width))
+            y_coordinate = int(random.uniform(y_coordinate, area_width))
 
-        async def move_operations():
-            x_coordinates_to_move_to, y_coordinates_to_move_to = (
-                x_coordinates,
-                y_coordinates,
-            )
-
-            # If Offset Percentages Are Set and Area Width And Height is Given
-            if (
-                x_coordinates_offset_percentage > 0
-                and y_coordinates_offset_percentage > 0
-                and area_width > 1
-                and area_height > 1
-            ):
-                # Calculate Offsets Based On Percentages
-                x_coordinates_to_move_to = (
-                    area_width * x_coordinates_offset_percentage / 100
-                ) + x_coordinates_to_move_to
-                y_coordinates_to_move_to = (
-                    area_height * y_coordinates_offset_percentage / 100
-                ) + y_coordinates_to_move_to
-
-                # If x_coordinates To Click On, Extends Beyond Width Bounds, Set To Bounds Point
-                if (
-                    x_coordinates_to_move_to < x_coordinates
-                    or x_coordinates_to_move_to > x_coordinates + area_width
-                ):
-                    x_coordinates_to_move_to = x_coordinates + (area_width / 2)
-
-                # If y_coordinates To Click On, Extends Beyond Height Bounds, Set To Bounds Point
-                if (
-                    y_coordinates_to_move_to < y_coordinates
-                    or y_coordinates_to_move_to > y_coordinates + area_height
-                ):
-                    y_coordinates_to_move_to = y_coordinates + (area_height / 2)
-
-            self.human_clicker = HumanClicker()
-
-            human_curve = None
-            duration = random.uniform(0.2, 1.2)
-            if is_small_distance:
-                x_coordinates_to_move_to = int(x_coordinates_to_move_to)
-                y_coordinates_to_move_to = int(y_coordinates_to_move_to)
-                human_curve = HumanCurve(
-                    pyautogui.position(),
-                    (x_coordinates_to_move_to, y_coordinates_to_move_to),
-                    targetPoints=50,
-                )
-                human_curve.points = human_curve.generateCurve(
-                    offsetBoundaryX=0,
-                    offsetBoundaryY=0,
-                    leftBoundary=x_coordinates_to_move_to,
-                    rightBoundary=x_coordinates_to_move_to + 1,
-                    downBoundary=y_coordinates_to_move_to,
-                    upBoundary=y_coordinates_to_move_to + 1,
-                    knotsCount=5,
-                    distortionMean=0.4,
-                    distortionStdev=0.2,
-                    distortionFrequency=0.2,
-                    tween=pytweening.linear,
-                    targetPoints=50,
-                )
-            if probability_of_overshoot > 0.5:
-                self.human_clicker.move(
-                    (
-                        int(
-                            x_coordinates_to_move_to
-                            + (
-                                x_coordinates_to_move_to
-                                * random.randint(-max_overshoot, max_overshoot)
-                                / 100
-                            )
-                        ),
-                        int(
-                            y_coordinates_to_move_to
-                            + (
-                                y_coordinates_to_move_to
-                                * random.randint(-max_overshoot, max_overshoot)
-                                / 100
-                            )
-                        ),
-                    ),
-                    humanCurve=human_curve,
-                    duration=duration,
-                )
-            self.human_clicker.move(
-                (int(x_coordinates_to_move_to), int(y_coordinates_to_move_to)),
-                humanCurve=human_curve,
-                duration=duration,
-            )
-
-            print(
-                f"Bot Process Id {self.bot_process_id} <:::> Mouse Moved To Area Point: ",
-                x_coordinates_to_move_to,
-                y_coordinates_to_move_to,
-            )
-            return {
-                "x": int(x_coordinates_to_move_to),
-                "y": int(y_coordinates_to_move_to),
-            }
-
-        if move_to_new_thread:
-            t = Thread(target=move_operations)
-            t.daemon = True
-            return t.start()
-        else:
-            return await move_operations()
+        return await self.simulate_human_mouse_move_behavior_to_point(
+            x_coordinate, y_coordinate, probability_of_overshoot
+        )
 
     async def simulate_human_mouse_move_behavior_to_point(
         self,
-        x_coordinates,
-        y_coordinates,
-        x_coordinates_offset_percentage=0,
-        y_coordinates_offset_percentage=0,
-        max_overshoot=0,
-        probability_of_overshoot=0.0,
-        is_small_distance=False,
-        move_to_new_thread=False,
+        x_coordinate,
+        y_coordinate,
+        probability_of_overshoot=1,
     ):
         """
         A Method To Simulate Human Mouse Behaviour To Specific Element On Screen. Powered By Pyclick and PyAutoGUI.
         Pass 1st and 2nd Argument To Click On a Specific Area. Pass Only The Next Six To Click On a Point Within an Area
-        :param x_coordinates: The X coordinates On Screen To Move The Mouse To.
+        :param x_coordinate: The X coordinates On Screen To Move The Mouse To.
         If Clickable Area Exists, Make Sure It's Within Boundaries
-        :param y_coordinates: The Y coordinates On Screen To Move The Mouse To.
+        :param y_coordinate: The Y coordinates On Screen To Move The Mouse To.
         If Clickable Area Exists, Make Sure It's Within Boundaries
-        :param x_coordinates_offset_percentage:
-        By How Many Percent Deviation To Move From The X Coordinates In Relation To Area Width.
-        Max is 100%
-        :param y_coordinates_offset_percentage:
-        By How Many Percent Deviation To Move From The Y Coordinates In Relation To Area Height
-        Max is 100%
-        :param max_overshoot: A Random Percentage Number Will Be Generated Not Greater Than The Value For Both X and Y
-        Coordinates Which Will Make The Mouse Overshoot Beyond The Set Coordinates and Back. Max is 100%
         :param probability_of_overshoot: Probability The Mouse Will Overshoot. 0 - Will Never Happen, 1 - Will Always Happen
-        :param is_small_distance: Advisable To Set To True If To MoveTo From Mouse Original Position Is Not Far Apart
-        :param move_to_new_thread: Move Operations To Another Thread, If True
-        :return: True When Done
+        :return: Coordinates moved to
         """
-        screen_size = pyautogui.size()
-        if x_coordinates >= screen_size[0]:
-            x_coordinates = screen_size[0] - 2
-        if y_coordinates >= screen_size[1]:
-            y_coordinates = screen_size[1] - 2
-
-        async def move_operations():
-            x_coordinates_to_move_to, y_coordinates_to_move_to = (
-                x_coordinates,
-                y_coordinates,
+        human_clicker = HumanClicker()
+        human_curve = None
+        human_curve = HumanCurve(
+            pyautogui.position(),
+            (x_coordinate, y_coordinate),
+        )
+        distance = int(
+            utils.find_points_distance_on_2d_cartesian_plane(
+                pyautogui.position(), (x_coordinate, y_coordinate)
             )
+        )
+        overshoot = 60
+        if random.random() < probability_of_overshoot:
+            overshoot += int(distance / 4 * random.uniform(0.8, 1.2))
 
-            # If Offset Percentages Are Set and Area Width And Height is Given
-            if (
-                x_coordinates_offset_percentage > 0
-                and y_coordinates_offset_percentage > 0
-            ):
-                # Calculate Offsets Based On Percentages
-                x_coordinates_to_move_to = (
-                    x_coordinates_to_move_to
-                    + utils.fetch_value_percentage(
-                        x_coordinates_to_move_to, x_coordinates_offset_percentage
-                    )
-                )
-                y_coordinates_to_move_to = (
-                    y_coordinates_to_move_to
-                    + utils.fetch_value_percentage(
-                        y_coordinates_to_move_to, y_coordinates_offset_percentage
-                    )
-                )
+        duration = random.uniform(0.2, 0.4 * (distance * 0.001))
+        target_points = int(distance * 0.4 * random.uniform(0.8, 1.2))
+        human_curve.points = human_curve.generateCurve(
+            offsetBoundaryX=overshoot,
+            offsetBoundaryY=overshoot,
+            leftBoundary=x_coordinate,
+            rightBoundary=x_coordinate,
+            downBoundary=y_coordinate,
+            upBoundary=y_coordinate,
+            knotsCount=int(distance * 0.01 * random.uniform(0.8, 1.5)),
+            distortionMean=0.2,
+            distortionStdev=0.5,
+            distortionFrequency=0.2,
+            tween=pytweening.linear,
+            targetPoints=target_points if target_points > 2 else 2,
+        )
 
-            self.human_clicker = HumanClicker()
-            human_curve = None
-            duration = random.uniform(0.2, 1.2)
-            if is_small_distance:
-                x_coordinates_to_move_to = int(x_coordinates_to_move_to)
-                y_coordinates_to_move_to = int(y_coordinates_to_move_to)
+        human_clicker.move(
+            (int(x_coordinate), int(y_coordinate)),
+            humanCurve=human_curve,
+            duration=duration,
+        )
 
-                human_curve = HumanCurve(
-                    pyautogui.position(),
-                    (x_coordinates_to_move_to, y_coordinates_to_move_to),
-                    targetPoints=50,
-                )
-                human_curve.points = human_curve.generateCurve(
-                    offsetBoundaryX=0,
-                    offsetBoundaryY=0,
-                    leftBoundary=x_coordinates_to_move_to,
-                    rightBoundary=x_coordinates_to_move_to + 1,
-                    downBoundary=y_coordinates_to_move_to,
-                    upBoundary=y_coordinates_to_move_to + 1,
-                    knotsCount=5,
-                    distortionMean=0,
-                    distortionStdev=0,
-                    distortionFrequency=0,
-                    tween=pytweening.linear,
-                    targetPoints=50,
-                )
-            if probability_of_overshoot > 0.5:
-                self.human_clicker.move(
-                    (
-                        int(
-                            x_coordinates_to_move_to
-                            + (
-                                x_coordinates_to_move_to
-                                * random.randint(-max_overshoot, max_overshoot)
-                                / 100
-                            )
-                        ),
-                        int(
-                            y_coordinates_to_move_to
-                            + (
-                                y_coordinates_to_move_to
-                                * random.randint(-max_overshoot, max_overshoot)
-                                / 100
-                            )
-                        ),
-                    ),
-                    humanCurve=human_curve,
-                    duration=duration,
-                )
-
-            self.human_clicker.move(
-                (int(x_coordinates_to_move_to), int(y_coordinates_to_move_to)),
-                humanCurve=human_curve,
-                duration=duration,
-            )
-
-            print(
-                f"Bot Process Id {self.bot_process_id} <:::> Mouse Moved To: ",
-                x_coordinates_to_move_to,
-                y_coordinates_to_move_to,
-            )
-            return {
-                "x": int(x_coordinates_to_move_to),
-                "y": int(y_coordinates_to_move_to),
-            }
-
-        if move_to_new_thread:
-            t = Thread(target=move_operations)
-            t.daemon = True
-            return t.start()
-        else:
-            return await move_operations()
+        print(
+            f"Bot Process Id {self.bot_process_id} <:::> Mouse Moved To: ",
+            x_coordinate,
+            y_coordinate,
+        )
+        return {
+            "x": int(x_coordinate),
+            "y": int(y_coordinate),
+        }
 
     async def move_pointing_device_to_element(
         self, html_web_element: WebElement, simulate_human_behaviour=True
@@ -374,9 +183,6 @@ class HumanMovements:
                     el_pos["area_y"] + 1,
                     el_pos["area_width"] - 2,
                     el_pos["area_height"] - 2,
-                    x_coordinates_offset_percentage=random.randint(0, 100),
-                    y_coordinates_offset_percentage=random.randint(0, 100),
-                    max_overshoot=35,
                     probability_of_overshoot=round(random.random(), 2),
                 )
         else:
@@ -412,7 +218,7 @@ class HumanMovements:
             self.read_with_touch(px_to_adjust_by, duration)
 
         async def offset_adjuster(offset_to_adjust_to, html_web_element):
-            element_coordinates = self.get_element_location_window_offset(
+            element_coordinates = await self.get_element_location_window_offset(
                 html_web_element
             )
             if offset_to_adjust_to > element_coordinates["y_offset"]:
@@ -451,8 +257,10 @@ class HumanMovements:
                         if not has_page_offset_changed():
                             return True
                         scroll_with_touch(True, 0.5)
-                        element_coordinates = self.get_element_location_window_offset(
-                            html_web_element
+                        element_coordinates = (
+                            await self.get_element_location_window_offset(
+                                html_web_element
+                            )
                         )
                 else:
                     while offset_to_adjust_to <= element_coordinates["y_offset"]:
@@ -469,8 +277,10 @@ class HumanMovements:
                             await asyncio.sleep(random.uniform(0.15, 0.6))
                         else:
                             await asyncio.sleep(0.3)
-                        element_coordinates = self.get_element_location_window_offset(
-                            html_web_element
+                        element_coordinates = (
+                            await self.get_element_location_window_offset(
+                                html_web_element
+                            )
                         )
                     await self.keyboard.up(K_Keys["ArrowDown"])
                     if random.random() > 0.5:
@@ -568,15 +378,12 @@ class HumanMovements:
                 pyautogui.mouseUp()
                 pyautogui.mouseDown()
 
-        await self.simulate_human_mouse_move_behavior_to_point(
-            coordinates_offset_overshoot["x"],
-            coordinates_offset_overshoot["y"],
-            coordinates_offset_overshoot["x_offset_percentage"],
-            coordinates_offset_overshoot["y_offset_percentage"],
-            coordinates_offset_overshoot["max_overshoot"],
-            coordinates_offset_overshoot["probability_of_overshoot"],
-            True,
-            is_asychronous,
+        asyncio.create_task(
+            self.simulate_human_mouse_move_behavior_to_point(
+                coordinates_offset_overshoot["x"],
+                coordinates_offset_overshoot["y"],
+                coordinates_offset_overshoot["probability_of_overshoot"],
+            )
         )
         pyautogui.mouseUp()
         return counter
@@ -793,16 +600,14 @@ class HumanMovements:
 
     async def send_mouse_to_scrollbar(self, is_asychronous=False):
         scroll_bar = self.get_scroll_bar_coordinates(2)
-        return await self.simulate_human_mouse_move_behavior_to_area(
-            scroll_bar["x_pos"] + 2,
-            scroll_bar["y_pos"] + 2,
-            scroll_bar["width"],
-            scroll_bar["height"],
-            random.randint(0, 100),
-            random.randint(0, 100),
-            30,
-            random.uniform(0.4, 1.0),
-            is_asychronous,
+        return asyncio.create_task(
+            self.simulate_human_mouse_move_behavior_to_area(
+                scroll_bar["x_pos"] + 2,
+                scroll_bar["y_pos"] + 2,
+                scroll_bar["width"],
+                scroll_bar["height"],
+                random.uniform(0.4, 1.0),
+            )
         )
 
     async def click_trigger(self, x_coord=50, y_coord=50, device_type="computer"):

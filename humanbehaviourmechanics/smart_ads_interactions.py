@@ -210,9 +210,6 @@ class SmartAdsInteractions:
                 ad_dimensions["y"],
                 ad_dimensions["width"],
                 ad_dimensions["height"],
-                x_coordinates_offset_percentage=random.randint(0, 100),
-                y_coordinates_offset_percentage=random.randint(0, 100),
-                max_overshoot=35,
                 probability_of_overshoot=round(random.random(), 2),
             )
             await asyncio.sleep(random.uniform(0.1, 0.4))

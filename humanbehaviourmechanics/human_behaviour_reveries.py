@@ -54,9 +54,6 @@ class HumanBehaviourReveries:
                 bounds["y"],
                 bounds["width"],
                 bounds["height"],
-                x_coordinates_offset_percentage=random.randint(8, 100),
-                y_coordinates_offset_percentage=random.randint(8, 100),
-                max_overshoot=20,
                 probability_of_overshoot=round(random.random(), 2),
             )
             await asyncio.sleep(0.5)

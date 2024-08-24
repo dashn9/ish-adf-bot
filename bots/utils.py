@@ -395,9 +395,11 @@ def generate_mouse_wheel_plot(px_to_adjust_by=1000, duration=3000):
     for plot in plots:
         px_to_adjust.append(plot[1])
         duration_to_wait.append(plot[0])
-
-    px_to_adjust = normalize_to_target(px_to_adjust, px_to_adjust_by)
-    duration_to_wait = normalize_to_target(duration_to_wait, duration)
+    try:
+        px_to_adjust = normalize_to_target(px_to_adjust, px_to_adjust_by)
+        duration_to_wait = normalize_to_target(duration_to_wait, duration)
+    except ValueError:
+        return []
     return [
         (
             [duration_to_wait[i], px_to_adjust[i]]

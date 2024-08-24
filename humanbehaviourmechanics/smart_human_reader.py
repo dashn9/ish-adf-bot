@@ -37,7 +37,7 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
         px_to_adjust_by = max(px_to_adjust_by, 10)
         # Stamp the initial time before reading began
         read_mode_time_used = time.time()
-        if random.random() < 0.5:
+        if random.random() < 0.25:
             await self.move_mouse_to_random_area_on_element(html_web_element)
         if mode == "arrow_keys":
             key = K_Keys["ArrowDown"]
@@ -49,7 +49,7 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
             # Wait to complete scroll
             await asyncio.sleep(0.12)
         elif mode == "wheel":
-            if random.random() < 0.62:
+            if random.random() < 0.68:
                 await self.mouse.mouse_wheel_with_bezier_animation(
                     *pyautogui.position(), px_to_adjust_by, direction
                 )
@@ -145,7 +145,6 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
 
         time_owed = kwargs.get("time_owed", 0)
 
-        print("time owed", time_owed)
         px_to_adjust_by = round(
             random.uniform(
                 browser_inner_size.get("height") / 1.4,
