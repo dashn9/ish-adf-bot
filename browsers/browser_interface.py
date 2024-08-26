@@ -374,13 +374,10 @@ class BrowserInterface:
             print(f"Bot Process Id {self.bot_process_id} <:::> Device Name:", self.hardware)
             self.activate_mobile()
         print(f"Bot Process Id {self.bot_process_id} <:::> Setting Page To Always Be In Focus")
-        print(f"Bot Process Id {self.bot_process_id} <:::> Setting Cookies From Identity")
         print(f"Bot Process Id {self.bot_process_id} <:::> Setting Timezone From Identity")
 
         # Delete existing cookies
         await devtools_primary.clear_all_cookies(self.web_browser_driver)
-        # Sets cookies from identity
-        await devtools_primary.set_all_cookies(self.web_browser_driver, self.cookies)
         await devtools_primary.set_hardware_concurrency(self.web_browser_driver, self.hardware_concurrency)
         # Set Timezone
         await devtools_primary.set_timezone(self.web_browser_driver, self.timezone_id)
