@@ -236,7 +236,7 @@ class Identity:
     async def update_cookies(self, cookies=None):
         if not cookies:
             cookies = self.cookies
-        self.data_controller.update_cookies(self.id, cookies)
+        await self.data_controller.update_cookies(self.id, cookies)
 
     async def fetch_referrer(self):
         return self.identity.referrals[

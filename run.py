@@ -134,12 +134,9 @@ async def run_bot(
 
         try:
             print("Updating Cookies To Cloud")
-            web_bot.update_cookies_to_cloud()
-            web_bot.release_proxies()
-            web_bot.proxy_cached_session.close()
-            web_bot.cached_requests_session.close()
+            await web_bot.update_cookies_to_cloud()
+            await web_bot.release_proxies()
             web_bot.web_browser_driver.stop()
-            DataController.ping_is_alive(BOT_ID)
         except ConnectionRefusedError:
             print(
                 "Most likely the Cookie Update job has been done by the daemon responsible for keeping reading "
@@ -162,9 +159,8 @@ async def run_bot(
         if DEBUG:
             print(traceback.format_exc())
             print("The Error Above Was Handled, But Printed For DEBUGing Purpose")
-        web_bot.web_browser_driver.quit()
+        web_bot.web_browser_driver.stop()
     print("Successfully Completed Activity For Identity:", identity.id)
-    restart_plug()
 
 
 async def main():
@@ -177,6 +173,7 @@ async def main():
     boc.PROXY_WHITELISTED_DOMAINS = page_info.get("proxy_domain_whitelists", "*")
 
     await run_bot(identity, page_info, 0)
+    await restart_plug()
 
 
 asyncio.run(main())

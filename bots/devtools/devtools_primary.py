@@ -1,5 +1,7 @@
 import base64
+import asyncio
 
+from dataclasses import dataclass
 from typing import Callable, Optional, List, Dict
 from nodriver import Browser, cdp
 
@@ -54,8 +56,8 @@ async def set_timezone(web_driver: Browser, timezone="Etc/GMT"):
     await web_driver.main_tab.send(cdp.emulation.set_timezone_override(timezone))
 
 
-async def get_all_cookies(web_driver: Browser):
-    await web_driver.execute_cdp_cmd("Storage.getCookies", {})["cookies"]
+async def get_all_cookies(web_driver: Browser, with_local_storage=True):
+    return await web_driver.cookies.get_all()
 
 
 async def clear_all_cookies(web_driver: Browser):
@@ -115,5 +117,4 @@ async def fulfill_request(
 
 
 async def set_all_cookies(web_driver: Browser, cookies):
-    print("cookies: ", cookies)
     await web_driver.cookies.set_all(cookies)

@@ -10,10 +10,8 @@ from threading import Thread
 from nodriver import Element as WebElement
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from selenium.common import NoAlertPresentException
 import nodriver as uc
-from seleniumwire import webdriver
 
 from bots import utils
 from bots.devtools import devtools_primary
@@ -47,6 +45,7 @@ class BrowserInterface:
         self.cookies = cookies
         self.cookies_update_callback = cookies_update_callback
         self.identity_id = identity_id
+        self.dom_storage = None
 
     async def wait_for_element_visible(self, locator):
         """
@@ -57,17 +56,9 @@ class BrowserInterface:
         wait = WebDriverWait(self.web_browser_driver, 10)
         return wait.until(EC.visibility_of_element_located(locator))
 
-    async def resolve_active_alert(self):
-        try:
-            alert = self.web_browser_driver.switch_to.alert
-            alert.accept()
-        except NoAlertPresentException:
-            pass
-
     async def update_cookies_to_cloud(self):
-        self.resolve_active_alert()
         if self.cookies_update_callback:
-            return self.cookies_update_callback(self.fetch_all_cookies())
+            return await self.cookies_update_callback(await self.fetch_all_cookies())
             # self.identity.update_cookies() put in the callback
         else:
             return self.fetch_all_cookies()
@@ -291,7 +282,8 @@ class BrowserInterface:
         return t.start()
 
     async def fetch_all_cookies(self):
-        return devtools_primary.get_all_cookies(self.web_browser_driver)
+        cookies = await devtools_primary.get_all_cookies(self.web_browser_driver)
+        return [cookie.to_json() for cookie in cookies]
 
     async def quit_browser_after_max_alive(self, sleep_time=bot_constants.BOT_MIN_ALIVE_TIME):
         await asyncio.sleep (sleep_time)
@@ -300,16 +292,15 @@ class BrowserInterface:
                 print(f"Identity: {self.identity_id} On Process: {self.bot_process_id} Could Not Perform "
                       f"Activity Within Set Time, Exiting Session...")
                 try:
-                    if self.web_browser_driver.session_id:
+                    if not self.web_browser_driver.stopped:
                         print(f"Bot Process Id {self.bot_process_id} <:::> Updating Cookies To Cloud")
-                        self.release_proxies()
-                        self.update_cookies_to_cloud()
-                        self.web_browser_driver.quit()
+                        await asyncio.gather(self.release_proxies(), self.update_cookies_to_cloud())
+                        self.web_browser_driver.stop()
                 except ConnectionRefusedError:
                     print(
                         "A connection refused error occurred, this would likely be as a result of a dead browser session")
             else:
-                self.quit_browser_after_max_alive(sleep_time=5)
+                asyncio.create_task(self.quit_browser_after_max_alive(sleep_time=5))
 
     @staticmethod
     async def _handle_prefs(options):
