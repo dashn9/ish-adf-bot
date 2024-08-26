@@ -6,6 +6,7 @@ import os
 FULL_DIRECTORY_PATH = os.path.dirname(os.path.realpath(__file__)).replace(
     "/constants", ""
 )
+CHROME_DATA_DIRECTORY = FULL_DIRECTORY_PATH + "/data/browsers/chrome"
 
 IGNORE_SSL = False
 

@@ -5,6 +5,7 @@
 /executables
 identity/account_details.temp.conf
 /chrome_cache
+/data
 /caches
 /config.ini
 /config.docker.ini

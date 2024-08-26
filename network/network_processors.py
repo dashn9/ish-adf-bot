@@ -45,7 +45,7 @@ class NetworkRunner:
         async with CachedSession(
             cache=SQLiteBackend(
                 bot_constants.FULL_DIRECTORY_PATH
-                + "/caches/request_caches/proxy_requests_cache"
+                + "/data/cache/request_cache/proxy_requests_cache"
             ),
             proxy=self.proxy,
         ) as session:

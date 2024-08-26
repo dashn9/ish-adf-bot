@@ -62,6 +62,9 @@ def load_configurations():
             "kiosk-mode-probability", brc.KIOSK_MODE_PROBABILITY
         )
         brc.IGNORE_SSL = browser_conf.getboolean("ignore-ssl", brc.IGNORE_SSL)
+        brc.CHROME_DATA_DIRECTORY = browser_conf.getboolean(
+            "chrome-data-directory", brc.CHROME_DATA_DIRECTORY
+        )
 
     if "OVPN" in configParser:
         ovpn = configParser["OVPN"]
