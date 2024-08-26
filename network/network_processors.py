@@ -10,9 +10,8 @@ from aiohttp_client_cache import CachedSession, SQLiteBackend, CachedResponse
 from bots.devtools import devtools_primary
 
 from bots import utils
-from constants import bot_constants
+from constants import config, bot_constants, browser_constants
 from identity.client import Identity
-from constants import config
 
 
 class NetworkRunner:
@@ -67,7 +66,7 @@ class NetworkRunner:
     async def inject_referer_into_header(self, request: cdp.network.Request):
         if self.referer_use_times < 1:
             request.headers["Referer"] = self.identity.referer
-            # self.referer_use_times += 1
+            self.referer_use_times += 1
 
     async def track_request_size(self, request: cdp.network.Request):
         request_size = len(request.post_data or "") / 1024
@@ -212,6 +211,16 @@ class NetworkRunner:
             self.identity.referrer = ""
         return False
 
+    async def strip_chromium_headers(self, headers: list):
+        # fufill_request works in an unusual behaviour, it only responds to sec-ch headers
+        return []
+
+    async def conform_headers_according_to_browser(self, headers: list):
+        # If identity browser is not chromium
+        if self.identity.browser_name not in ["edge", "chrome"]:
+            return await self.strip_chromium_headers(headers)
+        return headers
+
     async def request_interceptor(
         self, pausedRequest: cdp.fetch.RequestPaused, *args, **kwarg
     ):
@@ -242,10 +251,12 @@ class NetworkRunner:
                                 self.web_browser_driver,
                                 pausedRequest.request_id,
                                 response.status,
-                                response_headers=[
-                                    cdp.fetch.HeaderEntry(k, v)
-                                    for k, v in response.headers.items()
-                                ],
+                                response_headers=await self.conform_headers_according_to_browser(
+                                    [
+                                        cdp.fetch.HeaderEntry(k, v)
+                                        for k, v in response.headers.items()
+                                    ]
+                                ),
                                 body=response_body.encode(),
                             )
                         )
@@ -260,10 +271,12 @@ class NetworkRunner:
                         devtools_primary.continue_request(
                             self.web_browser_driver,
                             pausedRequest.request_id,
-                            headers=[
-                                cdp.fetch.HeaderEntry(k, v)
-                                for k, v in request.headers.items()
-                            ],
+                            headers=await self.conform_headers_according_to_browser(
+                                [
+                                    cdp.fetch.HeaderEntry(k, v)
+                                    for k, v in request.headers.items()
+                                ]
+                            ),
                         )
                     )
                     print(
@@ -285,10 +298,12 @@ class NetworkRunner:
                     devtools_primary.continue_request(
                         self.web_browser_driver,
                         pausedRequest.request_id,
-                        headers=[
-                            cdp.fetch.HeaderEntry(k, v)
-                            for k, v in request.headers.items()
-                        ],
+                        headers=await self.conform_headers_according_to_browser(
+                            [
+                                cdp.fetch.HeaderEntry(k, v)
+                                for k, v in request.headers.items()
+                            ]
+                        ),
                     )
                 )
             else:
@@ -312,9 +327,12 @@ class NetworkRunner:
                 devtools_primary.continue_request(
                     self.web_browser_driver,
                     pausedRequest.request_id,
-                    headers=[
-                        cdp.fetch.HeaderEntry(k, v) for k, v in request.headers.items()
-                    ],
+                    headers=await self.conform_headers_according_to_browser(
+                        [
+                            cdp.fetch.HeaderEntry(k, v)
+                            for k, v in request.headers.items()
+                        ]
+                    ),
                 )
             )
         else:
