@@ -387,7 +387,7 @@ class BrowserInterface:
                 f"Bot Process Id {self.bot_process_id} <:::> Setting User Agent: {self.user_agent} From Identity")
             await devtools_primary.change_user_agent(
                 self.web_browser_driver,
-                self.user_agent, self.platform, self.languages)
+                self.user_agent, self.platform, self.languages, self.identity.browser_name, self.identity.device_type == "smartphone", self.identity.device_model)
         # self.web_browser_driver.set_window_position(0, 0)
         if not open_browser_in_full_screen:
             await self.web_browser_driver.main_tab.set_window_size(0, 0, *window_size)

@@ -168,10 +168,10 @@ class Identity:
 
     async def auto_initiate_identity(self, method, method_value):
         await self.resolve_identity_from_cloud(method, method_value)
-        # I necessarily do not need to await this call, however it's a CPU bound task
+        ua_os_version = self.platform.get("version", None) or self.os_version
         self.user_agent = self.user_agent or await self.form_user_agent(
             self.os,
-            self.platform.get("version", None) or self.os_version,
+            ua_os_version,
             self.device_model,
             self.browser_name,
             self.browser_version,
@@ -198,7 +198,7 @@ class Identity:
             ]
         else:
             print("Resolving Timezone From Cloud")
-            identity_timezone = self.data_controller.fetch_timezone(
+            identity_timezone = await self.data_controller.fetch_timezone(
                 self.id, resolved_proxy_url
             )
             if identity_timezone and identity_timezone.get("id", None):
@@ -272,15 +272,21 @@ class Identity:
             "CHROME_MACINTOSH": "Mozilla/5.0 (<os>; Intel Mac OS X <os_version>) AppleWebKit/<apple_web_kit_version> (KHTML, like Gecko) Chrome/<browser_version> Safari/<safari_version>",
             # The archtecture on the windows ua below should also be subjected to change, however no provision was made for it because all windows device is x64 as per the generator.
             # This was done considering the fact that most windows pc follow the (Windows NT 10.0; Win64; x64) pattern
-            "CHROME_WINDOWS": "Mozilla/5.0 (<os> NT <os_version>; Win64; x64) AppleWebKit/<apple_web_kit_version> (KHTML, like Gecko) Chrome/<browser_version> Safari/<safari_Version>",
+            "CHROME_WINDOWS": "Mozilla/5.0 (<os> NT <os_version>; Win64; x64) AppleWebKit/<apple_web_kit_version> (KHTML, like Gecko) Chrome/<browser_version> Safari/<safari_version>",
             "EDGE_WINDOWS": "Mozilla/5.0 (<os> NT <os_version>; Win64; x64) AppleWebKit/<apple_web_kit_version> (KHTML, like Gecko) Chrome/<chrome_version> Safari/<safari_version> Edg/<browser_version>",
             "SAFARI_MACINTOSH": "Mozilla/5.0 (<os>; Intel Mac OS X <os_version>) AppleWebKit/<apple_web_kit_version> (KHTML, like Gecko) Version/<browser_version> Safari/<safari_version>",
             "SAFARI_IPHONE": "Mozilla/5.0 (<os>; CPU iPhone OS <os_version> like Mac OS X) AppleWebKit/<apple_web_kit_version> (KHTML, like Gecko) Version/<browser_version> Mobile/15E148 Safari/<safari_version>",
         }
+        if self.os == "Windows":
+            os_version = self.os_version
+            if float(os_version) > 10:
+                os_version = "10.0"
+        else:
+            os_version = os_version.replace(".", "_")
         user_agent = (
             BROWSER_TEMPLATES[browser_name.upper() + "_" + os.upper()]
             .replace("<os>", os)
-            .replace("<os_version>", os_version.replace(".", "_"))
+            .replace("<os_version>", os_version)
             .replace("<model>", device_model or "")
         )
         if browser_name == "edge":

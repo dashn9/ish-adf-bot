@@ -408,3 +408,8 @@ def generate_mouse_wheel_plot(px_to_adjust_by=1000, duration=3000):
         )
         for i in range(len(duration_to_wait))
     ]
+
+
+def normalize_version(version, indexes=4):
+    parts = str(version).split(".")[:indexes]
+    return ".".join(parts + ["0"] * (indexes - len(parts)))

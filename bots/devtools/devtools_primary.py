@@ -1,9 +1,10 @@
 import base64
-import asyncio
+import re
 
-from dataclasses import dataclass
 from typing import Callable, Optional, List, Dict
 from nodriver import Browser, cdp
+
+from .. import utils
 
 
 async def activate_mobile(
@@ -29,20 +30,91 @@ async def change_user_agent(
     web_driver: Browser,
     user_agent,
     platform={
-        "architecture": None,
-        "bitness": None,
+        "architecture": "",
+        "bitness": "",
         "navigator_platform": "",
-        "name": None,
-        "version": None,
+        "name": "",
+        "version": "",
     },
     language=["en-US", "en"],
+    browser="chrome",
+    mobile=True,
+    model="",
 ):
+    brand = []
+    full_version_list = []
+    browser_version = ""
+    if browser == "chrome":
+        browser_version = re.search(r"Chrome/(\d+\.\d+\.\d+\.\d+)", user_agent).group(1)
+        browser_version_fvi = browser_version.split(".")[0]
+        brand = [
+            {"brand": "Not)A;Brand", "version": "99"},
+            {"brand": "Google Chrome", "version": browser_version_fvi},
+            {"brand": "Chromium", "version": browser_version_fvi},
+        ]
+        full_version_list = [
+            {"brand": "Not)A;Brand", "version": "99.0.0.0"},
+            {"brand": "Google Chrome", "version": browser_version},
+            {"brand": "Chromium", "version": browser_version},
+        ]
+        user_agent = re.sub(
+            r"Chrome/(\d+\.\d+\.\d*\.\d+)",  # Matches 1 to 4 parts in the version number
+            lambda match: f"Chrome/{utils.normalize_version(match.group(1).split(".")[0])}",
+            user_agent,
+        )
+    elif browser == "edge":
+        browser_version = re.search(r"Edg/(\d+\.\d+\.\d+\.\d+)", user_agent).group(1)
+        chromium_version = re.search(r"Chrome/(\d+\.\d+\.\d+\.\d+)", user_agent).group(
+            1
+        )
+        chromium_version_fvi = chromium_version.split(".")[0]
+        browser_version_fvi = browser_version.split(".")[0]
+        brand = [
+            {"brand": "Chromium", "version": chromium_version_fvi},
+            {"brand": "Not;A=Brand", "version": "24"},
+            {"brand": "Microsoft Edge", "version": browser_version_fvi},
+        ]
+        full_version_list = [
+            {"brand": "Chromium", "version": chromium_version},
+            {"brand": "Not;A=Brand", "version": "24.0.0.0"},
+            {"brand": "Microsoft Edge", "version": browser_version},
+        ]
+        user_agent = re.sub(
+            r"(Edg|Chrome)/(\d+\.\d+\.\d*\.\d+)",  # Matches 1 to 4 parts in the version number
+            lambda match: f"{match.group(1)}/{utils.normalize_version(match.group(2).split(".")[0])}",
+            user_agent,
+        )
+    else:
+        # Copy platform so as not to overwrite original value
+        platform = platform.copy()
+        # Reset platform to empty for none chromium browsers, like safari
+        platform["name"] = ""
+        platform["version"] = ""
+        platform["architecture"] = ""
+        platform["bitness"] = ""
+
     await web_driver.main_tab.send(
         cdp.emulation.set_user_agent_override(
             user_agent=user_agent,
             accept_language=",".join(language),
-            platform=platform["navigator_platform"],
-            # user_agent_metadata=None,
+            platform=platform["navigator_platform"] or "",
+            user_agent_metadata=cdp.emulation.UserAgentMetadata(
+                platform=platform["name"] or "",
+                platform_version=platform["version"] or "",
+                architecture=platform["architecture"] or "",
+                model=model or "",
+                mobile=mobile,
+                brands=[
+                    cdp.emulation.UserAgentBrandVersion.from_json(b) for b in brand
+                ],
+                full_version_list=[
+                    cdp.emulation.UserAgentBrandVersion.from_json(full_version)
+                    for full_version in full_version_list
+                ],
+                full_version=browser_version,
+                bitness=platform["bitness"] or "",
+                wow64=False,
+            ),
         )
     )
     await web_driver.main_tab.send(cdp.emulation.set_locale_override(language[0]))
