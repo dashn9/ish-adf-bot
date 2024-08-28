@@ -17,3 +17,9 @@ resource "aws_instance" "ish_bot_kube_master" {
         volume_id   = aws_ebs_volume.chrome_profiles_store.id
     }
 }
+
+resource "local_file" "master_node_ssh_keys" {
+    count    = var.master_node_count
+    content  = tls_private_key.master_node_ssh_keys[count.index].private_key_pem
+    filename = "${var.master_node_name}-${count.index}_key.pem"
+}
