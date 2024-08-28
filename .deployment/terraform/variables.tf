@@ -7,9 +7,9 @@ variable "master_node_image" {
 }
 
 variable "worker_node_type" {
-    default = "t3a.large"
+    default = "t3a.xlarge"
 }
 
 variable "worker_node_image" {
-    default = "t3a.large"
+    default = "t3a.xlarge"
 }

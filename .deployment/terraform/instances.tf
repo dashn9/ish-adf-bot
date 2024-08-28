@@ -1,7 +1,8 @@
 resource "aws_instance" "ish_bot_kube_master" {
     instance_type = "${var.master_node_type}"
+    ami = "ami-064519b8c76274859"
     tags = {
-        name = "ish_bot_kube_master-${count.index}"
+        Name = "ish_bot_kube_master-${count.index}"
     }
 
     root_block_device {
