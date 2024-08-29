@@ -4,7 +4,7 @@
 echo && echo "$0: " && echo
 
 # Set the directory to store the CA files
-OUTPUT_DIR=${1:-.}
+OUTPUT_DIR=${1:-./certicates}
 # Create the directory if it doesn't exist
 mkdir -p "$OUTPUT_DIR/certs"
 mkdir -p "$OUTPUT_DIR/configs"
