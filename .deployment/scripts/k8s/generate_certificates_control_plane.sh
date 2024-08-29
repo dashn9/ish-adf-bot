@@ -26,9 +26,6 @@ fi
 # Kubeernetes API Server Kubelet Client
 ./generate-cert.sh "kubernetes-apiserver-kubelet-client" "kubernetes" "$OUTPUT_DIR" "$CA_KEY" "$CA_CERT"
 
-# Kubelet Client
-./generate-cert.sh "kubelet-client" "kubelet" "$OUTPUT_DIR" "$CA_KEY" "$CA_CERT"
-
 # Kubernetes Controller Manager
 ./generate-cert.sh "kube-controller-manager" "system:kube-controller-manager" "$OUTPUT_DIR" "$CA_KEY" "$CA_CERT"
 
@@ -39,7 +36,7 @@ fi
 ./generate-cert.sh "admin" "admin" "$OUTPUT_DIR" "$CA_KEY" "$CA_CERT"
 
 # etcd
-./generate-cert.sh "etcd-server" "etcd" "$OUTPUT_DIR" "$CA_KEY" "$CA_CERT"
+./generate-cert.sh "etcd-server" "etcd" "$OUTPUT_DIR" "$CA_KEY" "$CA_CERT" 
 ./generate-cert.sh "etcd-client" "etcd-client" "$OUTPUT_DIR" "$CA_KEY" "$CA_CERT"
 
 echo "Certificates generated in $OUTPUT_DIR."

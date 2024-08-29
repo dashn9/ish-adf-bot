@@ -11,8 +11,14 @@ variable "availability_zone" {
 }
 
 variable "ssh_path" {
-    default = "./nodes_ssh"
+    default = "./nodes_ssh_keys"
 }
+
+variable "control_plane_certificates_path" {
+    default = "../scripts/k8s/certificates"
+}
+
+
 variable "master_node_type" {
     default = "t3a.xlarge"
 }
@@ -23,6 +29,10 @@ variable "master_node_image" {
 
 variable "master_node_name" {
     default = "ish_bot_kube_master"
+}
+
+variable "master_node_user" {
+    default =  "ec2-user"
 }
 
 variable "master_node_root_storage_size" {
