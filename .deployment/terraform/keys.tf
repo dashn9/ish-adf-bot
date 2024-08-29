@@ -9,3 +9,9 @@ resource "aws_key_pair" "tf_master_node_ssh_keys" {
     key_name   = "${var.master_node_name}-${count.index}_key"
     public_key = tls_private_key.master_node_ssh_keys[count.index].public_key_openssh
 }
+
+resource "local_file" "ish_bot_kube_master_node_keys" {
+  count = var.master_node_count
+  content = tls_private_key.master_node_ssh_keys[count.index].private_key_pem
+  filename = "./${var.ssh_path}/${aws_key_pair.tf_master_node_ssh_keys[count.index].key_name}.key"
+}

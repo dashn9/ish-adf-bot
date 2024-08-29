@@ -9,6 +9,10 @@ variable "vpc_cidr" {
 variable "availability_zone" {
     default = "us-east-1"
 }
+
+variable "ssh_path" {
+    default = "./nodes_ssh"
+}
 variable "master_node_type" {
     default = "t3a.xlarge"
 }
