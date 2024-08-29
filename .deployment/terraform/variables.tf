@@ -1,3 +1,14 @@
+variable "name_prefix" {
+    default = "ish-bot"
+}
+
+variable "vpc_cidr" {
+    default = "10.0.0.0/16"
+}
+
+variable "availability_zone" {
+    default = "us-east-1"
+}
 variable "master_node_type" {
     default = "t3a.xlarge"
 }
@@ -19,5 +30,9 @@ variable "master_node_root_storage_type" {
 }
 
 variable "master_node_count" {
+    default = 1
+}
+
+variable "worker_node_count" {
     default = 1
 }
