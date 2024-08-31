@@ -308,14 +308,14 @@ resource "aws_instance" "ish_bot_kube_master" {
         }
 
         inline = [
-        "sleep 30",
-        "sudo chmod +x generate_admin_config.sh generate_controller_manager_config.sh generate_scheduler_config.sh install_control_plane.sh start_control_plane.sh start_etcd.sh",
-        "./install_control_plane.sh",
-        "./gen_controller_manager_config.sh",
-        "./gen_scheduler_config.sh",
-        "./gen_admin_config.sh",
-        "./start_etcd.sh",
-        "./start_control_plane.sh",
+            "sleep 30",
+            "sudo chmod +x generate_admin_config.sh generate_controller_manager_config.sh generate_scheduler_config.sh install_control_plane.sh start_control_plane.sh start_etcd.sh",
+            "./install_control_plane.sh",
+            "./gen_controller_manager_config.sh",
+            "./gen_scheduler_config.sh",
+            "./gen_admin_config.sh",
+            "./start_etcd.sh",
+            "./start_control_plane.sh",
         ]
     }
 
@@ -325,14 +325,6 @@ resource "aws_instance" "ish_bot_kube_master" {
     }
 
 }
-
-resource "local_file" "master_node_ssh_keys" {
-    count    = var.master_node_count
-    content  = tls_private_key.master_node_ssh_keys[count.index].private_key_pem
-    filename = "${var.master_node_name}-${count.index}.key"
-}
-
-
 
 
 
@@ -439,13 +431,13 @@ resource "aws_instance" "ish_bot_kube_worker" {
         }
 
         inline = [
-        "sleep 30",
-        "sudo chmod +x generate_cluster_worker_certificates.sh generate_kubelet_config.sh generarte_proxy_config.sh install_worker.sh start_worker.sh",
-        "./install_worker.sh",
-        "./generate_cluster_worker_certificates.sh",
-        "./generate_kubelet_config.sh ${google_compute_address.k8s_staticip.address}",
-        "./generate_proxy_config.sh ${google_compute_address.k8s_staticip.address}",
-        "./start_worker.sh",
+            "sleep 30",
+            "sudo chmod +x generate_cluster_worker_certificates.sh generate_kubelet_config.sh generarte_proxy_config.sh install_worker.sh start_worker.sh",
+            "./install_worker.sh",
+            "./generate_cluster_worker_certificates.sh",
+            "./generate_kubelet_config.sh ${aws_eip.ish_bot_kube_master_eip.public_ip}",
+            "./generate_proxy_config.sh ${aws_eip.ish_bot_kube_master_eip.public_ip}",
+            "./start_worker.sh",
         ]
     }
 
