@@ -21,4 +21,4 @@ kubectl config set-context default \
     --kubeconfig=kube-scheduler.kubeconfig
 
 kubectl config use-context default --kubeconfig=kube-scheduler.kubeconfig
-} >> cloudinit.log
+} >> generate_scheduler_config.log

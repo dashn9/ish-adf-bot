@@ -3,9 +3,11 @@
 {
 echo && echo "$0: " && echo
 
-HOST_NAME=$1
+meta() { curl -s "http://169.254.169.254/latest/meta-data/$1"; }
+
+HOSTNAME=${1:-$(meta hostname)}
+INTERNAL_IP=${2:-$(meta local-ipv4)}
 CONTROLLER_IP=$(dig +short HOST_NAME)
-INTERNAL_IP=$(curl -s http://169.254.169.254/latest/meta-data/local-ipv4)
 
 # Configure API Server
 sudo mkdir -p /var/lib/kubernetes/
