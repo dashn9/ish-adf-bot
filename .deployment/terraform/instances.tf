@@ -20,7 +20,7 @@ resource "aws_instance" "ish_bot_kube_master" {
             private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}_key.pem")
             host        = self.public_ip
         }
-    }
+    } 
 
     provisioner "file" {
         source      = "${var.control_plane_certificates_path}/kubernetes-apiserver.crt"
