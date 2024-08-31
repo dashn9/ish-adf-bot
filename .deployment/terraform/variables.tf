@@ -35,7 +35,7 @@ variable "master_node_name" {
 }
 
 variable "master_node_user" {
-    default =  "ec2-user"
+    default =  "admin"
 }
 
 variable "master_node_root_storage_size" {
@@ -60,11 +60,11 @@ variable "worker_node_image" {
 }
 
 variable "worker_node_name" {
-    default = "ish_bot_kube_master"
+    default = "ish_bot_kube_worker"
 }
 
 variable "worker_node_user" {
-    default =  "ec2-user"
+    default =  "admin"
 }
 
 variable "worker_node_root_storage_size" {

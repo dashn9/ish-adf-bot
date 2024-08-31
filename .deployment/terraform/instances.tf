@@ -9,7 +9,7 @@ resource "aws_instance" "ish_bot_kube_master" {
     ami = var.master_node_image
     key_name = aws_key_pair.tf_master_node_ssh_keys[count.index].key_name
     subnet_id = aws_subnet.k8s_subnets[count.index].id
-    security_groups = [ aws_security_group.k8s_sg.name ]
+    vpc_security_group_ids = [ aws_security_group.k8s_sg.id ]
     tags = {
         Name = "${var.master_node_name}-${count.index}"
     }
@@ -338,7 +338,7 @@ resource "aws_instance" "ish_bot_kube_worker" {
     ami = var.worker_node_image
     key_name = aws_key_pair.tf_worker_node_ssh_keys[count.index].key_name
     subnet_id = aws_subnet.k8s_subnets[count.index].id
-    security_groups = [ aws_security_group.k8s_sg.name ]
+    vpc_security_group_ids = [ aws_security_group.k8s_sg.id ]
 
     provisioner "file" {
         source      = "${var.certificates_path}/kube-proxy.key"
@@ -451,10 +451,13 @@ resource "aws_instance" "ish_bot_kube_worker" {
         volume_type = var.worker_node_root_storage_type
     }
 
-    ebs_block_device {
-        device_name = "/chrome_profiles_store"
-        volume_id   = aws_ebs_volume.chrome_profiles_store.id
-    }
+}
+
+resource "aws_volume_attachment" "ish_bot_kube_worker_chrome_profiles_storage_attachment" {
+    count = var.worker_node_count
+    device_name = "/chrome_profiles_store"
+    volume_id   = aws_ebs_volume.chrome_profiles_store.id
+    instance_id = aws_instance.ish_bot_kube_worker[count.index].id
 }
 
 resource "local_file" "master_node_ssh_keys" {

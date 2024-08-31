@@ -16,7 +16,7 @@ resource "aws_subnet" "k8s_subnets" {
     vpc_id                  = aws_vpc.k8s_vpc.id
     cidr_block              = "10.0.${count.index+1}.0/24"
     # Please endeavour to switch  this to use multiple availability zones
-    availability_zone       = var.availability_zone
+    availability_zone       = "${var.availability_zone}a"
     map_public_ip_on_launch = true
 
     tags = {

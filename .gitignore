@@ -9,5 +9,6 @@ identity/account_details.temp.conf
 /caches
 /config.ini
 /config.docker.ini
-
+*.key
+*_key.pem
 .DS_Store
