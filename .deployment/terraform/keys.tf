@@ -15,3 +15,21 @@ resource "local_file" "ish_bot_kube_master_node_keys" {
     content = tls_private_key.master_node_ssh_keys[count.index].private_key_pem
     filename = "./${var.ssh_path}/${aws_key_pair.tf_master_node_ssh_keys[count.index].key_name}.key"
 }
+
+resource "tls_private_key" "worker_node_ssh_keys" {
+    algorithm = "RSA"
+    rsa_bits  = 4096
+    count = var.worker_node_count
+}
+
+resource "aws_key_pair" "tf_worker_node_ssh_keys" {
+    count = var.worker_node_count
+    key_name   = "${var.worker_node_name}-${count.index}"
+    public_key = tls_private_key.worker_node_ssh_keys[count.index].public_key_openssh
+}
+
+resource "local_file" "ish_bot_kube_worker_node_keys" {
+    count = var.worker_node_count
+    content = tls_private_key.worker_node_ssh_keys[count.index].private_key_pem
+    filename = "./${var.ssh_path}/${aws_key_pair.tf_worker_node_ssh_keys[count.index].key_name}.key"
+}
