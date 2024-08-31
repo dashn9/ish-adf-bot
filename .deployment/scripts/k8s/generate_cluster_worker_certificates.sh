@@ -23,9 +23,9 @@ if [[ ! -f "$CA_KEY" || ! -f "$CA_CERT" ]]; then
     exit 1
 fi
 
-./generate_cert.sh "kubelet-server" "$HOSTNAME" "$OUTPUT_DIR" "$CA_KEY" "$CA_CERT" -ip $INTERNAL_IP
-./generate_cert.sh "kubelet-client" "system:node:$HOSTNAME" "$OUTPUT_DIR" "$CA_KEY" "$CA_CERT" ip $INTERNAL_IP
+./generate_cert.sh "${HOSTNAME}-kubelet-server" "$HOSTNAME" "$OUTPUT_DIR" "$CA_KEY" "$CA_CERT" -ip $INTERNAL_IP
+./generate_cert.sh "${HOSTNAME}-kubelet-client" "system:node:$HOSTNAME" "$OUTPUT_DIR" "$CA_KEY" "$CA_CERT" ip $INTERNAL_IP
 
-./generate_cert.sh "kubelet-proxy" "kube-proxy" "$OUTPUT_DIR" "$CA_KEY" "$CA_CERT"
+./generate_cert.sh "${HOSTNAME}-kubelet-proxy" "kube-proxy" "$OUTPUT_DIR" "$CA_KEY" "$CA_CERT"
 echo "Worker Certificates generated in $OUTPUT_DIR."
 } >> worker_init.log

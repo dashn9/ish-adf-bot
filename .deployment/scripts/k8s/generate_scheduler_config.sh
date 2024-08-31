@@ -3,7 +3,7 @@
 {
 echo && echo "$0: " && echo
 
-kubectl config set-cluster k8s-the-hard-way \
+kubectl config set-cluster ish-bot-kube \
     --certificate-authority=k8s-ca.pem \
     --embed-certs=true \
     --server=https://127.0.0.1:6443 \
@@ -16,7 +16,7 @@ kubectl config set-credentials system:kube-scheduler \
     --kubeconfig=kube-scheduler.kubeconfig
 
 kubectl config set-context default \
-    --cluster=k8s-the-hard-way \
+    --cluster=ish-bot-kube \
     --user=system:kube-scheduler \
     --kubeconfig=kube-scheduler.kubeconfig
 

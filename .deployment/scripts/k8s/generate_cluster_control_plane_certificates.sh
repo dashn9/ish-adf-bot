@@ -40,10 +40,6 @@ fi
 ./generate-cert.sh "etcd-server" "etcd-server " "$OUTPUT_DIR" "$CA_KEY" "$CA_CERT" 
 ./generate-cert.sh "etcd-peer" "etcd-peer" "$OUTPUT_DIR" "$CA_KEY" "$CA_CERT"
 
-
-# For Worker
-./generate_cert.sh "kubelet-server" "$HOSTNAME" "$OUTPUT_DIR" "$CA_KEY" "$CA_CERT"
-./generate_cert.sh "kubelet-client" "system:node:$HOSTNAME" "$OUTPUT_DIR" "$CA_KEY" "$CA_CERT"
-
 ./generate_cert.sh "kubelet-proxy" "kube-proxy" "$OUTPUT_DIR" "$CA_KEY" "$CA_CERT"
+
 echo "Control Plane Certificates generated in $OUTPUT_DIR."
