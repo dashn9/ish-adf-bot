@@ -72,9 +72,9 @@ EOF
 
 # Configure Kubelet
 sudo mkdir -p /var/lib/kubelet/
-sudo mv "kubelet-server.key kubelet-server.pem /var/lib/kubelet/
+sudo mv "${HOSTNAME}"-kubelet-server.key "${HOSTNAME}"-kubelet-server.pem /var/lib/kubelet/
 sudo mv "${HOSTNAME}".kubeconfig /var/lib/kubelet/kubeconfig
-sudo mv ca.pem /var/lib/kubernetes/
+sudo mv k8s-ca.pem /var/lib/kubernetes/
 
 cat <<EOF | sudo tee /var/lib/kubelet/kubelet-config.yaml
 kind: KubeletConfiguration
@@ -87,14 +87,14 @@ authentication:
   x509:
     clientCAFile: "/var/lib/kubernetes/k8s-ca.pem"
 authorization:
-  mode: Webhook
+    mode: Webhook
 clusterDomain: "cluster.local"
 clusterDNS:
-  - "10.32.0.10"
+    - "10.32.0.10"
 podCIDR: "${POD_CIDR}"
 runtimeRequestTimeout: "15m"
-tlsCertFile: "/var/lib/kubelet/kubelet-server.pem"
-tlsPrivateKeyFile: "/var/lib/kubelet/kubelet.key"
+tlsCertFile: "/var/lib/kubelet/${HOSTNAME}-kubelet-server.pem"
+tlsPrivateKeyFile: "/var/lib/kubelet/${HOSTNAME}-kubelet-client.key"
 EOF
 
 cat <<EOF | sudo tee /etc/systemd/system/kubelet.service
@@ -154,4 +154,4 @@ EOF
 sudo systemctl daemon-reload
 sudo systemctl enable containerd kubelet kube-proxy
 sudo systemctl start containerd kubelet kube-proxy
-} >> cloudinit.log
+} >> start_worker.log
