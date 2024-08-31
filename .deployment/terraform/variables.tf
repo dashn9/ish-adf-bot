@@ -18,6 +18,9 @@ variable "certificates_path" {
     default = "../scripts/k8s/certificates"
 }
 
+variable "scripts_path" {
+    default = "../scripts/k8s"
+}
 
 variable "master_node_type" {
     default = "t3a.medium"

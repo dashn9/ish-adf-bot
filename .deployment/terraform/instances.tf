@@ -1,3 +1,7 @@
+resource "aws_eip" "ish_bot_kube_master_eip" {
+    instance = aws_instance.ish_bot_kube_master
+}
+
 resource "aws_instance" "ish_bot_kube_master" {
     count = var.master_node_count
     instance_type = var.master_node_type
@@ -230,6 +234,31 @@ resource "aws_instance" "ish_bot_kube_worker" {
     key_name = aws_key_pair.tf_worker_node_ssh_keys[count.index].key_name
     subnet_id = aws_subnet.k8s_subnets[count.index].id
     security_groups = [ aws_security_group.k8s_sg ]
+
+    provisioner "file" {
+        source      = "${var.scripts_path}/generate_certificate.sh"
+        destination = "/home/${var.master_node_user}/generate_certificate.sh"
+
+        connection {
+            type        = "ssh"
+            user        = var.master_node_user
+            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}.key")
+            host        = self.public_ip
+        }
+    }
+
+    provisioner "file" {
+        source      = "${var.scripts_path}/generate_cluster_worker_certificates.sh"
+        destination = "/home/${var.master_node_user}/generate_cluster_worker_certificates.sh"
+
+        connection {
+            type        = "ssh"
+            user        = var.master_node_user
+            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}.key")
+            host        = self.public_ip
+        }
+    }
+
     tags = {
         Name = "${var.worker_node_name}-${count.index}"
     }
@@ -247,5 +276,11 @@ resource "aws_instance" "ish_bot_kube_worker" {
 resource "local_file" "master_node_ssh_keys" {
     count    = var.master_node_count
     content  = tls_private_key.master_node_ssh_keys[count.index].private_key_pem
-    filename = "${var.master_node_name}-${count.index}_key.pem"
+    filename = "${var.master_node_name}-${count.index}.key"
+}
+
+resource "local_file" "worker_node_ssh_keys" {
+    count    = var.worker_node_count
+    content  = tls_private_key.worker_node_ssh_keys[count.index].private_key_pem
+    filename = "${var.worker_node_name}-${count.index}.key"
 }

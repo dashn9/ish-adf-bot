@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# This script generates a certificate for a given Kubernetes component with SANs support
+# This script generates a certificate for a given Kubernetes component with SANs support and optional group details
 
 # Function to generate a certificate
 generate_cert() {
@@ -12,8 +12,9 @@ generate_cert() {
     shift 5
     local DNS_NAMES=""
     local IP_ADDRESSES=""
+    local GROUP_DETAILS=""
 
-    # Parse remaining arguments for DNS names and IP addresses
+    # Parse remaining arguments for DNS names, IP addresses, and group details
     while [[ $# -gt 0 ]]; do
         case $1 in
             --dns)
@@ -22,6 +23,10 @@ generate_cert() {
                 ;;
             --ip)
                 IP_ADDRESSES="$2"
+                shift 2
+                ;;
+            --group)
+                GROUP_DETAILS="$2"
                 shift 2
                 ;;
             *)
@@ -51,6 +56,15 @@ distinguished_name = dn
 
 [ dn ]
 CN = $CN
+EOF
+
+    # Add group details if provided
+    if [[ -n "$GROUP_DETAILS" ]]; then
+        echo "OU = $GROUP_DETAILS" >> "$CONFIG_FILE"
+    fi
+
+    # Continue building the config file
+    cat >> "$CONFIG_FILE" <<EOF
 
 [ req_ext ]
 subjectAltName = @alt_names
@@ -86,7 +100,7 @@ EOF
 
 # Check if the required arguments are provided
 if [ "$#" -lt 5 ]; then
-    echo "Usage: $0 <name> <common_name> <output_dir> <ca_key> <ca_cert> [--dns dns_names_comma_separated] [--ip ip_addresses_comma_separated]"
+    echo "Usage: $0 <name> <common_name> <output_dir> <ca_key> <ca_cert> [--dns dns_names_comma_separated] [--ip ip_addresses_comma_separated] [--group group_details]"
     exit 1
 fi
 
