@@ -1,5 +1,6 @@
 resource "aws_eip" "ish_bot_kube_master_eip" {
-    instance = aws_instance.ish_bot_kube_master
+    count = var.master_node_count
+    instance = aws_instance.ish_bot_kube_master[count.index].id
 }
 
 resource "aws_instance" "ish_bot_kube_master" {
@@ -8,7 +9,7 @@ resource "aws_instance" "ish_bot_kube_master" {
     ami = var.master_node_image
     key_name = aws_key_pair.tf_master_node_ssh_keys[count.index].key_name
     subnet_id = aws_subnet.k8s_subnets[count.index].id
-    security_groups = [ aws_security_group.k8s_sg ]
+    security_groups = [ aws_security_group.k8s_sg.name ]
     tags = {
         Name = "${var.master_node_name}-${count.index}"
     }
@@ -337,7 +338,7 @@ resource "aws_instance" "ish_bot_kube_worker" {
     ami = var.worker_node_image
     key_name = aws_key_pair.tf_worker_node_ssh_keys[count.index].key_name
     subnet_id = aws_subnet.k8s_subnets[count.index].id
-    security_groups = [ aws_security_group.k8s_sg ]
+    security_groups = [ aws_security_group.k8s_sg.name ]
 
     provisioner "file" {
         source      = "${var.certificates_path}/kube-proxy.key"
@@ -435,8 +436,9 @@ resource "aws_instance" "ish_bot_kube_worker" {
             "sudo chmod +x generate_cluster_worker_certificates.sh generate_kubelet_config.sh generarte_proxy_config.sh install_worker.sh start_worker.sh",
             "./install_worker.sh",
             "./generate_cluster_worker_certificates.sh",
-            "./generate_kubelet_config.sh ${aws_eip.ish_bot_kube_master_eip.public_ip}",
-            "./generate_proxy_config.sh ${aws_eip.ish_bot_kube_master_eip.public_ip}",
+            # This below would be an issue if I build this cluster to have multiple master nodes
+            "./generate_kubelet_config.sh ${join(" ", toset(aws_eip.ish_bot_kube_master_eip.*.public_ip))}",
+            "./generate_proxy_config.sh ${join(" ", toset(aws_eip.ish_bot_kube_master_eip.*.public_ip))}",
             "./start_worker.sh",
         ]
     }
