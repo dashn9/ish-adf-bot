@@ -13,6 +13,18 @@ resource "aws_instance" "ish_bot_kube_master" {
         Name = "${var.master_node_name}-${count.index}"
     }
 
+    provisioner "file" {
+        source      = "${var.certificates_path}/k8s-ca.crt"
+        destination = "/home/${var.master_node_user}/k8s-ca.crt"
+
+        connection {
+            type        = "ssh"
+            user        = var.master_node_user
+            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}.key")
+            host        = self.public_ip
+        }
+    } 
+
     # Upload Kubernetes API Server key and certificate
     provisioner "file" {
         source      = "${var.certificates_path}/kubernetes-apiserver.key"
@@ -21,7 +33,7 @@ resource "aws_instance" "ish_bot_kube_master" {
         connection {
             type        = "ssh"
             user        = var.master_node_user
-            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}_key.pem")
+            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}.key")
             host        = self.public_ip
         }
     } 
@@ -33,7 +45,7 @@ resource "aws_instance" "ish_bot_kube_master" {
         connection {
             type        = "ssh"
             user        = var.master_node_user
-            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}_key.pem")
+            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}.key")
             host        = self.public_ip
         }
     }
@@ -46,7 +58,7 @@ resource "aws_instance" "ish_bot_kube_master" {
         connection {
             type        = "ssh"
             user        = var.master_node_user
-            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}_key.pem")
+            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}.key")
             host        = self.public_ip
         }
     }
@@ -58,7 +70,7 @@ resource "aws_instance" "ish_bot_kube_master" {
         connection {
             type        = "ssh"
             user        = var.master_node_user
-            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}_key.pem")
+            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}.key")
             host        = self.public_ip
         }
     }
@@ -71,7 +83,7 @@ resource "aws_instance" "ish_bot_kube_master" {
         connection {
             type        = "ssh"
             user        = var.master_node_user
-            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}_key.pem")
+            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}.key")
             host        = self.public_ip
         }
     }
@@ -83,7 +95,7 @@ resource "aws_instance" "ish_bot_kube_master" {
         connection {
             type        = "ssh"
             user        = var.master_node_user
-            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}_key.pem")
+            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}.key")
             host        = self.public_ip
         }
     }
@@ -96,7 +108,7 @@ resource "aws_instance" "ish_bot_kube_master" {
         connection {
             type        = "ssh"
             user        = var.master_node_user
-            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}_key.pem")
+            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}.key")
             host        = self.public_ip
         }
     }
@@ -108,7 +120,7 @@ resource "aws_instance" "ish_bot_kube_master" {
         connection {
             type        = "ssh"
             user        = var.master_node_user
-            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}_key.pem")
+            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}.key")
             host        = self.public_ip
         }
     }
@@ -121,7 +133,7 @@ resource "aws_instance" "ish_bot_kube_master" {
         connection {
             type        = "ssh"
             user        = var.master_node_user
-            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}_key.pem")
+            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}.key")
             host        = self.public_ip
         }
     }
@@ -133,7 +145,7 @@ resource "aws_instance" "ish_bot_kube_master" {
         connection {
             type        = "ssh"
             user        = var.master_node_user
-            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}_key.pem")
+            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}.key")
             host        = self.public_ip
         }
     }
@@ -146,7 +158,7 @@ resource "aws_instance" "ish_bot_kube_master" {
         connection {
             type        = "ssh"
             user        = var.master_node_user
-            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}_key.pem")
+            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}.key")
             host        = self.public_ip
         }
     }
@@ -158,7 +170,7 @@ resource "aws_instance" "ish_bot_kube_master" {
         connection {
             type        = "ssh"
             user        = var.master_node_user
-            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}_key.pem")
+            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}.key")
             host        = self.public_ip
         }
     }
@@ -171,7 +183,7 @@ resource "aws_instance" "ish_bot_kube_master" {
         connection {
             type        = "ssh"
             user        = var.master_node_user
-            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}_key.pem")
+            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}.key")
             host        = self.public_ip
         }
     }
@@ -183,7 +195,7 @@ resource "aws_instance" "ish_bot_kube_master" {
         connection {
             type        = "ssh"
             user        = var.master_node_user
-            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}_key.pem")
+            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}.key")
             host        = self.public_ip
         }
     }
@@ -196,7 +208,7 @@ resource "aws_instance" "ish_bot_kube_master" {
         connection {
             type        = "ssh"
             user        = var.master_node_user
-            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}_key.pem")
+            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}.key")
             host        = self.public_ip
         }
     }
@@ -208,11 +220,104 @@ resource "aws_instance" "ish_bot_kube_master" {
         connection {
             type        = "ssh"
             user        = var.master_node_user
-            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}_key.pem")
+            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}.key")
             host        = self.public_ip
         }
     }
 
+    provisioner "file" {
+        source      = "${var.scripts_path}/generate_admin_config.sh"
+        destination = "/home/${var.master_node_user}/generate_admin_config.sh"
+
+        connection {
+            type        = "ssh"
+            user        = var.master_node_user
+            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}.key")
+            host        = self.public_ip
+        }
+    }
+
+    provisioner "file" {
+        source      = "${var.scripts_path}/generate_controller_manager_config.sh"
+        destination = "/home/${var.master_node_user}/generate_controller_manager_config.sh"
+
+        connection {
+            type        = "ssh"
+            user        = var.master_node_user
+            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}.key")
+            host        = self.public_ip
+        }
+    }
+
+    provisioner "file" {
+        source      = "${var.scripts_path}/generate_scheduler_config.sh"
+        destination = "/home/${var.master_node_user}/generate_scheduler_config.sh"
+
+        connection {
+            type        = "ssh"
+            user        = var.master_node_user
+            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}.key")
+            host        = self.public_ip
+        }
+    }
+
+    provisioner "file" {
+        source      = "${var.scripts_path}/install_control_plane.sh"
+        destination = "/home/${var.master_node_user}/install_control_plane.sh"
+
+        connection {
+            type        = "ssh"
+            user        = var.master_node_user
+            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}.key")
+            host        = self.public_ip
+        }
+    }
+
+    provisioner "file" {
+        source      = "${var.scripts_path}/start_control_plane.sh"
+        destination = "/home/${var.master_node_user}/start_control_plane.sh"
+
+        connection {
+            type        = "ssh"
+            user        = var.master_node_user
+            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}.key")
+            host        = self.public_ip
+        }
+    }
+
+    provisioner "file" {
+        source      = "${var.scripts_path}/start_etcd.sh"
+        destination = "/home/${var.master_node_user}/start_etcd.sh"
+
+        connection {
+            type        = "ssh"
+            user        = var.master_node_user
+            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}.key")
+            host        = self.public_ip
+        }
+    }
+
+
+    provisioner "remote-exec" {
+
+        connection {
+            type        = "ssh"
+            user        = var.master_node_user
+            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}.key")
+            host        = self.public_ip
+        }
+
+        inline = [
+        "sleep 30",
+        "sudo chmod +x generate_admin_config.sh generate_controller_manager_config.sh generate_scheduler_config.sh install_control_plane.sh start_control_plane.sh start_etcd.sh",
+        "./install_control_plane.sh",
+        "./gen_controller_manager_config.sh",
+        "./gen_scheduler_config.sh",
+        "./gen_admin_config.sh",
+        "./start_etcd.sh",
+        "./start_control_plane.sh",
+        ]
+    }
 
     root_block_device {
         volume_size = var.master_node_root_storage_size
@@ -224,8 +329,15 @@ resource "aws_instance" "ish_bot_kube_master" {
 resource "local_file" "master_node_ssh_keys" {
     count    = var.master_node_count
     content  = tls_private_key.master_node_ssh_keys[count.index].private_key_pem
-    filename = "${var.master_node_name}-${count.index}_key.pem"
+    filename = "${var.master_node_name}-${count.index}.key"
 }
+
+
+
+
+
+
+
 
 resource "aws_instance" "ish_bot_kube_worker" {
     count = var.worker_node_count
@@ -234,6 +346,65 @@ resource "aws_instance" "ish_bot_kube_worker" {
     key_name = aws_key_pair.tf_worker_node_ssh_keys[count.index].key_name
     subnet_id = aws_subnet.k8s_subnets[count.index].id
     security_groups = [ aws_security_group.k8s_sg ]
+
+    provisioner "file" {
+        source      = "${var.certificates_path}/kube-proxy.key"
+        destination = "/home/${var.master_node_user}/kube-proxy.key"
+
+        connection {
+            type        = "ssh"
+            user        = var.master_node_user
+            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}.key")
+            host        = self.public_ip
+        }
+    }
+
+    provisioner "file" {
+        source      = "${var.certificates_path}/kube-proxy.crt"
+        destination = "/home/${var.master_node_user}/kube-proxy.crt"
+
+        connection {
+            type        = "ssh"
+            user        = var.master_node_user
+            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}.key")
+            host        = self.public_ip
+        }
+    }
+    provisioner "file" {
+        source      = "${var.certificates_path}/k8s-ca.crt"
+        destination = "/home/${var.master_node_user}/k8s-ca.crt"
+
+        connection {
+            type        = "ssh"
+            user        = var.master_node_user
+            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}.key")
+            host        = self.public_ip
+        }
+    } 
+
+    provisioner "file" {
+        source      = "${var.scripts_path}/generate_proxy_config.sh"
+        destination = "/home/${var.master_node_user}/generate_proxy_config.sh"
+
+        connection {
+            type        = "ssh"
+            user        = var.master_node_user
+            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}.key")
+            host        = self.public_ip
+        }
+    }
+
+    provisioner "file" {
+        source      = "${var.scripts_path}/generate_kubelet_config.sh"
+        destination = "/home/${var.master_node_user}/generate_kubelet_config.sh"
+
+        connection {
+            type        = "ssh"
+            user        = var.master_node_user
+            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}.key")
+            host        = self.public_ip
+        }
+    }
 
     provisioner "file" {
         source      = "${var.scripts_path}/generate_certificate.sh"
@@ -257,6 +428,25 @@ resource "aws_instance" "ish_bot_kube_worker" {
             private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}.key")
             host        = self.public_ip
         }
+    }
+
+    provisioner "remote-exec" {
+        connection {
+            type        = "ssh"
+            user        = var.master_node_user
+            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}.key")
+            host        = self.public_ip
+        }
+
+        inline = [
+        "sleep 30",
+        "sudo chmod +x generate_cluster_worker_certificates.sh generate_kubelet_config.sh generarte_proxy_config.sh install_worker.sh start_worker.sh",
+        "./install_worker.sh",
+        "./generate_cluster_worker_certificates.sh",
+        "./generate_kubelet_config.sh ${google_compute_address.k8s_staticip.address}",
+        "./generate_proxy_config.sh ${google_compute_address.k8s_staticip.address}",
+        "./start_worker.sh",
+        ]
     }
 
     tags = {

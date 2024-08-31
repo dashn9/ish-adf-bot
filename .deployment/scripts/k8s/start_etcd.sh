@@ -11,7 +11,7 @@ INTERNAL_IP=$(curl -s http://169.254.169.254/latest/meta-data/local-ipv4)
 
 # Create necessary directories and copy certificates
 sudo mkdir -p /etc/etcd /var/lib/etcd
-sudo cp ca.pem kubernetes-key.pem kubernetes.pem /etc/etcd/
+sudo cp ca.crt kubernetes-key.crt kubernetes.crt /etc/etcd/
 
 # Create the systemd service file for etcd
 cat <<EOF | sudo tee /etc/systemd/system/etcd.service
@@ -22,12 +22,12 @@ Documentation=https://github.com/coreos
 [Service]
 ExecStart=/usr/local/bin/etcd \\
   --name ${ETCD_NAME} \\
-  --cert-file=/etc/etcd/kubernetes.pem \\
-  --key-file=/etc/etcd/kubernetes-key.pem \\
-  --peer-cert-file=/etc/etcd/kubernetes.pem \\
-  --peer-key-file=/etc/etcd/kubernetes-key.pem \\
-  --trusted-ca-file=/etc/etcd/ca.pem \\
-  --peer-trusted-ca-file=/etc/etcd/ca.pem \\
+  --cert-file=/etc/etcd/kubernetes.crt \\
+  --key-file=/etc/etcd/kubernetes-key.crt \\
+  --peer-cert-file=/etc/etcd/kubernetes.crt \\
+  --peer-key-file=/etc/etcd/kubernetes-key.crt \\
+  --trusted-ca-file=/etc/etcd/ca.crt \\
+  --peer-trusted-ca-file=/etc/etcd/ca.crt \\
   --peer-client-cert-auth \\
   --client-cert-auth \\
   --initial-advertise-peer-urls https://${INTERNAL_IP}:2380 \\
@@ -53,8 +53,8 @@ sudo systemctl start etcd
 # Verify that everything is working
 sudo ETCDCTL_API=3 etcdctl member list \
     --endpoints=https://127.0.0.1:2379 \
-    --cacert=/etc/etcd/ca.pem \
-    --cert=/etc/etcd/kubernetes.pem \
-    --key=/etc/etcd/kubernetes-key.pem
+    --cacert=/etc/etcd/ca.crt \
+    --cert=/etc/etcd/kubernetes.crt \
+    --key=/etc/etcd/kubernetes-key.crt
 
 } >> cloudinit.log 2>&1

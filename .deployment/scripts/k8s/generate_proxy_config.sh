@@ -6,13 +6,13 @@ echo && echo "$0: " && echo
 KUBERNETES_PUBLIC_ADDRESS=$1 # Static IP address provisioned in networking.tf
 
 kubectl config set-cluster ish-bot-kube \
-    --certificate-authority=k8s-ca.pem \
+    --certificate-authority=k8s-ca.crt \
     --embed-certs=true \
     --server=https://"${KUBERNETES_PUBLIC_ADDRESS}":6443 \
     --kubeconfig=kube-proxy.kubeconfig
     
 kubectl config set-credentials system:kube-proxy \
-    --client-certificate=kube-proxy.pem \
+    --client-certificate=kube-proxy.crt \
     --client-key=kube-proxy.key \
     --embed-certs=true \
     --kubeconfig=kube-proxy.kubeconfig

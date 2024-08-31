@@ -72,9 +72,9 @@ EOF
 
 # Configure Kubelet
 sudo mkdir -p /var/lib/kubelet/
-sudo mv "${HOSTNAME}"-kubelet-server.key "${HOSTNAME}"-kubelet-server.pem /var/lib/kubelet/
+sudo mv "${HOSTNAME}"-kubelet-server.key "${HOSTNAME}"-kubelet-server.crt /var/lib/kubelet/
 sudo mv "${HOSTNAME}".kubeconfig /var/lib/kubelet/kubeconfig
-sudo mv k8s-ca.pem /var/lib/kubernetes/
+sudo mv k8s-ca.crt /var/lib/kubernetes/
 
 cat <<EOF | sudo tee /var/lib/kubelet/kubelet-config.yaml
 kind: KubeletConfiguration
@@ -85,7 +85,7 @@ authentication:
   webhook:
     enabled: true
   x509:
-    clientCAFile: "/var/lib/kubernetes/k8s-ca.pem"
+    clientCAFile: "/var/lib/kubernetes/k8s-ca.crt"
 authorization:
     mode: Webhook
 clusterDomain: "cluster.local"
@@ -93,7 +93,7 @@ clusterDNS:
     - "10.32.0.10"
 podCIDR: "${POD_CIDR}"
 runtimeRequestTimeout: "15m"
-tlsCertFile: "/var/lib/kubelet/${HOSTNAME}-kubelet-server.pem"
+tlsCertFile: "/var/lib/kubelet/${HOSTNAME}-kubelet-server.crt"
 tlsPrivateKeyFile: "/var/lib/kubelet/${HOSTNAME}-kubelet-client.key"
 EOF
 

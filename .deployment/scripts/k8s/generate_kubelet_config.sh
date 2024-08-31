@@ -14,13 +14,13 @@ echo "Node Name: $NODE_NAME"
 
 # Set up kubeconfig for the node
 kubectl config set-cluster ish-bot-kube \
-    --certificate-authority=k8s-ca.pem \
+    --certificate-authority=k8s-ca.crt \
     --embed-certs=true \
     --server=https://"${KUBERNETES_PUBLIC_ADDRESS}":6443 \
     --kubeconfig="${NODE_NAME}".kubeconfig
 
 kubectl config set-credentials system:node:"${NODE_NAME}" \
-    --client-certificate="${NODE_NAME}-kubelet-client".pem \
+    --client-certificate="${NODE_NAME}-kubelet-client".crt \
     --client-key="${NODE_NAME}-kubelet-client".key \
     --embed-certs=true \
     --kubeconfig="${NODE_NAME}".kubeconfig

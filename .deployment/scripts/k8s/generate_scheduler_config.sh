@@ -4,14 +4,14 @@
 echo && echo "$0: " && echo
 
 kubectl config set-cluster ish-bot-kube \
-    --certificate-authority=k8s-ca.pem \
+    --certificate-authority=k8s-ca.crt \
     --embed-certs=true \
     --server=https://127.0.0.1:6443 \
     --kubeconfig=kube-scheduler.kubeconfig
 
 kubectl config set-credentials system:kube-scheduler \
-    --client-certificate=kube-scheduler.pem \
-    --client-key=kube-scheduler-key.pem \
+    --client-certificate=kube-scheduler.crt \
+    --client-key=kube-scheduler-key.crt \
     --embed-certs=true \
     --kubeconfig=kube-scheduler.kubeconfig
 

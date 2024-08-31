@@ -4,13 +4,13 @@
 echo && echo "$0: " && echo
 
 kubectl config set-cluster ish-bot-kube \
-    --certificate-authority=k8s-ca.pem \
+    --certificate-authority=k8s-ca.crt \
     --embed-certs=true \
     --server=https://127.0.0.1:6443 \
     --kubeconfig=admin.kubeconfig
 
 kubectl config set-credentials admin \
-    --client-certificate=admin.pem \
+    --client-certificate=admin.crt \
     --client-key=admin.key \
     --embed-certs=true \
     --kubeconfig=admin.kubeconfig
