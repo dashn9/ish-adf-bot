@@ -1,6 +1,6 @@
 resource "null_resource" "generate_k8s_ca" {
     provisioner "local-exec" {
-        command = "../scripts/k8s/generate_certificate_authority.sh"
+        command = "chmod +x ../scripts/k8s/generate_certificate_authority.sh; ../scripts/k8s/generate_certificate_authority.sh"
     }
 
     # This will ensure the CA is regenerated only if there are changes
@@ -10,8 +10,10 @@ resource "null_resource" "generate_k8s_ca" {
 }
 
 resource "null_resource" "generate_cluster_control_plane_certificates" {
+
+    depends_on = [ null_resource.generate_k8s_ca ]
     provisioner "local-exec" {
-        command = "../scripts/k8s/generate_cluster_control_plane_certificates.sh ./certificates ${join(" ", toset(aws_eip.ish_bot_kube_master_eip.*.public_ip))}"
+        command = "chmod +x ../scripts/k8s/generate_cluster_control_plane_certificates.sh; ../scripts/k8s/generate_cluster_control_plane_certificates.sh"
     }
 
     # This will ensure the CA is regenerated only if there are changes

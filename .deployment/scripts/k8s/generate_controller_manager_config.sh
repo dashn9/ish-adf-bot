@@ -1,6 +1,5 @@
 #!/bin/bash
 
-{
 echo && echo "$0: " && echo
 
 kubectl config set-cluster ish-bot-kube \
@@ -21,4 +20,3 @@ kubectl config set-context default \
     --kubeconfig=kube-controller-manager.kubeconfig
 
 kubectl config use-context default --kubeconfig=kube-controller-manager.kubeconfig
-} >> cloudinit.log

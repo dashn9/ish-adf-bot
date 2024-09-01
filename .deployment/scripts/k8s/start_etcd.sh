@@ -57,4 +57,4 @@ sudo ETCDCTL_API=3 etcdctl member list \
     --cert=/etc/etcd/kubernetes.crt \
     --key=/etc/etcd/kubernetes-key.crt
 
-} >> cloudinit.log 2>&1
+} >> start_etcd.log 2>&1

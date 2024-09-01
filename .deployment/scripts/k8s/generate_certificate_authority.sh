@@ -1,10 +1,9 @@
 #!/bin/bash
 
-{
 echo && echo "$0: " && echo
 
 # Set the directory to store the CA files
-OUTPUT_DIR=${1:-./certicates}
+OUTPUT_DIR=${1:-~/ish_bot_kube_cluster_certificates}
 # Create the directory if it doesn't exist
 mkdir -p "$OUTPUT_DIR/certs"
 mkdir -p "$OUTPUT_DIR/configs"
@@ -53,5 +52,3 @@ openssl req -x509 -new -nodes -key $CA_KEY -sha256 -days $VALIDITY_DAYS -out $CA
 echo "Kubernetes CA private key and certificate generated:"
 echo "Private Key: $CA_KEY"
 echo "Certificate: $CA_CERT"
-
-} >> generate_certificate_authority.log

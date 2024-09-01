@@ -15,7 +15,7 @@ variable "ssh_path" {
 }
 
 variable "certificates_path" {
-    default = "../scripts/k8s/certificates"
+    default = "~/ish_bot_kube_cluster_certificates/certs"
 }
 
 variable "scripts_path" {
