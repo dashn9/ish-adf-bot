@@ -11,7 +11,7 @@ kubectl config set-cluster ish-bot-kube \
 
 kubectl config set-credentials system:kube-scheduler \
     --client-certificate=kube-scheduler.crt \
-    --client-key=kube-scheduler-key.crt \
+    --client-key=kube-scheduler.key \
     --embed-certs=true \
     --kubeconfig=kube-scheduler.kubeconfig
 

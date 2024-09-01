@@ -203,8 +203,8 @@ resource "aws_instance" "ish_bot_kube_master" {
 
     # Upload ETCD client key and certificate
     provisioner "file" {
-        source      = "${var.certificates_path}/etcd-client.key"
-        destination = "/home/${var.master_node_user}/etcd-client.key"
+        source      = "${var.certificates_path}/etcd-peer.key"
+        destination = "/home/${var.master_node_user}/etcd-peer.key"
 
         connection {
             type        = "ssh"
@@ -215,8 +215,8 @@ resource "aws_instance" "ish_bot_kube_master" {
     }
 
     provisioner "file" {
-        source      = "${var.certificates_path}/etcd-client.crt"
-        destination = "/home/${var.master_node_user}/etcd-client.crt"
+        source      = "${var.certificates_path}/etcd-peer.crt"
+        destination = "/home/${var.master_node_user}/etcd-peer.crt"
 
         connection {
             type        = "ssh"
@@ -312,9 +312,9 @@ resource "aws_instance" "ish_bot_kube_master" {
             "sleep 30",
             "sudo chmod +x generate_admin_config.sh generate_controller_manager_config.sh generate_scheduler_config.sh install_control_plane.sh start_control_plane.sh start_etcd.sh",
             "./install_control_plane.sh",
-            "./gen_controller_manager_config.sh",
-            "./gen_scheduler_config.sh",
-            "./gen_admin_config.sh",
+            "./generate_controller_manager_config.sh",
+            "./generate_scheduler_config.sh",
+            "./generate_admin_config.sh",
             "./start_etcd.sh",
             "./start_control_plane.sh",
         ]
@@ -342,83 +342,83 @@ resource "aws_instance" "ish_bot_kube_worker" {
 
     provisioner "file" {
         source      = "${var.certificates_path}/kube-proxy.key"
-        destination = "/home/${var.master_node_user}/kube-proxy.key"
+        destination = "/home/${var.worker_node_user}/kube-proxy.key"
 
         connection {
             type        = "ssh"
-            user        = var.master_node_user
-            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}.key")
+            user        = var.worker_node_user
+            private_key = file("${var.ssh_path}/${var.worker_node_name}-${count.index}.key")
             host        = self.public_ip
         }
     }
 
     provisioner "file" {
         source      = "${var.certificates_path}/kube-proxy.crt"
-        destination = "/home/${var.master_node_user}/kube-proxy.crt"
+        destination = "/home/${var.worker_node_user}/kube-proxy.crt"
 
         connection {
             type        = "ssh"
-            user        = var.master_node_user
-            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}.key")
+            user        = var.worker_node_user
+            private_key = file("${var.ssh_path}/${var.worker_node_name}-${count.index}.key")
             host        = self.public_ip
         }
     }
     provisioner "file" {
         source      = "${var.certificates_path}/k8s-ca.crt"
-        destination = "/home/${var.master_node_user}/k8s-ca.crt"
+        destination = "/home/${var.worker_node_user}/k8s-ca.crt"
 
         connection {
             type        = "ssh"
-            user        = var.master_node_user
-            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}.key")
+            user        = var.worker_node_user
+            private_key = file("${var.ssh_path}/${var.worker_node_name}-${count.index}.key")
             host        = self.public_ip
         }
     } 
 
     provisioner "file" {
         source      = "${var.scripts_path}/generate_proxy_config.sh"
-        destination = "/home/${var.master_node_user}/generate_proxy_config.sh"
+        destination = "/home/${var.worker_node_user}/generate_proxy_config.sh"
 
         connection {
             type        = "ssh"
-            user        = var.master_node_user
-            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}.key")
+            user        = var.worker_node_user
+            private_key = file("${var.ssh_path}/${var.worker_node_name}-${count.index}.key")
             host        = self.public_ip
         }
     }
 
     provisioner "file" {
         source      = "${var.scripts_path}/generate_kubelet_config.sh"
-        destination = "/home/${var.master_node_user}/generate_kubelet_config.sh"
+        destination = "/home/${var.worker_node_user}/generate_kubelet_config.sh"
 
         connection {
             type        = "ssh"
-            user        = var.master_node_user
-            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}.key")
+            user        = var.worker_node_user
+            private_key = file("${var.ssh_path}/${var.worker_node_name}-${count.index}.key")
             host        = self.public_ip
         }
     }
 
     provisioner "file" {
         source      = "${var.scripts_path}/generate_certificate.sh"
-        destination = "/home/${var.master_node_user}/generate_certificate.sh"
+        destination = "/home/${var.worker_node_user}/generate_certificate.sh"
 
         connection {
             type        = "ssh"
-            user        = var.master_node_user
-            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}.key")
+            user        = var.worker_node_user
+            private_key = file("${var.ssh_path}/${var.worker_node_name}-${count.index}.key")
             host        = self.public_ip
         }
     }
 
     provisioner "file" {
         source      = "${var.scripts_path}/generate_cluster_worker_certificates.sh"
-        destination = "/home/${var.master_node_user}/generate_cluster_worker_certificates.sh"
+        destination = "/home/${var.worker_node_user}/generate_cluster_worker_certificates.sh"
 
         connection {
             type        = "ssh"
-            user        = var.master_node_user
-            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}.key")
+            user        = var.worker_node_user
+            private_key = file("${var.ssh_path}/${var.worker_node_name}-${count.index}.key")
             host        = self.public_ip
         }
     }
@@ -426,8 +426,8 @@ resource "aws_instance" "ish_bot_kube_worker" {
     provisioner "remote-exec" {
         connection {
             type        = "ssh"
-            user        = var.master_node_user
-            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}.key")
+            user        = var.worker_node_user
+            private_key = file("${var.ssh_path}/${var.worker_node_name}-${count.index}.key")
             host        = self.public_ip
         }
 
@@ -436,9 +436,9 @@ resource "aws_instance" "ish_bot_kube_worker" {
             "sudo chmod +x generate_cluster_worker_certificates.sh generate_kubelet_config.sh generarte_proxy_config.sh install_worker.sh start_worker.sh",
             "./install_worker.sh",
             "./generate_cluster_worker_certificates.sh",
-            # This below would be an issue if I build this cluster to have multiple master nodes
-            "./generate_kubelet_config.sh ${join(" ", toset(aws_eip.ish_bot_kube_master_eip.*.public_ip))}",
-            "./generate_proxy_config.sh ${join(" ", toset(aws_eip.ish_bot_kube_master_eip.*.public_ip))}",
+            # This below would be an issue if I build this cluster to have multiple worker nodes
+            "./generate_kubelet_config.sh",
+            "./generate_proxy_config.sh",
             "./start_worker.sh",
         ]
     }

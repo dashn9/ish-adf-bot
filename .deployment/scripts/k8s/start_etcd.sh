@@ -22,12 +22,12 @@ Documentation=https://github.com/coreos
 [Service]
 ExecStart=/usr/local/bin/etcd \\
   --name ${ETCD_NAME} \\
-  --cert-file=/etc/etcd/kubernetes.crt \\
-  --key-file=/etc/etcd/kubernetes-key.crt \\
-  --peer-cert-file=/etc/etcd/kubernetes.crt \\
-  --peer-key-file=/etc/etcd/kubernetes-key.crt \\
-  --trusted-ca-file=/etc/etcd/ca.crt \\
-  --peer-trusted-ca-file=/etc/etcd/ca.crt \\
+  --cert-file=/etc/etcd/etcd-server.crt \\
+  --key-file=/etc/etcd/etcd-server.key \\
+  --peer-cert-file=/etc/etcd/etcd-peer.crt \\
+  --peer-key-file=/etc/etcd/etcd-peer.key \\
+  --trusted-ca-file=/etc/etcd/k8s-ca.crt \\
+  --peer-trusted-ca-file=/etc/etcd/k8s-ca.crt \\
   --peer-client-cert-auth \\
   --client-cert-auth \\
   --initial-advertise-peer-urls https://${INTERNAL_IP}:2380 \\
@@ -53,8 +53,8 @@ sudo systemctl start etcd
 # Verify that everything is working
 sudo ETCDCTL_API=3 etcdctl member list \
     --endpoints=https://127.0.0.1:2379 \
-    --cacert=/etc/etcd/ca.crt \
-    --cert=/etc/etcd/kubernetes.crt \
-    --key=/etc/etcd/kubernetes-key.crt
+    --cacert=/etc/etcd/k8s-ca.crt \
+    --cert=/etc/etcd/etcd-peer.crt \
+    --key=/etc/etcd/etcd-peer.key
 
 } >> start_etcd.log 2>&1

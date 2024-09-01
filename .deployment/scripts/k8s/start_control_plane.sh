@@ -7,12 +7,12 @@ meta() { curl -s "http://169.254.169.254/latest/meta-data/$1"; }
 
 HOSTNAME=${1:-$(meta hostname)}
 INTERNAL_IP=${2:-$(meta local-ipv4)}
-CONTROLLER_IP=$(dig +short HOST_NAME)
+CONTROLLER_IP=$(meta public-ipv4)
 
 # Configure API Server
 sudo mkdir -p /var/lib/kubernetes/
 
-sudo mv ca.crt ca-key.crt kubernetes.key kubernetes.crt \
+sudo mv k8s-ca.crt kubernetes-apiserver.key kubernetes-apiserver.crt \
     /var/lib/kubernetes/
 
 cat <<EOF | sudo tee /etc/systemd/system/kube-apiserver.service
@@ -73,7 +73,7 @@ ExecStart=/usr/local/bin/kube-controller-manager \\
     --cluster-signing-key-file=/var/lib/kubernetes/k8s-ca.key \\
     --kubeconfig=/var/lib/kubernetes/kube-controller-manager.kubeconfig \\
     --leader-elect=true \\
-    --root-ca-file=/var/lib/kubernetes/ca.crt \\
+    --root-ca-file=/var/lib/kubernetes/k8s-ca.crt \\
     --service-cluster-ip-range=10.32.0.0/24 \\
     --v=2
 Restart=on-failure

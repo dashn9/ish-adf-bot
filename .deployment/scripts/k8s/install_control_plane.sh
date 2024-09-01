@@ -6,8 +6,8 @@ echo && echo "$0: " && echo
 # Install/prepare etcd
 wget -q --show-progress --https-only --timestamping \
     "https://storage.googleapis.com/etcd/v3.5.15/etcd-v3.5.15-linux-amd64.tar.gz -o /tmp/etcd-v3.5.15-linux-amd64.tar.gz"
-tar -xvf etcd-v3.5.15-linux-amd64.tar.gz
-sudo mv etcd-v3.5.15-linux-amd64/etcd* /usr/local/bin/
+tar -xvf /tmp/etcd-v3.5.15-linux-amd64.tar.gz
+sudo mv /tmp/etcd-v3.5.15-linux-amd64/etcd* /usr/local/bin/
 
 # Provision Kubernetes Control Plane
 sudo mkdir -p /etc/kubernetes/config
