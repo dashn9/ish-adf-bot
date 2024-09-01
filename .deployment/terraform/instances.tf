@@ -423,6 +423,30 @@ resource "aws_instance" "ish_bot_kube_worker" {
         }
     }
 
+    provisioner "file" {
+        source      = "${var.scripts_path}/install_worker.sh"
+        destination = "/home/${var.worker_node_user}/install_worker.sh"
+
+        connection {
+            type        = "ssh"
+            user        = var.worker_node_user
+            private_key = file("${var.ssh_path}/${var.worker_node_name}-${count.index}.key")
+            host        = self.public_ip
+        }
+    }   
+
+    provisioner "file" {
+        source      = "${var.scripts_path}/start_worker.sh"
+        destination = "/home/${var.worker_node_user}/start_worker.sh"
+
+        connection {
+            type        = "ssh"
+            user        = var.worker_node_user
+            private_key = file("${var.ssh_path}/${var.worker_node_name}-${count.index}.key")
+            host        = self.public_ip
+        }
+    }
+
     provisioner "remote-exec" {
         connection {
             type        = "ssh"
@@ -433,7 +457,7 @@ resource "aws_instance" "ish_bot_kube_worker" {
 
         inline = [
             "sleep 30",
-            "sudo chmod +x generate_cluster_worker_certificates.sh generate_kubelet_config.sh generarte_proxy_config.sh install_worker.sh start_worker.sh",
+            "sudo chmod +x generate_cluster_worker_certificates.sh generate_kubelet_config.sh generate_proxy_config.sh install_worker.sh start_worker.sh",
             "./install_worker.sh",
             "./generate_cluster_worker_certificates.sh",
             # This below would be an issue if I build this cluster to have multiple worker nodes

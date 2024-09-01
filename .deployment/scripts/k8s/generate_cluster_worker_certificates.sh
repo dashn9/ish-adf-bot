@@ -26,6 +26,5 @@ fi
 ./generate_cert.sh "${HOSTNAME}-kubelet-server" "$HOSTNAME" "$OUTPUT_DIR" "$CA_KEY" "$CA_CERT" -ip $INTERNAL_IP
 ./generate_cert.sh "${HOSTNAME}-kubelet-client" "system:node:$HOSTNAME" "$OUTPUT_DIR" "$CA_KEY" "$CA_CERT" ip $INTERNAL_IP
 
-./generate_cert.sh "kubelet-proxy" "kube-proxy" "$OUTPUT_DIR" "$CA_KEY" "$CA_CERT"
 echo "Worker Certificates generated in $OUTPUT_DIR."
-} >> worker_init.log
+} >> generate_cluster_worker_certificates.log
