@@ -5,7 +5,7 @@ OUTPUT_DIR=${1:-./certificates}
 
 meta() { curl -s "http://169.254.169.254/latest/meta-data/$1"; }
 
-HOSTNAME=${1:-$(meta hostname)}
+HOSTNAME=$(hostname -s)
 INTERNAL_IP=${2:-$(meta local-ipv4)}
 PUBLIC_IP=${3:-$(meta public-ipv4)}
 
@@ -23,8 +23,17 @@ if [[ ! -f "$CA_KEY" || ! -f "$CA_CERT" ]]; then
     exit 1
 fi
 
-./generate_cert.sh "${HOSTNAME}-kubelet-server" "$HOSTNAME" "$OUTPUT_DIR" "$CA_KEY" "$CA_CERT" -ip $INTERNAL_IP
-./generate_cert.sh "${HOSTNAME}-kubelet-client" "system:node:$HOSTNAME" "$OUTPUT_DIR" "$CA_KEY" "$CA_CERT" ip $INTERNAL_IP
+chmod +x ./generate_certificate.sh
 
+./generate_certificate.sh "${HOSTNAME}-kubelet-server" "$HOSTNAME" "$OUTPUT_DIR" "$CA_KEY" "$CA_CERT" --ip $INTERNAL_IP
+./generate_certificate.sh "${HOSTNAME}-kubelet-client" "system:node:$HOSTNAME" "$OUTPUT_DIR" "$CA_KEY" "$CA_CERT" --ip $INTERNAL_IP
+
+# mv certs to base dirs
+
+sudo mv ./certs/* .
+
+
+# There is no reason for this key to be lingering on the instance after cert creation
+sudo rm -r k8s-ca.key
 echo "Worker Certificates generated in $OUTPUT_DIR."
 } >> generate_cluster_worker_certificates.log

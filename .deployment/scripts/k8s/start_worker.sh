@@ -94,7 +94,7 @@ clusterDNS:
 podCIDR: "${POD_CIDR}"
 runtimeRequestTimeout: "15m"
 tlsCertFile: "/var/lib/kubelet/${HOSTNAME}-kubelet-server.crt"
-tlsPrivateKeyFile: "/var/lib/kubelet/${HOSTNAME}-kubelet-client.key"
+tlsPrivateKeyFile: "/var/lib/kubelet/${HOSTNAME}-kubelet-server.key"
 EOF
 
 cat <<EOF | sudo tee /etc/systemd/system/kubelet.service

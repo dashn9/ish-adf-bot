@@ -5,8 +5,11 @@ echo && echo "$0: " && echo
 
 KUBE_LATEST="v1.31.0"
 
+sudo apt-get update
+sudo apt-get install -y gnupg curl
+
 sudo mkdir -p /etc/apt/keyrings
-wget -qO- https://pkgs.k8s.io/core:/stable:/v1.31/deb/Release.key | sudo apt-key add -
+curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.31/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
 echo "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.31/deb/ /" | sudo tee /etc/apt/sources.list.d/kubernetes.list
 
 # Install Dependencies

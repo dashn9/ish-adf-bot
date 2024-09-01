@@ -341,6 +341,30 @@ resource "aws_instance" "ish_bot_kube_worker" {
     vpc_security_group_ids = [ aws_security_group.k8s_sg.id ]
 
     provisioner "file" {
+        source      = "${var.certificates_path}/k8s-ca.crt"
+        destination = "/home/${var.worker_node_user}/k8s-ca.crt"
+
+        connection {
+            type        = "ssh"
+            user        = var.worker_node_user
+            private_key = file("${var.ssh_path}/${var.worker_node_name}-${count.index}.key")
+            host        = self.public_ip
+        }
+    } 
+    # The only reason i'm passing the private key to the worker node, is so it can generate it's require certs, delete if cert has been created
+    provisioner "file" {
+        source      = "${var.certificates_path}/k8s-ca.key"
+        destination = "/home/${var.worker_node_user}/k8s-ca.key"
+
+        connection {
+            type        = "ssh"
+            user        = var.worker_node_user
+            private_key = file("${var.ssh_path}/${var.worker_node_name}-${count.index}.key")
+            host        = self.public_ip
+        }
+    } 
+    
+    provisioner "file" {
         source      = "${var.certificates_path}/kube-proxy.key"
         destination = "/home/${var.worker_node_user}/kube-proxy.key"
 
@@ -363,17 +387,7 @@ resource "aws_instance" "ish_bot_kube_worker" {
             host        = self.public_ip
         }
     }
-    provisioner "file" {
-        source      = "${var.certificates_path}/k8s-ca.crt"
-        destination = "/home/${var.worker_node_user}/k8s-ca.crt"
 
-        connection {
-            type        = "ssh"
-            user        = var.worker_node_user
-            private_key = file("${var.ssh_path}/${var.worker_node_name}-${count.index}.key")
-            host        = self.public_ip
-        }
-    } 
 
     provisioner "file" {
         source      = "${var.scripts_path}/generate_proxy_config.sh"
@@ -459,7 +473,7 @@ resource "aws_instance" "ish_bot_kube_worker" {
             "sleep 30",
             "sudo chmod +x generate_cluster_worker_certificates.sh generate_kubelet_config.sh generate_proxy_config.sh install_worker.sh start_worker.sh",
             "./install_worker.sh",
-            "./generate_cluster_worker_certificates.sh",
+            "./generate_cluster_worker_certificates.sh .",
             # This below would be an issue if I build this cluster to have multiple worker nodes
             "./generate_kubelet_config.sh",
             "./generate_proxy_config.sh",
@@ -479,7 +493,7 @@ resource "aws_instance" "ish_bot_kube_worker" {
 
 resource "aws_volume_attachment" "ish_bot_kube_worker_chrome_profiles_storage_attachment" {
     count = var.worker_node_count
-    device_name = "/chrome_profiles_store"
+    device_name = "/dev/sdf"
     volume_id   = aws_ebs_volume.chrome_profiles_store.id
     instance_id = aws_instance.ish_bot_kube_worker[count.index].id
 }
