@@ -1,20 +1,23 @@
 #!/bin/bash
 
-{
 echo && echo "$0: " && echo
 
 meta() { curl -s "http://169.254.169.254/latest/meta-data/$1"; }
 
-HOSTNAME=${1:-$(meta hostname)}
-INTERNAL_IP=${2:-$(meta local-ipv4)}
+HOSTNAME=$(hostname -s)
+INTERNAL_IP=${1:-$(meta local-ipv4)}
 CONTROLLER_IP=$(meta public-ipv4)
 
 # Configure API Server
 sudo mkdir -p /var/lib/kubernetes/
 
-sudo mv k8s-ca.crt kubernetes-apiserver.key kubernetes-apiserver.crt \
+sudo mv k8s-ca.crt k8s-sa-ca.crt k8s-sa-ca.key \
+    kubernetes-apiserver-etcd-client.crt kubernetes-apiserver-etcd-client.key \
+    kubernetes-apiserver-kubelet-client.crt kubernetes-apiserver-kubelet-client.key \
+    kubernetes-apiserver.key kubernetes-apiserver.crt service-account.crt \
     /var/lib/kubernetes/
 
+# Take a look at the --service-account-signing-key-file
 cat <<EOF | sudo tee /etc/systemd/system/kube-apiserver.service
 [Unit]
 Description=Kubernetes API Server
@@ -24,7 +27,6 @@ Documentation=https://github.com/kubernetes/kubernetes
 ExecStart=/usr/local/bin/kube-apiserver \\
     --advertise-address=${INTERNAL_IP} \\
     --allow-privileged=true \\
-    --apiserver-count=1 \\
     --audit-log-maxage=30 \\
     --audit-log-maxbackup=3 \\
     --audit-log-maxsize=100 \\
@@ -32,9 +34,8 @@ ExecStart=/usr/local/bin/kube-apiserver \\
     --authorization-mode=Node,RBAC \\
     --bind-address=0.0.0.0 \\
     --client-ca-file=/var/lib/kubernetes/k8s-ca.crt \\
-    --enable-admission-plugins=Initializers,NamespaceLifecycle,NodeRestriction,LimitRanger,ServiceAccount,DefaultStorageClass,ResourceQuota \\
-    --enable-swagger-ui=true \\
-    --etcd-cafile=/var/lib/kubernetes/k8a-ca.crt \\
+    --enable-admission-plugins=NamespaceLifecycle,NodeRestriction,LimitRanger,ServiceAccount,DefaultStorageClass,ResourceQuota \\
+    --etcd-cafile=/var/lib/kubernetes/k8s-ca.crt \\
     --etcd-certfile=/var/lib/kubernetes/kubernetes-apiserver-etcd-client.crt \\
     --etcd-keyfile=/var/lib/kubernetes/kubernetes-apiserver-etcd-client.key \\
     --etcd-servers=https://${CONTROLLER_IP}:2379 \\
@@ -42,8 +43,10 @@ ExecStart=/usr/local/bin/kube-apiserver \\
     --kubelet-certificate-authority=/var/lib/kubernetes/k8s-ca.crt \\
     --kubelet-client-certificate=/var/lib/kubernetes/kubernetes-apiserver-kubelet-client.crt \\
     --kubelet-client-key=/var/lib/kubernetes/kubernetes-apiserver-kubelet-client.key \\
-    --kubelet-https=true \\
-    --runtime-config=api/all \\
+    --runtime-config="v1=true" \\
+    --service-account-key-file=/var/lib/kubernetes/service-account.crt \\
+    --service-account-signing-key-file=/var/lib/kubernetes/k8s-sa-ca.key \\
+    --service-account-issuer="Kubernetes Service Accounts CA"
     --service-cluster-ip-range=10.32.0.0/24 \\
     --service-node-port-range=30000-32767 \\
     --tls-cert-file=/var/lib/kubernetes/kubernetes-apiserver.crt \\
@@ -70,7 +73,6 @@ ExecStart=/usr/local/bin/kube-controller-manager \\
     --cluster-cidr=10.32.0.0/24 \\
     --cluster-name=ish-bot-kube \\
     --cluster-signing-cert-file=/var/lib/kubernetes/k8s-ca.crt \\
-    --cluster-signing-key-file=/var/lib/kubernetes/k8s-ca.key \\
     --kubeconfig=/var/lib/kubernetes/kube-controller-manager.kubeconfig \\
     --leader-elect=true \\
     --root-ca-file=/var/lib/kubernetes/k8s-ca.crt \\
@@ -115,5 +117,3 @@ EOF
 sudo systemctl daemon-reload
 sudo systemctl enable kube-apiserver kube-controller-manager kube-scheduler
 sudo systemctl start kube-apiserver kube-controller-manager kube-scheduler
-
-} >> start_control_plane.log

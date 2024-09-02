@@ -47,4 +47,6 @@ chmod +x ./generate_certificate.sh
 
 ./generate_certificate.sh "kube-proxy" "kube-proxy" "$OUTPUT_DIR" "$CA_KEY" "$CA_CERT"
 
+./generate_certificate.sh "service-account" "service-account" "$OUTPUT_DIR" "$CA_KEY" "$CA_CERT"
+
 echo "Control Plane Certificates generated in $OUTPUT_DIR."

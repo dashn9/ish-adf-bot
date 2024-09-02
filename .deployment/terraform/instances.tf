@@ -25,6 +25,30 @@ resource "aws_instance" "ish_bot_kube_master" {
             host        = self.public_ip
         }
     } 
+    
+    provisioner "file" {
+        source      = "${var.certificates_path}/k8s-sa-ca.key"
+        destination = "/home/${var.master_node_user}/k8s-sa-ca.key"
+
+        connection {
+            type        = "ssh"
+            user        = var.master_node_user
+            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}.key")
+            host        = self.public_ip
+        }
+    } 
+
+    provisioner "file" {
+        source      = "${var.certificates_path}/k8s-sa-ca.crt"
+        destination = "/home/${var.master_node_user}/k8s-sa-ca.crt"
+
+        connection {
+            type        = "ssh"
+            user        = var.master_node_user
+            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}.key")
+            host        = self.public_ip
+        }
+    } 
 
     # Upload Kubernetes API Server key and certificate
     provisioner "file" {
@@ -217,6 +241,29 @@ resource "aws_instance" "ish_bot_kube_master" {
     provisioner "file" {
         source      = "${var.certificates_path}/etcd-peer.crt"
         destination = "/home/${var.master_node_user}/etcd-peer.crt"
+
+        connection {
+            type        = "ssh"
+            user        = var.master_node_user
+            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}.key")
+            host        = self.public_ip
+        }
+    }
+    provisioner "file" {
+        source      = "${var.certificates_path}/service-account.key"
+        destination = "/home/${var.master_node_user}/service-account.key"
+
+        connection {
+            type        = "ssh"
+            user        = var.master_node_user
+            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}.key")
+            host        = self.public_ip
+        }
+    }
+
+    provisioner "file" {
+        source      = "${var.certificates_path}/service-account.crt"
+        destination = "/home/${var.master_node_user}/service-account.crt"
 
         connection {
             type        = "ssh"
