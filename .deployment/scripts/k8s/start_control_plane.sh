@@ -46,7 +46,7 @@ ExecStart=/usr/local/bin/kube-apiserver \\
     --runtime-config="v1=true" \\
     --service-account-key-file=/var/lib/kubernetes/service-account.crt \\
     --service-account-signing-key-file=/var/lib/kubernetes/k8s-sa-ca.key \\
-    --service-account-issuer="Kubernetes Service Accounts CA"
+    --service-account-issuer="Kubernetes Service Accounts CA" \\
     --service-cluster-ip-range=10.32.0.0/24 \\
     --service-node-port-range=30000-32767 \\
     --tls-cert-file=/var/lib/kubernetes/kubernetes-apiserver.crt \\

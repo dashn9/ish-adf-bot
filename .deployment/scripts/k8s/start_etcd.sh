@@ -11,7 +11,8 @@ INTERNAL_IP=$(curl -s http://169.254.169.254/latest/meta-data/local-ipv4)
 
 # Create necessary directories and copy certificates
 sudo mkdir -p /etc/etcd /var/lib/etcd
-sudo cp k8s-ca.crt kubernetes-apiserver.key kubernetes-apiserver.crt /etc/etcd/
+sudo cp k8s-ca.crt /etc/etcd/
+sudo mv etcd-server.crt etcd-server.key etcd-peer.crt etcd-peer.key /etc/etcd/
 
 # Create the systemd service file for etcd
 cat <<EOF | sudo tee /etc/systemd/system/etcd.service
