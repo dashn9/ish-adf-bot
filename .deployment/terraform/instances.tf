@@ -14,296 +14,137 @@ resource "aws_instance" "ish_bot_kube_master" {
         Name = "${var.master_node_name}-${count.index}"
     }
 
+    # There is a cleaner way to move these files below
+    connection {
+        type        = "ssh"
+        user        = var.master_node_user
+        private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}.key")
+        host        = self.public_ip
+    }
+
     provisioner "file" {
         source      = "${var.certificates_path}/k8s-ca.crt"
         destination = "/home/${var.master_node_user}/k8s-ca.crt"
-
-        connection {
-            type        = "ssh"
-            user        = var.master_node_user
-            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}.key")
-            host        = self.public_ip
-        }
     } 
     
     provisioner "file" {
         source      = "${var.certificates_path}/k8s-sa-ca.key"
         destination = "/home/${var.master_node_user}/k8s-sa-ca.key"
-
-        connection {
-            type        = "ssh"
-            user        = var.master_node_user
-            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}.key")
-            host        = self.public_ip
-        }
     } 
 
     provisioner "file" {
         source      = "${var.certificates_path}/k8s-sa-ca.crt"
         destination = "/home/${var.master_node_user}/k8s-sa-ca.crt"
-
-        connection {
-            type        = "ssh"
-            user        = var.master_node_user
-            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}.key")
-            host        = self.public_ip
-        }
     } 
 
     # Upload Kubernetes API Server key and certificate
     provisioner "file" {
         source      = "${var.certificates_path}/kubernetes-apiserver.key"
         destination = "/home/${var.master_node_user}/kubernetes-apiserver.key"
-
-        connection {
-            type        = "ssh"
-            user        = var.master_node_user
-            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}.key")
-            host        = self.public_ip
-        }
     } 
 
     provisioner "file" {
         source      = "${var.certificates_path}/kubernetes-apiserver.crt"
         destination = "/home/${var.master_node_user}/kubernetes-apiserver.crt"
-
-        connection {
-            type        = "ssh"
-            user        = var.master_node_user
-            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}.key")
-            host        = self.public_ip
-        }
     }
 
     # Upload Kubernetes API Server Kubelet client key and certificate
     provisioner "file" {
         source      = "${var.certificates_path}/kubernetes-apiserver-kubelet-client.key"
         destination = "/home/${var.master_node_user}/kubernetes-apiserver-kubelet-client.key"
-
-        connection {
-            type        = "ssh"
-            user        = var.master_node_user
-            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}.key")
-            host        = self.public_ip
-        }
     }
 
     provisioner "file" {
         source      = "${var.certificates_path}/kubernetes-apiserver-kubelet-client.crt"
         destination = "/home/${var.master_node_user}/kubernetes-apiserver-kubelet-client.crt"
-
-        connection {
-            type        = "ssh"
-            user        = var.master_node_user
-            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}.key")
-            host        = self.public_ip
-        }
     }
 
     # Upload Kubernetes Controller Manager key and certificate
     provisioner "file" {
         source      = "${var.certificates_path}/kube-controller-manager.key"
         destination = "/home/${var.master_node_user}/kube-controller-manager.key"
-
-        connection {
-            type        = "ssh"
-            user        = var.master_node_user
-            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}.key")
-            host        = self.public_ip
-        }
     }
 
     provisioner "file" {
         source      = "${var.certificates_path}/kube-controller-manager.crt"
         destination = "/home/${var.master_node_user}/kube-controller-manager.crt"
-
-        connection {
-            type        = "ssh"
-            user        = var.master_node_user
-            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}.key")
-            host        = self.public_ip
-        }
     }
 
     # Upload Kubernetes Scheduler key and certificate
     provisioner "file" {
         source      = "${var.certificates_path}/kube-scheduler.key"
         destination = "/home/${var.master_node_user}/kube-scheduler.key"
-
-        connection {
-            type        = "ssh"
-            user        = var.master_node_user
-            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}.key")
-            host        = self.public_ip
-        }
     }
 
     provisioner "file" {
         source      = "${var.certificates_path}/kube-scheduler.crt"
         destination = "/home/${var.master_node_user}/kube-scheduler.crt"
-
-        connection {
-            type        = "ssh"
-            user        = var.master_node_user
-            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}.key")
-            host        = self.public_ip
-        }
     }
 
     # Upload Admin key and certificate
     provisioner "file" {
         source      = "${var.certificates_path}/admin.key"
         destination = "/home/${var.master_node_user}/admin.key"
-
-        connection {
-            type        = "ssh"
-            user        = var.master_node_user
-            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}.key")
-            host        = self.public_ip
-        }
     }
 
     provisioner "file" {
         source      = "${var.certificates_path}/admin.crt"
         destination = "/home/${var.master_node_user}/admin.crt"
-
-        connection {
-            type        = "ssh"
-            user        = var.master_node_user
-            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}.key")
-            host        = self.public_ip
-        }
     }
 
     # Upload ETCD client key and certificate
     provisioner "file" {
         source      = "${var.certificates_path}/etcd.key"
         destination = "/home/${var.master_node_user}/etcd.key"
-
-        connection {
-            type        = "ssh"
-            user        = var.master_node_user
-            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}.key")
-            host        = self.public_ip
-        }
     }
 
     provisioner "file" {
         source      = "${var.certificates_path}/etcd.crt"
         destination = "/home/${var.master_node_user}/etcd.crt"
-
-        connection {
-            type        = "ssh"
-            user        = var.master_node_user
-            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}.key")
-            host        = self.public_ip
-        }
     }
     provisioner "file" {
         source      = "${var.certificates_path}/service-account.key"
         destination = "/home/${var.master_node_user}/service-account.key"
-
-        connection {
-            type        = "ssh"
-            user        = var.master_node_user
-            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}.key")
-            host        = self.public_ip
-        }
     }
 
     provisioner "file" {
         source      = "${var.certificates_path}/service-account.crt"
         destination = "/home/${var.master_node_user}/service-account.crt"
-
-        connection {
-            type        = "ssh"
-            user        = var.master_node_user
-            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}.key")
-            host        = self.public_ip
-        }
     }
 
     provisioner "file" {
         source      = "${var.scripts_path}/generate_admin_config.sh"
         destination = "/home/${var.master_node_user}/generate_admin_config.sh"
-
-        connection {
-            type        = "ssh"
-            user        = var.master_node_user
-            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}.key")
-            host        = self.public_ip
-        }
     }
 
     provisioner "file" {
         source      = "${var.scripts_path}/generate_controller_manager_config.sh"
         destination = "/home/${var.master_node_user}/generate_controller_manager_config.sh"
-
-        connection {
-            type        = "ssh"
-            user        = var.master_node_user
-            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}.key")
-            host        = self.public_ip
-        }
     }
 
     provisioner "file" {
         source      = "${var.scripts_path}/generate_scheduler_config.sh"
         destination = "/home/${var.master_node_user}/generate_scheduler_config.sh"
-
-        connection {
-            type        = "ssh"
-            user        = var.master_node_user
-            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}.key")
-            host        = self.public_ip
-        }
     }
 
     provisioner "file" {
         source      = "${var.scripts_path}/install_control_plane.sh"
         destination = "/home/${var.master_node_user}/install_control_plane.sh"
-
-        connection {
-            type        = "ssh"
-            user        = var.master_node_user
-            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}.key")
-            host        = self.public_ip
-        }
     }
 
     provisioner "file" {
         source      = "${var.scripts_path}/start_control_plane.sh"
         destination = "/home/${var.master_node_user}/start_control_plane.sh"
-
-        connection {
-            type        = "ssh"
-            user        = var.master_node_user
-            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}.key")
-            host        = self.public_ip
-        }
     }
 
     provisioner "file" {
         source      = "${var.scripts_path}/start_etcd.sh"
         destination = "/home/${var.master_node_user}/start_etcd.sh"
-
-        connection {
-            type        = "ssh"
-            user        = var.master_node_user
-            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}.key")
-            host        = self.public_ip
-        }
     }
 
 
     provisioner "remote-exec" {
 
-        connection {
-            type        = "ssh"
-            user        = var.master_node_user
-            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}.key")
-            host        = self.public_ip
-        }
 
         inline = [
             "sleep 30",
@@ -327,8 +168,6 @@ resource "aws_instance" "ish_bot_kube_master" {
 
 
 
-
-
 resource "aws_instance" "ish_bot_kube_worker" {
     count = var.worker_node_count
     instance_type = var.worker_node_type
@@ -336,136 +175,65 @@ resource "aws_instance" "ish_bot_kube_worker" {
     key_name = aws_key_pair.tf_worker_node_ssh_keys[count.index].key_name
     subnet_id = aws_subnet.k8s_subnets[count.index].id
     vpc_security_group_ids = [ aws_security_group.k8s_sg.id ]
-
+    
+    connection {
+        type        = "ssh"
+        user        = var.worker_node_user
+        private_key = file("${var.ssh_path}/${var.worker_node_name}-${count.index}.key")
+        host        = self.public_ip
+    }
     provisioner "file" {
         source      = "${var.certificates_path}/k8s-ca.crt"
         destination = "/home/${var.worker_node_user}/k8s-ca.crt"
-
-        connection {
-            type        = "ssh"
-            user        = var.worker_node_user
-            private_key = file("${var.ssh_path}/${var.worker_node_name}-${count.index}.key")
-            host        = self.public_ip
-        }
     } 
     # The only reason i'm passing the private key to the worker node, is so it can generate it's require certs, delete if cert has been created
     provisioner "file" {
         source      = "${var.certificates_path}/k8s-ca.key"
         destination = "/home/${var.worker_node_user}/k8s-ca.key"
-
-        connection {
-            type        = "ssh"
-            user        = var.worker_node_user
-            private_key = file("${var.ssh_path}/${var.worker_node_name}-${count.index}.key")
-            host        = self.public_ip
-        }
     } 
     
     provisioner "file" {
         source      = "${var.certificates_path}/kube-proxy.key"
         destination = "/home/${var.worker_node_user}/kube-proxy.key"
-
-        connection {
-            type        = "ssh"
-            user        = var.worker_node_user
-            private_key = file("${var.ssh_path}/${var.worker_node_name}-${count.index}.key")
-            host        = self.public_ip
-        }
     }
 
     provisioner "file" {
         source      = "${var.certificates_path}/kube-proxy.crt"
         destination = "/home/${var.worker_node_user}/kube-proxy.crt"
-
-        connection {
-            type        = "ssh"
-            user        = var.worker_node_user
-            private_key = file("${var.ssh_path}/${var.worker_node_name}-${count.index}.key")
-            host        = self.public_ip
-        }
     }
 
 
     provisioner "file" {
         source      = "${var.scripts_path}/generate_proxy_config.sh"
         destination = "/home/${var.worker_node_user}/generate_proxy_config.sh"
-
-        connection {
-            type        = "ssh"
-            user        = var.worker_node_user
-            private_key = file("${var.ssh_path}/${var.worker_node_name}-${count.index}.key")
-            host        = self.public_ip
-        }
     }
 
     provisioner "file" {
         source      = "${var.scripts_path}/generate_kubelet_config.sh"
         destination = "/home/${var.worker_node_user}/generate_kubelet_config.sh"
-
-        connection {
-            type        = "ssh"
-            user        = var.worker_node_user
-            private_key = file("${var.ssh_path}/${var.worker_node_name}-${count.index}.key")
-            host        = self.public_ip
-        }
     }
 
     provisioner "file" {
         source      = "${var.scripts_path}/generate_certificate.sh"
         destination = "/home/${var.worker_node_user}/generate_certificate.sh"
-
-        connection {
-            type        = "ssh"
-            user        = var.worker_node_user
-            private_key = file("${var.ssh_path}/${var.worker_node_name}-${count.index}.key")
-            host        = self.public_ip
-        }
     }
 
     provisioner "file" {
         source      = "${var.scripts_path}/generate_cluster_worker_certificates.sh"
         destination = "/home/${var.worker_node_user}/generate_cluster_worker_certificates.sh"
-
-        connection {
-            type        = "ssh"
-            user        = var.worker_node_user
-            private_key = file("${var.ssh_path}/${var.worker_node_name}-${count.index}.key")
-            host        = self.public_ip
-        }
     }
 
     provisioner "file" {
         source      = "${var.scripts_path}/install_worker.sh"
         destination = "/home/${var.worker_node_user}/install_worker.sh"
-
-        connection {
-            type        = "ssh"
-            user        = var.worker_node_user
-            private_key = file("${var.ssh_path}/${var.worker_node_name}-${count.index}.key")
-            host        = self.public_ip
-        }
     }   
 
     provisioner "file" {
         source      = "${var.scripts_path}/start_worker.sh"
         destination = "/home/${var.worker_node_user}/start_worker.sh"
-
-        connection {
-            type        = "ssh"
-            user        = var.worker_node_user
-            private_key = file("${var.ssh_path}/${var.worker_node_name}-${count.index}.key")
-            host        = self.public_ip
-        }
     }
 
     provisioner "remote-exec" {
-        connection {
-            type        = "ssh"
-            user        = var.worker_node_user
-            private_key = file("${var.ssh_path}/${var.worker_node_name}-${count.index}.key")
-            host        = self.public_ip
-        }
-
         inline = [
             "sleep 30",
             "sudo chmod +x generate_cluster_worker_certificates.sh generate_kubelet_config.sh generate_proxy_config.sh install_worker.sh start_worker.sh",
