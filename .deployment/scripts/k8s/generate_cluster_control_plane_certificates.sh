@@ -63,7 +63,7 @@ chmod +x ./generate_certificate.sh
 ./generate_certificate.sh "kube-scheduler" "system:kube-scheduler" "$OUTPUT_DIR" "$CA_KEY" "$CA_CERT"
 
 # Kubernetes Admin
-./generate_certificate.sh "admin" "kube-admin" "$OUTPUT_DIR" "$CA_KEY" "$CA_CERT" --group "system:masters"
+./generate_certificate.sh "admin" "admin" "$OUTPUT_DIR" "$CA_KEY" "$CA_CERT" --group "system:masters"
 
 # etcd with specified IPs
 ./generate_certificate.sh "etcd" "etcd" "$OUTPUT_DIR" "$CA_KEY" "$CA_CERT" --ip "$IPS"

@@ -66,7 +66,7 @@ EOF
 
     # Add group details if provided
     if [[ -n "$GROUP_DETAILS" ]]; then
-        echo "OU = $GROUP_DETAILS" >> "$CONFIG_FILE"
+        echo "O = $GROUP_DETAILS" >> "$CONFIG_FILE"
     fi
 
     # Add req_ext section if DNS names or IP addresses are provided

@@ -1,6 +1,5 @@
 #!/bin/bash
 
-{
 echo && echo "$0: " && echo
 
 kubectl config set-cluster ish-bot-kube \
@@ -11,14 +10,13 @@ kubectl config set-cluster ish-bot-kube \
 
 kubectl config set-credentials admin \
     --client-certificate=admin.crt \
-    --client-key=admin.key \
     --embed-certs=true \
+    --client-key=admin.key \
     --kubeconfig=admin.kubeconfig
 
-kubectl config set-context ish-bot-kube \
+kubectl config set-context default \
     --cluster=ish-bot-kube \
     --user=admin \
     --kubeconfig=admin.kubeconfig
 
-kubectl config use-context ish-bot-kube --kubeconfig=admin.kubeconfig
-} >> cloudinit.log
+kubectl config use-context default --kubeconfig=admin.kubeconfig

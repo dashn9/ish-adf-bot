@@ -10,11 +10,20 @@ CONTROLLER_IP=$(meta public-ipv4)
 
 # Configure API Server
 sudo mkdir -p /var/lib/kubernetes/pki
+sudo chown root:root /var/lib/kubernetes/pki/*
+sudo chmod 600 /var/lib/kubernetes/pki/*
 
-sudo mv k8s-ca.crt k8s-sa-ca.crt k8s-sa-ca.key \
-    etcd.key etcd.crt /var/lib/kubernetes/pki \
+POD_CIDR=10.244.0.0/16
+SERVICE_CIDR=10.96.0.0/16
+
+sudo mv k8s-ca.crt k8s-sa-ca.crt \
+    k8s-sa-ca.key \
+    etcd.key etcd.crt \
     kubernetes-apiserver-kubelet-client.crt kubernetes-apiserver-kubelet-client.key \
-    kubernetes-apiserver.key kubernetes-apiserver.crt service-account.crt \
+    kube-controller-manager.crt kube-controller-manager.key \
+    kube-scheduler.crt kube-scheduler.key \
+    kubernetes-apiserver.key kubernetes-apiserver.crt \
+    service-account.crt service-account.key \
     /var/lib/kubernetes/pki
 
 # Take a look at the --service-account-signing-key-file
@@ -47,7 +56,7 @@ ExecStart=/usr/local/bin/kube-apiserver \\
     --service-account-key-file=/var/lib/kubernetes/pki/service-account.crt \\
     --service-account-signing-key-file=/var/lib/kubernetes/pki/k8s-sa-ca.key \\
     --service-account-issuer="kubernetes-sa-ca" \\
-    --service-cluster-ip-range=10.32.0.0/24 \\
+    --service-cluster-ip-range=${SERVICE_CIDR} \\
     --service-node-port-range=30000-32767 \\
     --tls-cert-file=/var/lib/kubernetes/pki/kubernetes-apiserver.crt \\
     --tls-private-key-file=/var/lib/kubernetes/pki/kubernetes-apiserver.key \\
@@ -69,14 +78,24 @@ Documentation=https://github.com/kubernetes/kubernetes
 
 [Service]
 ExecStart=/usr/local/bin/kube-controller-manager \\
-    --address=0.0.0.0 \\
-    --cluster-cidr=10.32.0.0/24 \\
-    --cluster-name=ish-bot-kube \\
-    --cluster-signing-cert-file=/var/lib/kubernetes/k8s-ca.crt \\
+    --allocate-node-cidrs=true \\
+    --authentication-kubeconfig=/var/lib/kubernetes/kube-controller-manager.kubeconfig \\
+    --authorization-kubeconfig=/var/lib/kubernetes/kube-controller-manager.kubeconfig \\
+    --bind-address=127.0.0.1 \\
+    --client-ca-file=/var/lib/kubernetes/pki/k8s-ca.crt \\
+    --cluster-cidr=${POD_CIDR} \\
+    --cluster-name=kubernetes \\
+    --cluster-signing-cert-file=/var/lib/kubernetes/pki/k8s-ca.crt \\
+    --cluster-signing-key-file=/var/lib/kubernetes/pki/k8s-ca.key \\
+    --controllers=*,bootstrapsigner,tokencleaner \\
     --kubeconfig=/var/lib/kubernetes/kube-controller-manager.kubeconfig \\
     --leader-elect=true \\
-    --root-ca-file=/var/lib/kubernetes/k8s-ca.crt \\
-    --service-cluster-ip-range=10.32.0.0/24 \\
+    --node-cidr-mask-size=24 \\
+    --requestheader-client-ca-file=/var/lib/kubernetes/pki/k8s-ca.crt \\
+    --root-ca-file=/var/lib/kubernetes/pki/k8s-ca.crt \\
+    --service-account-private-key-file=/var/lib/kubernetes/pki/service-account.key \\
+    --service-cluster-ip-range=${SERVICE_CIDR} \\
+    --use-service-account-credentials=true \\
     --v=2
 Restart=on-failure
 RestartSec=5
@@ -88,15 +107,6 @@ EOF
 # Configure Scheduler
 sudo mv kube-scheduler.kubeconfig /var/lib/kubernetes/
 
-cat <<EOF | sudo tee /etc/kubernetes/config/kube-scheduler.yaml
-apiVersion: componentconfig/v1alpha1
-kind: KubeSchedulerConfiguration
-clientConnection:
-    kubeconfig: "/var/lib/kubernetes/kube-scheduler.kubeconfig"
-leaderElection:
-    leaderElect: true
-EOF
-
 cat <<EOF | sudo tee /etc/systemd/system/kube-scheduler.service
 [Unit]
 Description=Kubernetes Scheduler
@@ -104,7 +114,8 @@ Documentation=https://github.com/kubernetes/kubernetes
 
 [Service]
 ExecStart=/usr/local/bin/kube-scheduler \\
-    --config=/etc/kubernetes/config/kube-scheduler.yaml \\
+    --kubeconfig=/var/lib/kubernetes/kube-scheduler.kubeconfig \\
+    --leader-elect=true \\
     --v=2
 Restart=on-failure
 RestartSec=5
