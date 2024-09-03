@@ -75,31 +75,6 @@ resource "aws_instance" "ish_bot_kube_master" {
         }
     }
 
-    # Upload Kubernetes API Server ETCD client key and certificate
-    provisioner "file" {
-        source      = "${var.certificates_path}/kubernetes-apiserver-etcd-client.key"
-        destination = "/home/${var.master_node_user}/kubernetes-apiserver-etcd-client.key"
-
-        connection {
-            type        = "ssh"
-            user        = var.master_node_user
-            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}.key")
-            host        = self.public_ip
-        }
-    }
-
-    provisioner "file" {
-        source      = "${var.certificates_path}/kubernetes-apiserver-etcd-client.crt"
-        destination = "/home/${var.master_node_user}/kubernetes-apiserver-etcd-client.crt"
-
-        connection {
-            type        = "ssh"
-            user        = var.master_node_user
-            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}.key")
-            host        = self.public_ip
-        }
-    }
-
     # Upload Kubernetes API Server Kubelet client key and certificate
     provisioner "file" {
         source      = "${var.certificates_path}/kubernetes-apiserver-kubelet-client.key"
@@ -200,35 +175,10 @@ resource "aws_instance" "ish_bot_kube_master" {
         }
     }
 
-    # Upload ETCD server key and certificate
-    provisioner "file" {
-        source      = "${var.certificates_path}/etcd-server.key"
-        destination = "/home/${var.master_node_user}/etcd-server.key"
-
-        connection {
-            type        = "ssh"
-            user        = var.master_node_user
-            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}.key")
-            host        = self.public_ip
-        }
-    }
-
-    provisioner "file" {
-        source      = "${var.certificates_path}/etcd-server.crt"
-        destination = "/home/${var.master_node_user}/etcd-server.crt"
-
-        connection {
-            type        = "ssh"
-            user        = var.master_node_user
-            private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}.key")
-            host        = self.public_ip
-        }
-    }
-
     # Upload ETCD client key and certificate
     provisioner "file" {
-        source      = "${var.certificates_path}/etcd-peer.key"
-        destination = "/home/${var.master_node_user}/etcd-peer.key"
+        source      = "${var.certificates_path}/etcd.key"
+        destination = "/home/${var.master_node_user}/etcd.key"
 
         connection {
             type        = "ssh"
@@ -239,8 +189,8 @@ resource "aws_instance" "ish_bot_kube_master" {
     }
 
     provisioner "file" {
-        source      = "${var.certificates_path}/etcd-peer.crt"
-        destination = "/home/${var.master_node_user}/etcd-peer.crt"
+        source      = "${var.certificates_path}/etcd.crt"
+        destination = "/home/${var.master_node_user}/etcd.crt"
 
         connection {
             type        = "ssh"

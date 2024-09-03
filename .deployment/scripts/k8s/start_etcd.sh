@@ -11,8 +11,7 @@ INTERNAL_IP=$(curl -s http://169.254.169.254/latest/meta-data/local-ipv4)
 
 # Create necessary directories and copy certificates
 sudo mkdir -p /etc/etcd /var/lib/etcd
-sudo cp k8s-ca.crt /etc/etcd/
-sudo mv etcd-server.crt etcd-server.key etcd-peer.crt etcd-peer.key /etc/etcd/
+sudo cp k8s-ca.crt etcd.crt etcd.key /etc/etcd/
 
 # Create the systemd service file for etcd
 cat <<EOF | sudo tee /etc/systemd/system/etcd.service
@@ -23,14 +22,14 @@ Documentation=https://github.com/coreos
 [Service]
 ExecStart=/usr/local/bin/etcd \\
   --name ${ETCD_NAME} \\
-  --cert-file=/etc/etcd/etcd-server.crt \\
-  --key-file=/etc/etcd/etcd-server.key \\
-  --peer-cert-file=/etc/etcd/etcd-peer.crt \\
-  --peer-key-file=/etc/etcd/etcd-peer.key \\
+  --cert-file=/etc/etcd/etcd.crt \\
+  --key-file=/etc/etcd/etcd.key \\
+  --peer-cert-file=/etc/etcd/etcd.crt \\
+  --peer-key-file=/etc/etcd/etcd.key \\
   --trusted-ca-file=/etc/etcd/k8s-ca.crt \\
   --peer-trusted-ca-file=/etc/etcd/k8s-ca.crt \\
-  --peer-client-cert-auth \\
-  --client-cert-auth \\
+  --peer-client-cert-auth=true \\
+  --client-cert-auth=true \\
   --initial-advertise-peer-urls https://${INTERNAL_IP}:2380 \\
   --listen-peer-urls https://${INTERNAL_IP}:2380 \\
   --listen-client-urls https://${INTERNAL_IP}:2379,https://127.0.0.1:2379 \\
@@ -55,7 +54,7 @@ sudo systemctl start etcd
 sudo ETCDCTL_API=3 etcdctl member list \
     --endpoints=https://127.0.0.1:2379 \
     --cacert=/etc/etcd/k8s-ca.crt \
-    --cert=/etc/etcd/etcd-peer.crt \
-    --key=/etc/etcd/etcd-peer.key
+    --cert=/etc/etcd/etcd.crt \
+    --key=/etc/etcd/etcd.key
 
 } >> start_etcd.log 2>&1

@@ -26,8 +26,6 @@ chmod +x ./generate_certificate.sh
     --dns "kubernetes,kubernetes.default,kubernetes.default.svc,kubernetes.default.svc.cluster.local" \
     --ip "127.0.0.1,10.32.0.1"
 
-# Kubernetes API Server ETCD Client
-./generate_certificate.sh "kubernetes-apiserver-etcd-client" "kube-apiserver" "$OUTPUT_DIR" "$CA_KEY" "$CA_CERT"
 
 # Kubeernetes API Server Kubelet Client
 ./generate_certificate.sh "kubernetes-apiserver-kubelet-client" "kube-apiserver" "$OUTPUT_DIR" "$CA_KEY" "$CA_CERT"
@@ -42,8 +40,7 @@ chmod +x ./generate_certificate.sh
 ./generate_certificate.sh "admin" "kube-admin" "$OUTPUT_DIR" "$CA_KEY" "$CA_CERT" --group "system:masters"
 
 # etcd
-./generate_certificate.sh "etcd-server" "etcd-server " "$OUTPUT_DIR" "$CA_KEY" "$CA_CERT" 
-./generate_certificate.sh "etcd-peer" "etcd-peer" "$OUTPUT_DIR" "$CA_KEY" "$CA_CERT"
+./generate_certificate.sh "etcd" "etcd " "$OUTPUT_DIR" "$CA_KEY" "$CA_CERT"
 
 ./generate_certificate.sh "kube-proxy" "kube-proxy" "$OUTPUT_DIR" "$CA_KEY" "$CA_CERT"
 

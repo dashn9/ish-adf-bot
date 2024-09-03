@@ -48,7 +48,7 @@ generate_cert() {
     # Create the configuration file for the certificate
     cat > "$CONFIG_FILE" <<EOF
 [ req ]
-default_bits       = 2048
+default_bits       = 4096
 prompt             = no
 default_md         = sha256
 EOF
@@ -93,7 +93,7 @@ EOF
     fi
 
     # Generate the private key
-    openssl genrsa -out "$KEY_FILE" 2048
+    openssl genrsa -out "$KEY_FILE" 4096
     if [[ $? -ne 0 ]]; then
         echo "Error generating private key for $NAME"
         exit 1
@@ -105,13 +105,8 @@ EOF
         echo "Error generating CSR for $NAME"
         exit 1
     fi
-
-        # Sign the certificate with the CA
-    if [[ -n "$DNS_NAMES" || -n "$IP_ADDRESSES" ]]; then
-        openssl x509 -req -in "$CSR_FILE" -CA "$CA_CERT" -CAkey "$CA_KEY" -CAcreateserial -out "$CERT_FILE" -days 3650 -sha256 -extensions req_ext  -extfile "$CONFIG_FILE"
-    else
-        openssl x509 -req -in "$CSR_FILE" -CA "$CA_CERT" -CAkey "$CA_KEY" -CAcreateserial -out "$CERT_FILE" -days 3650 -sha256 -extfile "$CONFIG_FILE"
-    fi
+    
+    openssl x509 -req -in "$CSR_FILE" -copy_extensions copyall -CA "$CA_CERT" -CAkey "$CA_KEY" -CAcreateserial -out "$CERT_FILE" -days 3650 -sha256
 
     if [[ $? -ne 0 ]]; then
         echo "Error signing certificate for $NAME"

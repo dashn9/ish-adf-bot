@@ -15,10 +15,10 @@ kubectl config set-credentials admin \
     --embed-certs=true \
     --kubeconfig=admin.kubeconfig
 
-kubectl config set-context default \
+kubectl config set-context ish-bot-kube \
     --cluster=ish-bot-kube \
     --user=admin \
     --kubeconfig=admin.kubeconfig
 
-kubectl config use-context default --kubeconfig=admin.kubeconfig
+kubectl config use-context ish-bot-kube --kubeconfig=admin.kubeconfig
 } >> cloudinit.log

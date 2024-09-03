@@ -9,13 +9,13 @@ INTERNAL_IP=${1:-$(meta local-ipv4)}
 CONTROLLER_IP=$(meta public-ipv4)
 
 # Configure API Server
-sudo mkdir -p /var/lib/kubernetes/
+sudo mkdir -p /var/lib/kubernetes/pki
 
 sudo mv k8s-ca.crt k8s-sa-ca.crt k8s-sa-ca.key \
-    kubernetes-apiserver-etcd-client.crt kubernetes-apiserver-etcd-client.key \
+    etcd.key etcd.crt /var/lib/kubernetes/pki \
     kubernetes-apiserver-kubelet-client.crt kubernetes-apiserver-kubelet-client.key \
     kubernetes-apiserver.key kubernetes-apiserver.crt service-account.crt \
-    /var/lib/kubernetes/
+    /var/lib/kubernetes/pki
 
 # Take a look at the --service-account-signing-key-file
 cat <<EOF | sudo tee /etc/systemd/system/kube-apiserver.service
@@ -33,24 +33,24 @@ ExecStart=/usr/local/bin/kube-apiserver \\
     --audit-log-path=/var/log/audit.log \\
     --authorization-mode=Node,RBAC \\
     --bind-address=0.0.0.0 \\
-    --client-ca-file=/var/lib/kubernetes/k8s-ca.crt \\
-    --enable-admission-plugins=NamespaceLifecycle,NodeRestriction,LimitRanger,ServiceAccount,DefaultStorageClass,ResourceQuota \\
-    --etcd-cafile=/var/lib/kubernetes/k8s-ca.crt \\
-    --etcd-certfile=/var/lib/kubernetes/kubernetes-apiserver-etcd-client.crt \\
-    --etcd-keyfile=/var/lib/kubernetes/kubernetes-apiserver-etcd-client.key \\
-    --etcd-servers=https://${CONTROLLER_IP}:2379 \\
+    --client-ca-file=/var/lib/kubernetes/pki/k8s-ca.crt \\
+    --enable-admission-plugins=NodeRestriction,ServiceAccount \\
+    --etcd-cafile=/var/lib/kubernetes/pki/k8s-ca.crt \\
+    --etcd-certfile=/var/lib/kubernetes/pki/etcd.crt \\
+    --etcd-keyfile=/var/lib/kubernetes/pki/etcd.key \\
+    --etcd-servers=https://${INTERNAL_IP}:2379 \\
     --event-ttl=1h \\
-    --kubelet-certificate-authority=/var/lib/kubernetes/k8s-ca.crt \\
-    --kubelet-client-certificate=/var/lib/kubernetes/kubernetes-apiserver-kubelet-client.crt \\
-    --kubelet-client-key=/var/lib/kubernetes/kubernetes-apiserver-kubelet-client.key \\
+    --kubelet-certificate-authority=/var/lib/kubernetes/pki/k8s-ca.crt \\
+    --kubelet-client-certificate=/var/lib/kubernetes/pki/kubernetes-apiserver-kubelet-client.crt \\
+    --kubelet-client-key=/var/lib/kubernetes/pki/kubernetes-apiserver-kubelet-client.key \\
     --runtime-config="v1=true" \\
-    --service-account-key-file=/var/lib/kubernetes/service-account.crt \\
-    --service-account-signing-key-file=/var/lib/kubernetes/k8s-sa-ca.key \\
-    --service-account-issuer="Kubernetes Service Accounts CA" \\
+    --service-account-key-file=/var/lib/kubernetes/pki/service-account.crt \\
+    --service-account-signing-key-file=/var/lib/kubernetes/pki/k8s-sa-ca.key \\
+    --service-account-issuer="kubernetes-sa-ca" \\
     --service-cluster-ip-range=10.32.0.0/24 \\
     --service-node-port-range=30000-32767 \\
-    --tls-cert-file=/var/lib/kubernetes/kubernetes-apiserver.crt \\
-    --tls-private-key-file=/var/lib/kubernetes/kubernetes-apiserver.key \\
+    --tls-cert-file=/var/lib/kubernetes/pki/kubernetes-apiserver.crt \\
+    --tls-private-key-file=/var/lib/kubernetes/pki/kubernetes-apiserver.key \\
     --v=2
 Restart=on-failure
 RestartSec=5
