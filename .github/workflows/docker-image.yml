@@ -26,9 +26,9 @@ jobs:
 
       - name: Build and tag the Docker image
         run: |
-          docker build -t ish-bot/${{ secrets.GCP_PROJECT_ID }}/ish_bot:${{ github.sha }} .
+          docker build -t us-east4-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/ish-bot/ish_bot:${{ github.sha }} .
 
       - name: Push the Docker image
         run: |
-          docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/ish_bot:${{ github.sha }}
+          docker push us-east4-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/ish-bot/ish_bot:${{ github.sha }}
 
