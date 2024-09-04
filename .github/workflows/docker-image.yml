@@ -1,0 +1,34 @@
+name: CI/CD
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v1
+        with:
+          service_account_key: ${{ secrets.GCR_SERVICE_ACCOUNT_KEY }}
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+          export_default_credentials: true
+
+      - name: Configure Docker to use Google Cloud
+        run: gcloud auth configure-docker
+
+      - name: Build and tag the Docker image
+        run: |
+          docker build -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/ish_bot:${{ github.sha }} .
+          # Replace "myapp" with the name of your application
+
+      - name: Push the Docker image
+        run: |
+          docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/myapp:${{ github.sha }}
+
