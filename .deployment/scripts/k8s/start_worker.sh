@@ -1,12 +1,15 @@
 #!/bin/bash
 
-{
 echo && echo "$0: " && echo
 
 # Configure CNI Networking
 HOSTNAME=$(hostname -s)
 POD_CIDR=$(curl -s http://169.254.169.254/latest/meta-data/network/interfaces/macs/$(curl -s http://169.254.169.254/latest/meta-data/mac)/subnet-ipv4-cidr-block)
 
+POD_CIDR=10.244.0.0/16
+SERVICE_CIDR=10.96.0.0/16
+
+CLUSTER_DNS=$(echo $SERVICE_CIDR | awk 'BEGIN {FS="."} ; { printf("%s.%s.%s.10", $1, $2, $3) }')
 # Create CNI directory if not exists
 sudo mkdir -p /etc/cni/net.d
 
@@ -21,7 +24,7 @@ cat <<EOF | sudo tee /etc/cni/net.d/10-bridge.conf
     "ipam": {
         "type": "host-local",
         "ranges": [
-          [{"subnet": "${POD_CIDR}"}]
+          [{"subnet": ${POD_CIDR}}]
         ],
         "routes": [{"dst": "0.0.0.0/0"}]
     }
@@ -70,11 +73,14 @@ LimitCORE=infinity
 WantedBy=multi-user.target
 EOF
 
+sudo mkdir -p \
+  /var/lib/kubelet \
+  /var/lib/kube-proxy \
+  /var/lib/kubernetes/pki \
+  /var/run/kubernetes
 # Configure Kubelet
-sudo mkdir -p /var/lib/kubelet/
-sudo mv "${HOSTNAME}"-kubelet-server.key "${HOSTNAME}"-kubelet-server.crt /var/lib/kubelet/
-sudo mv "${HOSTNAME}".kubeconfig /var/lib/kubelet/kubeconfig
-sudo mv k8s-ca.crt /var/lib/kubernetes/
+sudo mv "${HOSTNAME}"-kubelet-server.key "${HOSTNAME}"-kubelet-server.crt kube-proxy.crt kube-proxy.key k8s-ca.crt /var/lib/kubernetes/pki/
+sudo mv "${HOSTNAME}".kubeconfig /var/lib/kubelet/kubelet.kubeconfig
 
 cat <<EOF | sudo tee /var/lib/kubelet/kubelet-config.yaml
 kind: KubeletConfiguration
@@ -85,35 +91,33 @@ authentication:
   webhook:
     enabled: true
   x509:
-    clientCAFile: "/var/lib/kubernetes/k8s-ca.crt"
+    clientCAFile: /var/lib/kubernetes/pki/k8s-ca.crt
 authorization:
-    mode: Webhook
-clusterDomain: "cluster.local"
+  mode: Webhook
+containerRuntimeEndpoint: unix:///var/run/containerd/containerd.sock
+clusterDomain: cluster.local
 clusterDNS:
-    - "10.32.0.10"
-podCIDR: "${POD_CIDR}"
+  - ${CLUSTER_DNS}
+cgroupDriver: systemd
+resolvConf: /run/systemd/resolve/resolv.conf
 runtimeRequestTimeout: "15m"
-tlsCertFile: "/var/lib/kubelet/${HOSTNAME}-kubelet-server.crt"
-tlsPrivateKeyFile: "/var/lib/kubelet/${HOSTNAME}-kubelet-server.key"
+tlsCertFile: /var/lib/kubernetes/pki/${HOSTNAME}-kubelet-server.crt
+tlsPrivateKeyFile: /var/lib/kubernetes/pki/${HOSTNAME}-kubelet-server.key
+registerNode: true
 EOF
 
 cat <<EOF | sudo tee /etc/systemd/system/kubelet.service
 [Unit]
 Description=Kubernetes Kubelet
-Documentation=https://kubernetes.io/docs/
+Documentation=https://github.com/kubernetes/kubernetes
 After=containerd.service
 Requires=containerd.service
 
 [Service]
 ExecStart=/usr/local/bin/kubelet \\
   --config=/var/lib/kubelet/kubelet-config.yaml \\
-  --container-runtime=remote \\
-  --container-runtime-endpoint=unix:///var/run/containerd/containerd.sock \\
-  --image-pull-progress-deadline=2m \\
-  --kubeconfig=/var/lib/kubelet/kubeconfig \\
-  --network-plugin=cni \\
-  --register-node=true \\
-  --resolv-conf=/run/systemd/resolve/resolv.conf \\
+  --kubeconfig=/var/lib/kubelet/kubelet.kubeconfig \\
+  --node-ip=${PRIMARY_IP} \\
   --v=2
 Restart=on-failure
 RestartSec=5
@@ -123,22 +127,21 @@ WantedBy=multi-user.target
 EOF
 
 # Configure Kube-Proxy
-sudo mkdir -p /var/lib/kube-proxy/
-sudo mv kube-proxy.kubeconfig /var/lib/kube-proxy/kubeconfig
+sudo mv kube-proxy.kubeconfig /var/lib/kube-proxy/
 
 cat <<EOF | sudo tee /var/lib/kube-proxy/kube-proxy-config.yaml
 kind: KubeProxyConfiguration
 apiVersion: kubeproxy.config.k8s.io/v1alpha1
 clientConnection:
-  kubeconfig: "/var/lib/kube-proxy/kube-proxy.kubeconfig"
-mode: "iptables"
-clusterCIDR: "10.200.0.0/16"
+  kubeconfig: /var/lib/kube-proxy/kube-proxy.kubeconfig
+mode: iptables
+clusterCIDR: ${POD_CIDR}
 EOF
 
 cat <<EOF | sudo tee /etc/systemd/system/kube-proxy.service
 [Unit]
 Description=Kubernetes Kube Proxy
-Documentation=https://kubernetes.io/docs/
+Documentation=https://github.com/kubernetes/kubernetes
 
 [Service]
 ExecStart=/usr/local/bin/kube-proxy \\
@@ -154,4 +157,3 @@ EOF
 sudo systemctl daemon-reload
 sudo systemctl enable containerd kubelet kube-proxy
 sudo systemctl start containerd kubelet kube-proxy
-} >> start_worker.log

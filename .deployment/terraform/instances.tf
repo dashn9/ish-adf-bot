@@ -239,9 +239,9 @@ resource "aws_instance" "ish_bot_kube_worker" {
             "sudo chmod +x generate_cluster_worker_certificates.sh generate_kubelet_config.sh generate_proxy_config.sh install_worker.sh start_worker.sh",
             "./install_worker.sh",
             "./generate_cluster_worker_certificates.sh .",
-            # This below would be an issue if I build this cluster to have multiple worker nodes
-            "./generate_kubelet_config.sh",
-            "./generate_proxy_config.sh",
+            # In the future, when you create multiple master nodes for HA, you would want to use a load balance and attach a single publics ip to the entire cluster
+            "./generate_kubelet_config.sh ${aws_eip.ish_bot_kube_master_eip[0].public_ip}",
+            "./generate_proxy_config.sh ${aws_eip.ish_bot_kube_master_eip[0].public_ip}",
             "./start_worker.sh",
         ]
     }

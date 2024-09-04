@@ -21,7 +21,7 @@ sudo apt-get install -y containerd kubernetes-cni kubectl
 # Install/Configure Worker Dependencies
 wget -q --show-progress --https-only --timestamping \
     https://dl.k8s.io/${KUBE_LATEST}/bin/linux/amd64/kube-proxy \
-    https://dl.k8s.io/${KUBE_LATEST}/bin/linux/arm64/kubelet
+    https://dl.k8s.io/${KUBE_LATEST}/bin/linux/amd64/kubelet
 
 sudo mkdir -p \
     /etc/cni/net.d \

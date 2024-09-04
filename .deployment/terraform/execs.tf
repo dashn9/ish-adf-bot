@@ -36,7 +36,7 @@ resource "null_resource" "generate_cluster_control_plane_certificates" {
 # Regenerate Control Plane certs again (This is because the kube-apiserver and etcd certs needs to have the IP altNames added)
 resource "null_resource" "regenerate_cluster_control_plane_certificates" {
     provisioner "local-exec" {
-        command = "../scripts/k8s/generate_cluster_control_plane_certificates.sh -ip 127.0.0.1,${join(",", aws_instance.ish_bot_kube_master.*.private_ip)}"
+        command = "../scripts/k8s/generate_cluster_control_plane_certificates.sh -ip 127.0.0.1,${join(",", aws_instance.ish_bot_kube_master.*.private_ip)} -p ${aws_eip.ish_bot_kube_master_eip[0].public_ip}"
     }
 
     depends_on = [ aws_instance.ish_bot_kube_master ]
