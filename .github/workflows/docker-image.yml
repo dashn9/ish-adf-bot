@@ -22,13 +22,13 @@ jobs:
         uses: 'google-github-actions/setup-gcloud@v2'
 
       - name: Configure Docker to use Google Cloud
-        run: gcloud auth configure-docker
+        run: gcloud auth configure-docker 
 
       - name: Build and tag the Docker image
         run: |
-          docker build -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/ish_bot:${{ github.sha }} .
+          docker build -t ish-bot/${{ secrets.GCP_PROJECT_ID }}/ish_bot:${{ github.sha }} .
 
       - name: Push the Docker image
         run: |
-          docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/ish_bot:${{ github.sha }}
+          docker push ish-bot/${{ secrets.GCP_PROJECT_ID }}/ish_bot:${{ github.sha }}
 
