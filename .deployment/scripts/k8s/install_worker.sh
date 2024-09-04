@@ -1,12 +1,11 @@
 #!/bin/bash
 
-{
 echo && echo "$0: " && echo
 
 KUBE_LATEST="v1.31.0"
 
 sudo apt-get update
-sudo apt-get install -y gnupg curl
+sudo apt-get install -y gnupg
 
 sudo mkdir -p /etc/apt/keyrings
 curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.31/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
@@ -33,4 +32,3 @@ sudo mkdir -p \
 
 chmod +x kube-proxy kubelet
 sudo mv kube-proxy kubelet /usr/local/bin/
-} >> install_worker.log

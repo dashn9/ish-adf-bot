@@ -142,12 +142,14 @@ resource "aws_instance" "ish_bot_kube_master" {
         destination = "/home/${var.master_node_user}/start_etcd.sh"
     }
 
+    provisioner "file" {
+        source      = "${var.scripts_path}/create_rbac.sh"
+        destination = "/home/${var.master_node_user}/create_rbac.sh"
+    }
 
     provisioner "remote-exec" {
 
-
         inline = [
-            "sleep 30",
             "sudo chmod +x generate_admin_config.sh generate_controller_manager_config.sh generate_scheduler_config.sh install_control_plane.sh start_control_plane.sh start_etcd.sh",
             "./install_control_plane.sh",
             "./generate_controller_manager_config.sh",
@@ -176,6 +178,10 @@ resource "aws_instance" "ish_bot_kube_worker" {
     subnet_id = aws_subnet.k8s_subnets[count.index].id
     vpc_security_group_ids = [ aws_security_group.k8s_sg.id ]
     
+    user_data = <<-EOF
+                #!/bin/bash
+                echo "POD_CIDR=10.244.${count.index}.0/24" >> /etc/environment
+            EOF
     connection {
         type        = "ssh"
         user        = var.worker_node_user
@@ -235,7 +241,6 @@ resource "aws_instance" "ish_bot_kube_worker" {
 
     provisioner "remote-exec" {
         inline = [
-            "sleep 30",
             "sudo chmod +x generate_cluster_worker_certificates.sh generate_kubelet_config.sh generate_proxy_config.sh install_worker.sh start_worker.sh",
             "./install_worker.sh",
             "./generate_cluster_worker_certificates.sh .",

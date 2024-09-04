@@ -69,3 +69,23 @@ resource "null_resource" "redistribute_regenerated_certs_on_master" {
         ]
     }
 }
+
+# Reason for this, is the worker nodes has to be provisioned before creating the rbac
+resource "null_resource" "create_rbac_on_master_nodes" {
+    depends_on = [aws_instance.ish_bot_kube_worker]
+    count      = length(aws_instance.ish_bot_kube_master)
+
+    connection {
+        type        = "ssh"
+        user        = var.master_node_user
+        private_key = file("${var.ssh_path}/${var.master_node_name}-${count.index}.key")
+        host        = aws_eip.ish_bot_kube_master_eip[count.index].public_ip
+    }
+
+    provisioner "remote-exec" {
+        inline = [
+            "sudo chmod +x create_rbac.sh",
+            "./create_rbac.sh"
+        ]
+    }
+}

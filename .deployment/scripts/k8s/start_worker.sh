@@ -4,9 +4,8 @@ echo && echo "$0: " && echo
 
 # Configure CNI Networking
 HOSTNAME=$(hostname -s)
-POD_CIDR=$(curl -s http://169.254.169.254/latest/meta-data/network/interfaces/macs/$(curl -s http://169.254.169.254/latest/meta-data/mac)/subnet-ipv4-cidr-block)
+source /etc/environment
 
-POD_CIDR=10.244.0.0/16
 SERVICE_CIDR=10.96.0.0/16
 
 CLUSTER_DNS=$(echo $SERVICE_CIDR | awk 'BEGIN {FS="."} ; { printf("%s.%s.%s.10", $1, $2, $3) }')
@@ -15,7 +14,7 @@ sudo mkdir -p /etc/cni/net.d
 
 cat <<EOF | sudo tee /etc/cni/net.d/10-bridge.conf
 {
-    "cniVersion": "0.3.1",
+    "cniVersion": "1.0.0",
     "name": "bridge",
     "type": "bridge",
     "bridge": "cnio0",
@@ -24,7 +23,7 @@ cat <<EOF | sudo tee /etc/cni/net.d/10-bridge.conf
     "ipam": {
         "type": "host-local",
         "ranges": [
-          [{"subnet": ${POD_CIDR}}]
+          [{"subnet": "${POD_CIDR}"}]
         ],
         "routes": [{"dst": "0.0.0.0/0"}]
     }
@@ -33,7 +32,7 @@ EOF
 
 cat <<EOF | sudo tee /etc/cni/net.d/99-loopback.conf
 {
-    "cniVersion": "0.3.1",
+    "cniVersion": "1.0.0",
     "type": "loopback"
 }
 EOF
@@ -95,6 +94,7 @@ authentication:
 authorization:
   mode: Webhook
 containerRuntimeEndpoint: unix:///var/run/containerd/containerd.sock
+podCIDR: ${POD_CIDR}
 clusterDomain: cluster.local
 clusterDNS:
   - ${CLUSTER_DNS}
@@ -135,7 +135,7 @@ apiVersion: kubeproxy.config.k8s.io/v1alpha1
 clientConnection:
   kubeconfig: /var/lib/kube-proxy/kube-proxy.kubeconfig
 mode: iptables
-clusterCIDR: ${POD_CIDR}
+clusterCIDR: 10.244.0.0/16
 EOF
 
 cat <<EOF | sudo tee /etc/systemd/system/kube-proxy.service
