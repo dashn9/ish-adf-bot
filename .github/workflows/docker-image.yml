@@ -1,4 +1,4 @@
-name: CI/CD
+name: Build and Push to GCR
 
 on:
   push:
@@ -26,9 +26,8 @@ jobs:
       - name: Build and tag the Docker image
         run: |
           docker build -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/ish_bot:${{ github.sha }} .
-          # Replace "myapp" with the name of your application
 
       - name: Push the Docker image
         run: |
-          docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/myapp:${{ github.sha }}
+          docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/ish_bot:${{ github.sha }}
 
