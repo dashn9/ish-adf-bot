@@ -22,6 +22,10 @@ variable "scripts_path" {
     default = "../scripts/k8s"
 }
 
+variable "configs_path" {
+    default = "../scripts/k8s/gens"
+}
+
 variable "master_node_type" {
     default = "t3a.medium"
 }

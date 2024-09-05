@@ -14,6 +14,8 @@ resource "aws_instance" "ish_bot_kube_master" {
         Name = "${var.master_node_name}-${count.index}"
     }
 
+    depends_on = [ null_resource.generate_cluster_encryption_config_yaml ]
+
     # There is a cleaner way to move these files below
     connection {
         type        = "ssh"
@@ -145,6 +147,11 @@ resource "aws_instance" "ish_bot_kube_master" {
     provisioner "file" {
         source      = "${var.scripts_path}/create_rbac.sh"
         destination = "/home/${var.master_node_user}/create_rbac.sh"
+    }
+
+    provisioner "file" {
+        source      = "${var.configs_path}/encryption-config.yaml"
+        destination = "/home/${var.master_node_user}/encryption-config.yaml"
     }
 
     provisioner "remote-exec" {
