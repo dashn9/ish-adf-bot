@@ -1,5 +1,5 @@
 # Variables
-# There might be a potential issue in this cluster where pods on different nodes might not be able to communicate with each
+
 resource "aws_vpc" "k8s_vpc" {
     cidr_block           = var.vpc_cidr
     enable_dns_hostnames = true
@@ -45,6 +45,13 @@ resource "aws_route_table" "k8s_rt" {
     tags = {
         Name = "${var.name_prefix}-kubernetes-rt"
     }
+}
+
+resource "aws_route" "k8s_worker_route" {
+    count                  = var.worker_node_count
+    route_table_id         = aws_route_table.k8s_rt.id
+    destination_cidr_block = "10.244.${count.index}.0/24"
+    network_interface_id   = aws_instance.ish_bot_kube_worker[count.index].primary_network_interface_id
 }
 
 # Route Table Association
