@@ -10,8 +10,6 @@ kind: EncryptionConfiguration
 resources:
   - resources:
       - secrets
-      - configmaps
-      - persistentvolumes
     providers:
       - aescbc:
           keys:
