@@ -41,12 +41,19 @@ EOF
 sudo mkdir -p /etc/containerd/
 
 cat << EOF | sudo tee /etc/containerd/config.toml
-[plugins."io.containerd.grpc.v1.cri".containerd]
-  snapshotter = "overlayfs"
-[plugins."io.containerd.grpc.v1.cri".containerd.default_runtime]
-  runtime_type = "io.containerd.runc.v2"
+version = 2
+
 [plugins."io.containerd.grpc.v1.cri"]
-  systemd_cgroup = true
+  [plugins."io.containerd.grpc.v1.cri".containerd]
+    snapshotter = "overlayfs"
+    default_runtime_name = "runc"
+  [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc]
+    runtime_type = "io.containerd.runc.v2"
+  [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc.options]
+    SystemdCgroup = true
+[plugins."io.containerd.grpc.v1.cri".cni]
+  bin_dir = "/opt/cni/bin"
+  conf_dir = "/etc/cni/net.d"
 EOF
 
 # Create systemd service file for containerd

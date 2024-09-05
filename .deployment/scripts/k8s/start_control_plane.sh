@@ -26,6 +26,8 @@ sudo mv k8s-ca.crt k8s-sa-ca.crt \
     service-account.crt service-account.key \
     /var/lib/kubernetes/pki
 
+sudo mv encryption-config.yaml /var/lib/kubernetes/
+
 # Take a look at the --service-account-signing-key-file
 cat <<EOF | sudo tee /etc/systemd/system/kube-apiserver.service
 [Unit]
@@ -49,6 +51,7 @@ ExecStart=/usr/local/bin/kube-apiserver \\
     --etcd-keyfile=/var/lib/kubernetes/pki/etcd.key \\
     --etcd-servers=https://${INTERNAL_IP}:2379 \\
     --event-ttl=1h \\
+    --encryption-provider-config=/var/lib/kubernetes/encryption-config.yaml \\
     --kubelet-certificate-authority=/var/lib/kubernetes/pki/k8s-ca.crt \\
     --kubelet-client-certificate=/var/lib/kubernetes/pki/kubernetes-apiserver-kubelet-client.crt \\
     --kubelet-client-key=/var/lib/kubernetes/pki/kubernetes-apiserver-kubelet-client.key \\
