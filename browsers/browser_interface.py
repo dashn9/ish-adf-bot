@@ -265,11 +265,11 @@ class BrowserInterface:
         return False
 
     async def activate_mobile(self):
-        devtools_primary.activate_mobile(self.web_browser_driver,
+        await devtools_primary.activate_mobile(self.web_browser_driver,
                                          {"width": self.screen_width,
-                                          "height": self.screen_height, "deviceScaleFactor":
-                                              self.device_pixel_ratio, "screenOrientation":
-                                              {"type": "portraitPrimary", "angle": 0},
+                                          "height": self.screen_height, "device_scale_factor":
+                                              self.device_pixel_ratio, "screen_orientation":
+                                              {"type": "portrait_primary", "angle": 0},
                                           "mobile": True})
 
     async def revert_to_main_page_if_ever_changed(self):
@@ -370,9 +370,9 @@ class BrowserInterface:
         print(f"Bot Process Id {self.bot_process_id} <:::> Web Browser Opened")
         print(f"Bot Process Id {self.bot_process_id} <:::> Activating Browser Based On Device Type")
         # If device to emulate is a smartphone, set chrome to mobile mode
-        if self.device_type == "is_smartphone":
+        if self.device_type == "smartphone":
             print(f"Bot Process Id {self.bot_process_id} <:::> Device Name:", self.hardware)
-            self.activate_mobile()
+            await self.activate_mobile()
         print(f"Bot Process Id {self.bot_process_id} <:::> Setting Page To Always Be In Focus")
         print(f"Bot Process Id {self.bot_process_id} <:::> Setting Timezone From Identity")
 

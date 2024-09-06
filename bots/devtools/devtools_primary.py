@@ -8,18 +8,24 @@ from .. import utils
 
 
 async def activate_mobile(
-    web_driver: Browser, device_metrics: dict, max_touch_points=5
+    web_driver: Browser, device_metrics: dict = {
+        "width": 1366,
+        "height": 768, "device_scale_factor": 2,
+        "mobile": False
+        }, 
+    max_touch_points=5
 ):
-    alert = web_driver.switch_to.alert
-    alert.accept()
-    web_driver.execute_cdp_cmd("Emulation.setDeviceMetricsOverride", device_metrics)
-    web_driver.execute_cdp_cmd(
-        "Emulation.setTouchEmulationEnabled",
-        {"enabled": True, "maxTouchPoints": max_touch_points},
-    )
-    web_driver.execute_cdp_cmd(
-        "Emulation.setEmitTouchEventsForMouse", {"enabled": True}
-    )
+    print(device_metrics)
+    await web_driver.main_tab.send(cdp.emulation.set_device_metrics_override(
+        width=device_metrics['width'], 
+        height=device_metrics["height"], 
+        device_scale_factor=device_metrics["device_scale_factor"],
+        mobile=device_metrics["mobile"],
+        # screen_orientation=cdp.emulation.ScreenOrientation(type_=device_metrics["screen_orientation"]["type"], angle=device_metrics["screen_orientation"]["angle"])
+        )
+        )
+    await web_driver.main_tab.send(cdp.emulation.set_touch_emulation_enabled(enabled=True, max_touch_points=max_touch_points))
+    await web_driver.main_tab.send(cdp.emulation.set_emit_touch_events_for_mouse(enabled=True))
 
 
 async def activate_all_focus(web_driver: Browser):
@@ -92,6 +98,7 @@ async def change_user_agent(
         platform["version"] = ""
         platform["architecture"] = ""
         platform["bitness"] = ""
+        model = ""
 
     await web_driver.main_tab.send(
         cdp.emulation.set_user_agent_override(
