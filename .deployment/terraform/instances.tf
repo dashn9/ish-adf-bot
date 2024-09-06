@@ -30,13 +30,8 @@ resource "aws_instance" "ish_bot_kube_master" {
     } 
     
     provisioner "file" {
-        source      = "${var.certificates_path}/k8s-sa-ca.key"
-        destination = "/home/${var.master_node_user}/k8s-sa-ca.key"
-    } 
-
-    provisioner "file" {
-        source      = "${var.certificates_path}/k8s-sa-ca.crt"
-        destination = "/home/${var.master_node_user}/k8s-sa-ca.crt"
+        source      = "${var.certificates_path}/k8s-ca.key"
+        destination = "/home/${var.master_node_user}/k8s-ca.key"
     } 
 
     # Upload Kubernetes API Server key and certificate
@@ -105,13 +100,13 @@ resource "aws_instance" "ish_bot_kube_master" {
         destination = "/home/${var.master_node_user}/etcd.crt"
     }
     provisioner "file" {
-        source      = "${var.certificates_path}/service-account.key"
-        destination = "/home/${var.master_node_user}/service-account.key"
+        source      = "${var.certificates_path}/service-accounts.key"
+        destination = "/home/${var.master_node_user}/service-accounts.key"
     }
 
     provisioner "file" {
-        source      = "${var.certificates_path}/service-account.crt"
-        destination = "/home/${var.master_node_user}/service-account.crt"
+        source      = "${var.certificates_path}/service-accounts.crt"
+        destination = "/home/${var.master_node_user}/service-accounts.crt"
     }
 
     provisioner "file" {

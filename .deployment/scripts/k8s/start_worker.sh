@@ -10,7 +10,24 @@ SERVICE_CIDR=10.96.0.0/16
 
 CLUSTER_DNS=$(echo $SERVICE_CIDR | awk 'BEGIN {FS="."} ; { printf("%s.%s.%s.10", $1, $2, $3) }')
 # Create CNI directory if not exists
-sudo mkdir -p /etc/cni/net.d
+sudo mkdir -p /etc/cni/net.d /etc/containerd/
+
+cat << EOF | sudo tee /etc/containerd/config.toml
+version = 2
+
+[plugins."io.containerd.grpc.v1.cri"]
+  [plugins."io.containerd.grpc.v1.cri".containerd]
+    snapshotter = "overlayfs"
+    default_runtime_name = "runc"
+  [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc]
+    runtime_type = "io.containerd.runc.v2"
+  [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc.options]
+    SystemdCgroup = true
+[plugins."io.containerd.grpc.v1.cri".cni]
+  bin_dir = "/opt/cni/bin"
+  conf_dir = "/etc/cni/net.d"
+
+EOF
 
 cat <<EOF | sudo tee /etc/cni/net.d/10-bridge.conf
 {
@@ -32,28 +49,10 @@ EOF
 
 cat <<EOF | sudo tee /etc/cni/net.d/99-loopback.conf
 {
-    "cniVersion": "1.0.0",
+    "cniVersion": "1.1.0",
+    "name": "lo",
     "type": "loopback"
 }
-EOF
-
-# Install and configure containerd
-sudo mkdir -p /etc/containerd/
-
-cat << EOF | sudo tee /etc/containerd/config.toml
-version = 2
-
-[plugins."io.containerd.grpc.v1.cri"]
-  [plugins."io.containerd.grpc.v1.cri".containerd]
-    snapshotter = "overlayfs"
-    default_runtime_name = "runc"
-  [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc]
-    runtime_type = "io.containerd.runc.v2"
-  [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc.options]
-    SystemdCgroup = true
-[plugins."io.containerd.grpc.v1.cri".cni]
-  bin_dir = "/opt/cni/bin"
-  conf_dir = "/etc/cni/net.d"
 EOF
 
 # Create systemd service file for containerd
@@ -65,7 +64,7 @@ After=network.target
 
 [Service]
 ExecStartPre=/sbin/modprobe overlay
-ExecStart=/usr/local/bin/containerd
+ExecStart=/bin/containerd
 Restart=always
 RestartSec=5
 Delegate=yes
@@ -76,7 +75,7 @@ LimitNPROC=infinity
 LimitCORE=infinity
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=multi-user.target  
 EOF
 
 sudo mkdir -p \
@@ -124,7 +123,6 @@ Requires=containerd.service
 ExecStart=/usr/local/bin/kubelet \\
   --config=/var/lib/kubelet/kubelet-config.yaml \\
   --kubeconfig=/var/lib/kubelet/kubelet.kubeconfig \\
-  --node-ip=${PRIMARY_IP} \\
   --v=2
 Restart=on-failure
 RestartSec=5

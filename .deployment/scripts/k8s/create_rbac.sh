@@ -39,7 +39,7 @@ roleRef:
 subjects:
   - apiGroup: rbac.authorization.k8s.io
     kind: User
-    name: kubernetes
+    name: kube-apiserver
 EOF
 
 kubectl apply --kubeconfig admin.kubeconfig -f rbac-crb.yaml

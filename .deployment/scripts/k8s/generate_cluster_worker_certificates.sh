@@ -21,7 +21,7 @@ fi
 
 chmod +x ./generate_certificate.sh
 
-./generate_certificate.sh "${HOSTNAME}-kubelet-server" "system:node:$HOSTNAME" "$OUTPUT_DIR" "$CA_KEY" "$CA_CERT" --dns $HOSTNAME --ip $INTERNAL_IP --group "system:nodes"
+./generate_certificate.sh "${HOSTNAME}-kubelet-server" "system:node:$HOSTNAME" "$OUTPUT_DIR" "$CA_KEY" "$CA_CERT" --dns $HOSTNAME,$(meta public-ipv4),$(meta hostname) --ip $INTERNAL_IP --group "system:nodes"
 
 # mv certs to base dirs
 

@@ -10,18 +10,6 @@ resource "null_resource" "generate_cluster_encryption_config_yaml" {
         always_run = "${timestamp()}"
     }
 }
-
-resource "null_resource" "generate_k8s_sa_ca" {
-    provisioner "local-exec" {
-        command = "chmod +x ../scripts/k8s/generate_certificate_authority.sh; ../scripts/k8s/generate_certificate_authority.sh k8s-sa-ca 'kubernetes-sa-ca'"
-    }
-
-    # This will ensure the CA is regenerated only if there are changes
-    triggers = {
-        always_run = "${timestamp()}"
-    }
-}
-
 resource "null_resource" "generate_k8s_ca" {
     provisioner "local-exec" {
         command = "chmod +x ../scripts/k8s/generate_certificate_authority.sh; ../scripts/k8s/generate_certificate_authority.sh k8s-ca 'kubernetes-ca'"
