@@ -1,0 +1,34 @@
+name: Build and Push to GCR
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Authenticate Google Cloud SDK
+        uses: 'google-github-actions/auth@v2'
+        with:
+          credentials_json: '${{ secrets.GCR_SERVICE_ACCOUNT_CREDENTIALS }}'
+          
+      - name: Set up Cloud SDK
+        uses: 'google-github-actions/setup-gcloud@v2'
+
+      - name: Configure Docker to use Google Cloud
+        run: gcloud auth configure-docker us-east4-docker.pkg.dev
+
+      - name: Build and tag the Docker image
+        run: |
+          docker build -t us-east4-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/ish-bot/ish_bot:${{ github.sha }} .
+
+      - name: Push the Docker image
+        run: |
+          docker push us-east4-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/ish-bot/ish_bot:${{ github.sha }}
+
