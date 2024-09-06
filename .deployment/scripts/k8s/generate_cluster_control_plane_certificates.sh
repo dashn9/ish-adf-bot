@@ -48,7 +48,7 @@ chmod +x ./generate_certificate.sh
 # Kubernetes API Server with separate DNS and IP SANs
 ./generate_certificate.sh "kubernetes-apiserver" "kube-apiserver" "$OUTPUT_DIR" "$CA_KEY" "$CA_CERT" \
     --dns "kubernetes,kubernetes.default,kubernetes.default.svc,kubernetes.default.svc.cluster.local" \
-    --ip "$IPS,$PUBLIC_IP"
+    --ip "10.96.0.1,$IPS,$PUBLIC_IP"
 
 # Kubernetes API Server Kubelet Client
 ./generate_certificate.sh "kubernetes-apiserver-kubelet-client" "kube-apiserver" "$OUTPUT_DIR" "$CA_KEY" "$CA_CERT"
