@@ -12,10 +12,10 @@ class DataController:
     def __init__(self):
         pass
 
-    def fetch_an_identity(self, method, value):
+    async def fetch_an_identity(self, method, value):
         if isinstance(value, list):
             value = json.dumps(value)
-        req_url = f"bots/identity/{method}/{value}"
+        req_url = f"bots/identity/{method}/{value}/"
         identity = requests.get(
             self.server_addr + req_url,
             timeout=DataController.timeout,
@@ -26,9 +26,9 @@ class DataController:
             return False
         return identity.json()
 
-    def fetch_timezone(self, identity_id: int, proxy=None, retries=0):
+    async def fetch_timezone(self, identity_id: int, proxy=None, retries=0):
         # try:
-        req_url = f"bots/identity/{identity_id}/timezone/fetch"
+        req_url = f"bots/identity/{identity_id}/timezone/"
         req_session = requests.session()
         identity_id = str(identity_id)
         if proxy:
@@ -49,7 +49,7 @@ class DataController:
         #         retries += 1
         #         return self.fetch_timezone(identity_id, proxy, retries)
 
-    def fetch_geolocation_data(self, proxy=None):
+    async def fetch_geolocation_data(self, proxy=None):
         try:
             api_endpoint = "http://ip-api.com/json?fields=34652445"
             req_session = requests.session(verify=not DEBUG)
@@ -68,58 +68,23 @@ class DataController:
         except:
             return False
 
-    def identity_visited_webpage(self, identity_id, page_id):
+    async def identity_visited_webpage(self, identity_id, page_id):
         pass
 
-    def update_cookies(self, uid, cookies):
-        if isinstance(cookies, list):
-            cookies = json.dumps(cookies)
-        req_url = "update_cookies_for_identity.php"
-        cookies_update = requests.post(
+    async def update_cookies(self, identity_id, cookies):
+        req_url = f"bots/identity/{identity_id}/cookies/"
+        cookies_update = requests.put(
             self.server_addr + req_url,
-            data={"identity_id": str(uid), "cookies": cookies},
+            json=cookies,
             timeout=DataController.timeout,
             verify=not DEBUG,
         )
         print("cookie update: " + cookies_update.text)
         cookies_update.close()
 
-    def fetch_vpn_account_details(self, vpn_client):
-        req_url = "get_a_vpn_account.php?vpn_client=" + vpn_client
-        vpn_account = requests.get(
-            self.server_addr + req_url, timeout=DataController.timeout
-        )
-        vpn_account.close()
-        return vpn_account.json()
-
-    def update_vpn_account_status(self, vpn_client, vpn_account_id, vpn_account_status):
-        auth_status = "AUTH_VALID"
-        vpn_account_id = str(vpn_account_id)
-        if vpn_account_status == 0:
-            auth_status = "AUTH_INVALID"
-        req_url = (
-            "update_vpn_account.php?vpn_client="
-            + vpn_client
-            + "&account_id="
-            + vpn_account_id
-            + "&account_status="
-            + auth_status
-        )
-        vpn_account_update = requests.get(
-            self.server_addr + req_url, timeout=DataController.timeout, verify=not DEBUG
-        )
-        vpn_account_update.close()
-        if vpn_account_update.text == "successful":
-            print(f"Successfully Updated {vpn_client} Account ID: {vpn_account_id}")
-        else:
-            print(
-                f"Something Went Wrong While Updating {vpn_client} Account ID: {vpn_account_id}"
-                f", MESSAGE: {vpn_account_update.text}"
-            )
-
     @staticmethod
-    def fetch_active_random_url():
-        req_url = "url/random"
+    async def fetch_active_random_url():
+        req_url = "url/random/"
         page_details = requests.get(
             DataController.server_addr + req_url,
             timeout=DataController.timeout,
@@ -128,6 +93,6 @@ class DataController:
         return page_details.json()
 
     @staticmethod
-    def ping_is_alive(bot_server_id):
+    async def ping_is_alive(bot_server_id):
         req_url = "bot_is_alive.php?bot_id=" + bot_server_id
         requests.get(DataController.server_addr + req_url)

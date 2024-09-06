@@ -28,7 +28,7 @@ class WebBot(
         if not identity:
             self.identity = Identity(
                 id=0,
-                device_type="is_pc",
+                device_type="computer",
                 hardware="Desktop",
                 platform={
                     "architecture": None,

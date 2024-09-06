@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+import asyncio
 import random
 import os
 import sys
@@ -35,7 +36,7 @@ boc.FULL_DIRECTORY_PATH = os.path.dirname(os.path.realpath(__file__))
 brc.FULL_DIRECTORY_PATH = os.path.dirname(os.path.realpath(__file__))
 
 
-def restart_plug():
+async def restart_plug():
     if not RUN_INFINITELY:
         exit()
     else:
@@ -46,39 +47,22 @@ def restart_plug():
 if FETCH_BY == "scr":
     FETCH_BY_VALUE = [boc.SCREEN_WIDTH, boc.SCREEN_HEIGHT]
 
-identity = Identity()
-identity.auto_initiate_identity(FETCH_BY, FETCH_BY_VALUE)
 
-page_info = DataController.fetch_active_random_url()
-page_content_element_type = By.ID
-page_content_element_name = page_info.get("page_content_element_name")
-related_articles_elements_type = By.CLASS_NAME
-related_articles_elements_name = page_info.get("related_articles_elements_name")
-if page_info.get("page_content_element_type") == "class":
-    page_content_element_type = By.CLASS_NAME
-elif page_info.get("page_content_element_type") == "tag_name":
-    page_content_element_type = By.TAG_NAME
-
-if page_info.get("related_articles_elements_type") == "id":
-    related_articles_elements_type = By.ID
-elif page_info.get("related_articles_elements_type") == "tag_name":
-    related_articles_elements_type = By.TAG_NAME
-
-
-boc.PROXY_WHITELISTED_DOMAINS = page_info.get("proxy_domain_whitelists", "*")
-
-
-def run_bot(identity, process_id):
+async def run_bot(
+    identity: Identity,
+    page_info: dict,
+    process_id,
+):
     web_bot = WebBot(
         identity=identity,
         browser_to_use_id=brc.CHROME_ID,
         bot_process_id=process_id,
         no_of_clicks=page_info["page_clicks"],
     )
-    web_bot.open_web_browser()
+    await web_bot.open_web_browser()
     try:
         web_bot.time_activated = time.time()
-        web_bot.web_browser_driver.get(page_info.get("page_url"))
+        await web_bot.web_browser_driver.get(page_info.get("page_url"))
 
         if random.random() >= identity.ad_keywords_click_probability:
             identity.ad_keywords = None
@@ -87,40 +71,35 @@ def run_bot(identity, process_id):
         if ad_click_probability <= identity.ad_click_probability:
             ad_to_click = identity.ad_type_to_click
 
-        web_bot.set_ad_behaviour_environment(
+        await web_bot.set_ad_behaviour_environment(
             ad_to_click=ad_to_click,
-            vignette_ad_close_type=page_info["vignette_close_ad_elements_type"],
-            vignette_ad_close_name=page_info["vignette_close_ad_elements_name"],
-            vignette_ad_open_type=page_info["vignette_open_ad_elements_type"],
-            vignette_ad_open_name=page_info["vignette_open_ad_elements_name"],
-            in_page_ad_links_type=page_info["in_page_ad_link_elements_type"],
-            in_page_ad_links_name=page_info["in_page_ad_link_elements_name"],
+            vignette_ad_close=page_info["vignette_close_ad_elements"],
+            vignette_ad_open=page_info["vignette_open_ad_elements"],
+            in_page_ad_links_open=page_info["in_page_open_ad_link_elements"],
             ad_keywords=identity.ad_keywords,
         )
-        time.sleep(random.uniform(0, 1))
+        await asyncio.sleep(random.uniform(0, 1))
         if boc.ENGAGE_READER:
-            if web_bot.identity.device_type == "is_pc" and random.random() < 0.2:
-                web_bot.move_mouse_to_random_area_on_screen()
+            if web_bot.identity.device_type == "computer":
+                await web_bot.move_mouse_to_random_area_on_document()
             if (
-                web_bot.read_element_content(
-                    web_bot.web_browser_driver.find_element(
-                        page_content_element_type, page_content_element_name
+                await web_bot.read_element_content(
+                    await web_bot.web_browser_driver.main_tab.select(
+                        page_info["page_content_element"]
                     )
                 )
                 == "ad_clicked"
             ):
                 try:
-                    time.sleep(random.uniform(0.7, 1.5))
-                    body_element = WebDriverWait(web_bot.web_browser_driver, 4).until(
-                        EC.presence_of_element_located((By.TAG_NAME, "body"))
-                    )
-                    web_bot.read_element_content(body_element)
+                    await asyncio.sleep(random.uniform(0.7, 1.5))
+                    body_element = web_bot.web_browser_driver.main_tab.select("body", 4)
+                    await web_bot.read_element_content(body_element)
                     while random.random() < identity.page_depth:
                         web_bot.time_activated = time.time()
                         web_bot.open_link_in_elements([body_element])
-                        body_element = WebDriverWait(
-                            web_bot.web_browser_driver, 4
-                        ).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
+                        body_element = web_bot.web_browser_driver.main_tab.select(
+                            "body", 4
+                        )
                         web_bot.read_element_content(body_element)
                 except TimeoutException:
                     print(
@@ -134,33 +113,30 @@ def run_bot(identity, process_id):
                         web_bot.time_activated = time.time()
                         web_bot.no_of_clicks = page_info.get("page_clicks")
                         web_bot.open_link_in_elements(
-                            web_bot.web_browser_driver.find_elements(
-                                related_articles_elements_type,
-                                related_articles_elements_name,
+                            web_bot.web_browser_driver.main_tab.select_all(
+                                page_info["related_articles_elements"]
                             )
                         )
 
                         web_bot.read_element_content(
-                            web_bot.web_browser_driver.find_element(
-                                page_content_element_type, page_content_element_name
+                            web_bot.web_browser_driver.main_tab.select(
+                                page_info["page_content_element"]
                             )
                         )
                         identity.page_depth = identity.page_depth / 2
-            if web_bot.identity.device_type == "is_pc":
-                web_bot.move_mouse_to_fool_exit_point()
+            if web_bot.identity.device_type == "computer":
+                await web_bot.move_mouse_to_fool_exit_point()
         else:
             # Just a feature for testing, bot doesn't engage if engage-reader was set to false
-            time.sleep(random.randint(boc.BOT_MIN_ALIVE_TIME, boc.BOT_MAX_ALIVE_TIME))
+            await asyncio.sleep(
+                random.randint(boc.BOT_MIN_ALIVE_TIME, boc.BOT_MAX_ALIVE_TIME)
+            )
 
         try:
-            if web_bot.web_browser_driver.session_id:
-                print("Updating Cookies To Cloud")
-                web_bot.update_cookies_to_cloud()
-                web_bot.release_proxies()
-                web_bot.proxy_requests_session.close()
-                web_bot.cached_requests_session.close()
-                web_bot.web_browser_driver.quit()
-                DataController.ping_is_alive(BOT_ID)
+            print("Updating Cookies To Cloud")
+            await web_bot.update_cookies_to_cloud()
+            await web_bot.release_proxies()
+            web_bot.web_browser_driver.stop()
         except ConnectionRefusedError:
             print(
                 "Most likely the Cookie Update job has been done by the daemon responsible for keeping reading "
@@ -183,9 +159,21 @@ def run_bot(identity, process_id):
         if DEBUG:
             print(traceback.format_exc())
             print("The Error Above Was Handled, But Printed For DEBUGing Purpose")
-        web_bot.web_browser_driver.quit()
+        web_bot.web_browser_driver.stop()
+    print("Successfully Completed Activity For Identity:", identity.id)
 
 
-run_bot(identity, 0)
-print("Successfully Completed Activity For Identity:", identity.id)
-restart_plug()
+async def main():
+    identity = Identity()
+
+    await identity.auto_initiate_identity(FETCH_BY, FETCH_BY_VALUE)
+
+    page_info = await DataController.fetch_active_random_url()
+
+    boc.PROXY_WHITELISTED_DOMAINS = page_info.get("proxy_domain_whitelists", "*")
+
+    await run_bot(identity, page_info, 0)
+    await restart_plug()
+
+
+asyncio.run(main())

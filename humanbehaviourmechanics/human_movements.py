@@ -1,10 +1,10 @@
 import pytweening
 import random
-import time
+import asyncio
+from threading import Thread
 
 import pyautogui
-from selenium.webdriver.remote.webdriver import WebElement
-from threading import Thread
+from nodriver import Element as WebElement
 from pyclick import HumanClicker, HumanCurve
 
 from constants import bot_constants
@@ -29,324 +29,133 @@ class HumanMovements:
 
     @property
     def keyboard(self):
-        if self._keyboard and self._keyboard.webdriver is None:
-            self._keyboard.webdriver = self.web_browser_driver
+        if self._keyboard and self._keyboard.web_browser_driver is None:
+            self._keyboard.web_browser_driver = self.web_browser_driver
         return self._keyboard
 
     @property
     def mouse(self):
-        if self._mouse and self._mouse.webdriver is None:
-            self._mouse.webdriver = self.web_browser_driver
+        if self._mouse and self._mouse.web_browser_driver is None:
+            self._mouse.web_browser_driver = self.web_browser_driver
         return self._mouse
 
     @property
     def touch(self):
-        if self._touch and self._touch.webdriver is None:
-            self._touch.webdriver = self.web_browser_driver
+        if self._touch and self._touch.web_browser_driver is None:
+            self._touch.web_browser_driver = self.web_browser_driver
         return self._touch
 
     @staticmethod
-    def get_mouse_position():
+    async def get_mouse_position():
         return pyautogui.position()
 
     @staticmethod
-    def get_screen_size():
+    async def get_screen_size():
         return pyautogui.size()
 
-    def set_fail_safe(self, fail_safe_bool: bool):
+    async def set_fail_safe(self, fail_safe_bool: bool):
         pyautogui.FAILSAFE = fail_safe_bool
 
-    def click_on_element(self, html_web_element):
+    async def click_on_element(self, html_web_element):
         if isinstance(list, html_web_element):
             for ht_el in html_web_element:
                 ht_el.click()
         else:
             html_web_element.click()
 
-    def simulate_human_mouse_move_behavior_to_area(
+    async def simulate_human_mouse_move_behavior_to_area(
         self,
-        x_coordinates,
-        y_coordinates,
+        x_coordinate,
+        y_coordinate,
         area_width=1,
         area_height=1,
-        x_coordinates_offset_percentage=0,
-        y_coordinates_offset_percentage=0,
-        max_overshoot=0,
         probability_of_overshoot=0.0,
-        is_small_distance=False,
-        move_to_new_thread=False,
     ):
         """
         A Method To Simulate Human Mouse Behaviour To Specific Element On Screen. Powered By Pyclick and PyAutoGUI.
         Pass 1st and 2nd Argument To Click On a Specific Area. Pass Only The Next Six To Click On a Point Within an Area
-        :param x_coordinates: The X coordinates On Screen Of Area
+        :param x_coordinate: The X coordinates On Screen Of Area
         If Clickable Area Exists, Make Sure It's Within Boundaries
-        :param y_coordinates: The Y coordinates On Screen To Move Of Area.
+        :param y_coordinate: The Y coordinates On Screen To Move Of Area.
         If Clickable Area Exists, Make Sure It's Within Boundaries
         :param area_width: The Surface Width of The Element You Want to Get To On Screen.
         :param area_height: The Surface Height of The Element You Want to Get To On Screen.
-        :param x_coordinates_offset_percentage:
-        By How Many Percent Deviation To Move From The X Coordinates In Relation To Area Width.
-        Max is 100%
-        :param y_coordinates_offset_percentage:
-        By How Many Percent Deviation To Move From The Y Coordinates In Relation To Area Height
-        Max is 100%
-        :param max_overshoot: A Random Percentage Number Will Be Generated Not Greater Than The Value For Both X and Y
-        Coordinates Which Will Make The Mouse Overshoot Beyond The Set Coordinates and Back. Max is 100%
         :param probability_of_overshoot: Probability The Mouse Will Overshoot. 0 - Will Never Happen, 1 - Will Always Happen
-        :param is_small_distance: Advisable To Set To True If ToMoveTo From Mouse Original Position Is Not Far Apart
-        :param move_to_new_thread: Move Operations To Another Thread, If True
-        :return: True When Done
+        :return: coordinates moved to
         """
-        screen_size = pyautogui.size()
-        if x_coordinates >= screen_size[0]:
-            x_coordinates = screen_size[0] - 2
-        if y_coordinates >= screen_size[1]:
-            y_coordinates = screen_size[1] - 2
+        if area_width > 1 and area_height > 1:
+            x_coordinate = int(random.uniform(x_coordinate, area_width))
+            y_coordinate = int(random.uniform(y_coordinate, area_width))
 
-        def move_operations():
-            x_coordinates_to_move_to, y_coordinates_to_move_to = (
-                x_coordinates,
-                y_coordinates,
-            )
+        return await self.simulate_human_mouse_move_behavior_to_point(
+            x_coordinate, y_coordinate, probability_of_overshoot
+        )
 
-            # If Offset Percentages Are Set and Area Width And Height is Given
-            if (
-                x_coordinates_offset_percentage > 0
-                and y_coordinates_offset_percentage > 0
-                and area_width > 1
-                and area_height > 1
-            ):
-                # Calculate Offsets Based On Percentages
-                x_coordinates_to_move_to = (
-                    area_width * x_coordinates_offset_percentage / 100
-                ) + x_coordinates_to_move_to
-                y_coordinates_to_move_to = (
-                    area_height * y_coordinates_offset_percentage / 100
-                ) + y_coordinates_to_move_to
-
-                # If x_coordinates To Click On, Extends Beyond Width Bounds, Set To Bounds Point
-                if (
-                    x_coordinates_to_move_to < x_coordinates
-                    or x_coordinates_to_move_to > x_coordinates + area_width
-                ):
-                    x_coordinates_to_move_to = x_coordinates + (area_width / 2)
-
-                # If y_coordinates To Click On, Extends Beyond Height Bounds, Set To Bounds Point
-                if (
-                    y_coordinates_to_move_to < y_coordinates
-                    or y_coordinates_to_move_to > y_coordinates + area_height
-                ):
-                    y_coordinates_to_move_to = y_coordinates + (area_height / 2)
-
-            self.human_clicker = HumanClicker()
-
-            human_curve = None
-            duration = random.uniform(0.2, 1.2)
-            if is_small_distance:
-                x_coordinates_to_move_to = int(x_coordinates_to_move_to)
-                y_coordinates_to_move_to = int(y_coordinates_to_move_to)
-                human_curve = HumanCurve(
-                    pyautogui.position(),
-                    (x_coordinates_to_move_to, y_coordinates_to_move_to),
-                    targetPoints=50,
-                )
-                human_curve.points = human_curve.generateCurve(
-                    offsetBoundaryX=0,
-                    offsetBoundaryY=0,
-                    leftBoundary=x_coordinates_to_move_to,
-                    rightBoundary=x_coordinates_to_move_to + 1,
-                    downBoundary=y_coordinates_to_move_to,
-                    upBoundary=y_coordinates_to_move_to + 1,
-                    knotsCount=5,
-                    distortionMean=0.4,
-                    distortionStdev=0.2,
-                    distortionFrequency=0.2,
-                    tween=pytweening.linear,
-                    targetPoints=50,
-                )
-            if probability_of_overshoot > 0.5:
-                self.human_clicker.move(
-                    (
-                        int(
-                            x_coordinates_to_move_to
-                            + (
-                                x_coordinates_to_move_to
-                                * random.randint(-max_overshoot, max_overshoot)
-                                / 100
-                            )
-                        ),
-                        int(
-                            y_coordinates_to_move_to
-                            + (
-                                y_coordinates_to_move_to
-                                * random.randint(-max_overshoot, max_overshoot)
-                                / 100
-                            )
-                        ),
-                    ),
-                    humanCurve=human_curve,
-                    duration=duration,
-                )
-            self.human_clicker.move(
-                (int(x_coordinates_to_move_to), int(y_coordinates_to_move_to)),
-                humanCurve=human_curve,
-                duration=duration,
-            )
-
-            print(
-                f"Bot Process Id {self.bot_process_id} <:::> Mouse Moved To Area Point: ",
-                x_coordinates_to_move_to,
-                y_coordinates_to_move_to,
-            )
-            return {
-                "x": int(x_coordinates_to_move_to),
-                "y": int(y_coordinates_to_move_to),
-            }
-
-        if move_to_new_thread:
-            t = Thread(target=move_operations)
-            t.daemon = True
-            return t.start()
-        else:
-            return move_operations()
-
-    def simulate_human_mouse_move_behavior_to_point(
+    async def simulate_human_mouse_move_behavior_to_point(
         self,
-        x_coordinates,
-        y_coordinates,
-        x_coordinates_offset_percentage=0,
-        y_coordinates_offset_percentage=0,
-        max_overshoot=0,
-        probability_of_overshoot=0.0,
-        is_small_distance=False,
-        move_to_new_thread=False,
+        x_coordinate,
+        y_coordinate,
+        probability_of_overshoot=1,
     ):
         """
         A Method To Simulate Human Mouse Behaviour To Specific Element On Screen. Powered By Pyclick and PyAutoGUI.
         Pass 1st and 2nd Argument To Click On a Specific Area. Pass Only The Next Six To Click On a Point Within an Area
-        :param x_coordinates: The X coordinates On Screen To Move The Mouse To.
+        :param x_coordinate: The X coordinates On Screen To Move The Mouse To.
         If Clickable Area Exists, Make Sure It's Within Boundaries
-        :param y_coordinates: The Y coordinates On Screen To Move The Mouse To.
+        :param y_coordinate: The Y coordinates On Screen To Move The Mouse To.
         If Clickable Area Exists, Make Sure It's Within Boundaries
-        :param x_coordinates_offset_percentage:
-        By How Many Percent Deviation To Move From The X Coordinates In Relation To Area Width.
-        Max is 100%
-        :param y_coordinates_offset_percentage:
-        By How Many Percent Deviation To Move From The Y Coordinates In Relation To Area Height
-        Max is 100%
-        :param max_overshoot: A Random Percentage Number Will Be Generated Not Greater Than The Value For Both X and Y
-        Coordinates Which Will Make The Mouse Overshoot Beyond The Set Coordinates and Back. Max is 100%
         :param probability_of_overshoot: Probability The Mouse Will Overshoot. 0 - Will Never Happen, 1 - Will Always Happen
-        :param is_small_distance: Advisable To Set To True If To MoveTo From Mouse Original Position Is Not Far Apart
-        :param move_to_new_thread: Move Operations To Another Thread, If True
-        :return: True When Done
+        :return: Coordinates moved to
         """
-        screen_size = pyautogui.size()
-        if x_coordinates >= screen_size[0]:
-            x_coordinates = screen_size[0] - 2
-        if y_coordinates >= screen_size[1]:
-            y_coordinates = screen_size[1] - 2
-
-        def move_operations():
-            x_coordinates_to_move_to, y_coordinates_to_move_to = (
-                x_coordinates,
-                y_coordinates,
+        human_clicker = HumanClicker()
+        human_curve = None
+        human_curve = HumanCurve(
+            pyautogui.position(),
+            (x_coordinate, y_coordinate),
+        )
+        distance = int(
+            utils.find_points_distance_on_2d_cartesian_plane(
+                pyautogui.position(), (x_coordinate, y_coordinate)
             )
+        )
+        overshoot = 60
+        if random.random() < probability_of_overshoot:
+            overshoot += int(distance / 4 * random.uniform(0.8, 1.2))
 
-            # If Offset Percentages Are Set and Area Width And Height is Given
-            if (
-                x_coordinates_offset_percentage > 0
-                and y_coordinates_offset_percentage > 0
-            ):
-                # Calculate Offsets Based On Percentages
-                x_coordinates_to_move_to = (
-                    x_coordinates_to_move_to
-                    + utils.fetch_value_percentage(
-                        x_coordinates_to_move_to, x_coordinates_offset_percentage
-                    )
-                )
-                y_coordinates_to_move_to = (
-                    y_coordinates_to_move_to
-                    + utils.fetch_value_percentage(
-                        y_coordinates_to_move_to, y_coordinates_offset_percentage
-                    )
-                )
+        duration = random.uniform(0.2, 0.4 * (distance * 0.001))
+        target_points = int(distance * 0.4 * random.uniform(0.8, 1.2))
+        human_curve.points = human_curve.generateCurve(
+            offsetBoundaryX=overshoot,
+            offsetBoundaryY=overshoot,
+            leftBoundary=x_coordinate,
+            rightBoundary=x_coordinate,
+            downBoundary=y_coordinate,
+            upBoundary=y_coordinate,
+            knotsCount=int(distance * 0.01 * random.uniform(0.8, 1.5)),
+            distortionMean=0.2,
+            distortionStdev=0.5,
+            distortionFrequency=0.2,
+            tween=pytweening.linear,
+            targetPoints=target_points if target_points > 2 else 2,
+        )
 
-            self.human_clicker = HumanClicker()
-            human_curve = None
-            duration = random.uniform(0.2, 1.2)
-            if is_small_distance:
-                x_coordinates_to_move_to = int(x_coordinates_to_move_to)
-                y_coordinates_to_move_to = int(y_coordinates_to_move_to)
+        human_clicker.move(
+            (int(x_coordinate), int(y_coordinate)),
+            humanCurve=human_curve,
+            duration=duration,
+        )
 
-                human_curve = HumanCurve(
-                    pyautogui.position(),
-                    (x_coordinates_to_move_to, y_coordinates_to_move_to),
-                    targetPoints=50,
-                )
-                human_curve.points = human_curve.generateCurve(
-                    offsetBoundaryX=0,
-                    offsetBoundaryY=0,
-                    leftBoundary=x_coordinates_to_move_to,
-                    rightBoundary=x_coordinates_to_move_to + 1,
-                    downBoundary=y_coordinates_to_move_to,
-                    upBoundary=y_coordinates_to_move_to + 1,
-                    knotsCount=5,
-                    distortionMean=0,
-                    distortionStdev=0,
-                    distortionFrequency=0,
-                    tween=pytweening.linear,
-                    targetPoints=50,
-                )
-            if probability_of_overshoot > 0.5:
-                self.human_clicker.move(
-                    (
-                        int(
-                            x_coordinates_to_move_to
-                            + (
-                                x_coordinates_to_move_to
-                                * random.randint(-max_overshoot, max_overshoot)
-                                / 100
-                            )
-                        ),
-                        int(
-                            y_coordinates_to_move_to
-                            + (
-                                y_coordinates_to_move_to
-                                * random.randint(-max_overshoot, max_overshoot)
-                                / 100
-                            )
-                        ),
-                    ),
-                    humanCurve=human_curve,
-                    duration=duration,
-                )
+        print(
+            f"Bot Process Id {self.bot_process_id} <:::> Mouse Moved To: ",
+            x_coordinate,
+            y_coordinate,
+        )
+        return {
+            "x": int(x_coordinate),
+            "y": int(y_coordinate),
+        }
 
-            self.human_clicker.move(
-                (int(x_coordinates_to_move_to), int(y_coordinates_to_move_to)),
-                humanCurve=human_curve,
-                duration=duration,
-            )
-
-            print(
-                f"Bot Process Id {self.bot_process_id} <:::> Mouse Moved To: ",
-                x_coordinates_to_move_to,
-                y_coordinates_to_move_to,
-            )
-            return {
-                "x": int(x_coordinates_to_move_to),
-                "y": int(y_coordinates_to_move_to),
-            }
-
-        if move_to_new_thread:
-            t = Thread(target=move_operations)
-            t.daemon = True
-            return t.start()
-        else:
-            return move_operations()
-
-    def move_pointing_device_to_element(
+    async def move_pointing_device_to_element(
         self, html_web_element: WebElement, simulate_human_behaviour=True
     ):
         """
@@ -359,35 +168,30 @@ class HumanMovements:
                 html_web_element, element_scroll_to=1
             )
             if not isinstance(self.touch, Touchscreen):
-                element_screen_position = (
-                    self.get_element_window_location_screen_offsets(html_web_element)
+                element_screen_position = self.get_element_location_screen_offset(
+                    html_web_element
                 )
                 el_pos = dict(
-                    area_x=element_screen_position["html_web_element"][0],
-                    area_y=element_screen_position["html_web_element"][1],
+                    area_x=element_screen_position["html_web_element"]["x_offset"],
+                    area_y=element_screen_position["html_web_element"]["y_offset"],
                     area_width=html_web_element.rect["width"],
                     area_height=html_web_element.rect["height"],
                 )
 
-                self.simulate_human_mouse_move_behavior_to_area(
+                await self.simulate_human_mouse_move_behavior_to_area(
                     el_pos["area_x"] + 1,
                     el_pos["area_y"] + 1,
                     el_pos["area_width"] - 2,
                     el_pos["area_height"] - 2,
-                    x_coordinates_offset_percentage=random.randint(0, 100),
-                    y_coordinates_offset_percentage=random.randint(0, 100),
-                    max_overshoot=35,
                     probability_of_overshoot=round(random.random(), 2),
                 )
         else:
-            self.browser_action_chains.move_to_element_with_offset(
-                html_web_element, 20, 20
-            ).perform()
+            html_web_element.scroll_into_view()
 
-    def scroll_to_percentage_in_element(
+    async def scroll_to_percentage_in_element(
         self, html_web_element, percentage_to_scroll_to, time_to_sleep=1
     ):
-        def has_page_offset_changed():
+        async def has_page_offset_changed():
             document_offsets = self.get_window_document_offsets()
             document_offsets = [
                 document_offsets["x_offset"],
@@ -398,23 +202,23 @@ class HumanMovements:
             else:
                 return True
 
-        def random_miscellaneous_key_presses(key_down_probability):
+        async def random_miscellaneous_key_presses(key_down_probability):
             for i in range(random.randint(1, 5)):
                 if random.random() < key_down_probability:
                     self.keyboard.down(K_Keys["ArrowDown"])
                 else:
                     self.keyboard.down(K_Keys["ArrowUp"])
-                time.sleep(random.uniform(0.05, 0.45))
+                await asyncio.sleep(random.uniform(0.05, 0.45))
 
-        def scroll_with_touch(direction, duration):
+        async def scroll_with_touch(direction, duration):
             if direction:
                 px_to_adjust_by = random.randint(1, 500)
             if not direction:
                 px_to_adjust_by = random.randint(-500, -1)
             self.read_with_touch(px_to_adjust_by, duration)
 
-        def offset_adjuster(offset_to_adjust_to, html_web_element):
-            element_coordinates = self.get_element_location_window_offset(
+        async def offset_adjuster(offset_to_adjust_to, html_web_element):
+            element_coordinates = await self.get_element_location_window_offset(
                 html_web_element
             )
             if offset_to_adjust_to > element_coordinates["y_offset"]:
@@ -428,90 +232,104 @@ class HumanMovements:
                         )
                 else:
                     while offset_to_adjust_to >= element_coordinates["y_offset"]:
-                        self.keyboard.down_persistent(K_Keys["ArrowUp"])
+                        asyncio.create_task(
+                            self.keyboard.down_persistent(K_Keys["ArrowUp"])
+                        )
                         if (
                             utils.clean_negative(element_coordinates["y_offset"])
                             - utils.clean_negative(offset_to_adjust_to)
                             < bot_constants.PX_VALUE_TO_CHECK_WHEN_SCROLL_TO_POINT
                         ):
-                            time.sleep(random.uniform(0.01, 0.267))
-                            self.keyboard.up(K_Keys["ArrowUp"])
-                            time.sleep(random.uniform(0.15, 0.6))
+                            await asyncio.sleep(random.uniform(0.01, 0.267))
+                            await self.keyboard.up(K_Keys["ArrowUp"])
+                            await asyncio.sleep(random.uniform(0.15, 0.6))
                         else:
-                            time.sleep(0.3)
+                            await asyncio.sleep(0.3)
                         element_coordinates = self.get_element_location_window_offset(
                             html_web_element
                         )
-                    self.keyboard.up(K_Keys["ArrowUp"])
+                    await self.keyboard.up(K_Keys["ArrowUp"])
                     if random.random() > 0.5:
-                        random_miscellaneous_key_presses(0.75)
+                        await random_miscellaneous_key_presses(0.75)
             elif offset_to_adjust_to < element_coordinates["y_offset"]:
                 if isinstance(self.touch, Touchscreen):
                     while offset_to_adjust_to <= element_coordinates["y_offset"]:
                         if not has_page_offset_changed():
                             return True
                         scroll_with_touch(True, 0.5)
-                        element_coordinates = self.get_element_location_window_offset(
-                            html_web_element
+                        element_coordinates = (
+                            await self.get_element_location_window_offset(
+                                html_web_element
+                            )
                         )
                 else:
                     while offset_to_adjust_to <= element_coordinates["y_offset"]:
-                        self.keyboard.down_persistent(K_Keys["ArrowDown"])
+                        asyncio.create_task(
+                            self.keyboard.down_persistent(K_Keys["ArrowDown"])
+                        )
                         if (
                             utils.clean_negative(offset_to_adjust_to)
                             - utils.clean_negative(element_coordinates["y_offset"])
                             < bot_constants.PX_VALUE_TO_CHECK_WHEN_SCROLL_TO_POINT
                         ):
-                            time.sleep(random.uniform(0.01, 0.267))
-                            self.keyboard.up(K_Keys["ArrowDown"])
-                            time.sleep(random.uniform(0.15, 0.6))
+                            await asyncio.sleep(random.uniform(0.01, 0.267))
+                            await self.keyboard.up(K_Keys["ArrowDown"])
+                            await asyncio.sleep(random.uniform(0.15, 0.6))
                         else:
-                            time.sleep(0.3)
-                        element_coordinates = self.get_element_location_window_offset(
-                            html_web_element
+                            await asyncio.sleep(0.3)
+                        element_coordinates = (
+                            await self.get_element_location_window_offset(
+                                html_web_element
+                            )
                         )
-                    self.keyboard.up(K_Keys["ArrowDown"])
+                    await self.keyboard.up(K_Keys["ArrowDown"])
                     if random.random() > 0.5:
-                        random_miscellaneous_key_presses(0.25)
+                        await random_miscellaneous_key_presses(0.25)
 
         # Element Height - Browser Window Makes It Possible To Eject Browser Dimensions From Calculations
-        workable_height = html_web_element.rect.get(
-            "height"
-        ) - self.web_browser_driver.get_window_rect().get("height")
+        workable_height = (await html_web_element.get_position()).width - (
+            await self.web_browser_driver.main_tab.get_window()
+        )[1].height
 
         offset_to_adjust_to = utils.fetch_percentage_value(
             workable_height, percentage_to_scroll_to
         )
         offset_to_adjust_to *= -1
 
-        original_y_offset = self.get_element_location_window_offset(html_web_element)[
-            "y_offset"
-        ]
+        original_y_offset = (
+            await self.get_element_location_window_offset(html_web_element)
+        )["y_offset"]
 
-        offset_adjuster(offset_to_adjust_to, html_web_element)
-        time.sleep(time_to_sleep)
-        offset_adjuster(original_y_offset, html_web_element)
+        await offset_adjuster(offset_to_adjust_to, html_web_element)
+        await asyncio.sleep(time_to_sleep)
+        await offset_adjuster(original_y_offset, html_web_element)
 
-    def read_with_arrow_keys(
+    async def read_with_arrow_keys(
         self,
         html_web_element,
         boundary,
         key=K_Keys["ArrowDown"],
         direction_to_move=True,
     ):
-        self.keyboard.down_persistent(key)
-        element_coordinates = self.get_element_location_window_offset(html_web_element)
+        asyncio.create_task(self.keyboard.down_persistent(key))
+        element_coordinates = await self.get_element_location_window_offset(
+            html_web_element
+        )
         old_element_coordinates = element_coordinates
-        boundary = element_coordinates.get("y_offset") - boundary
+        boundary = (
+            element_coordinates.get("y_offset") - boundary
+            if direction_to_move
+            else element_coordinates.get("y_offset") + boundary
+        )
         offset_same_count = 0
 
         if direction_to_move:
             while element_coordinates.get("y_offset") >= boundary:
-                old_element_coordinates = self.get_element_location_window_offset(
+                old_element_coordinates = await self.get_element_location_window_offset(
                     html_web_element
                 )
-                time.sleep(0.1)
-                element_coordinates = self.get_element_location_window_offset(
+                await asyncio.sleep(0.3)
+                element_coordinates = await self.get_element_location_window_offset(
                     html_web_element
                 )
 
@@ -524,11 +342,11 @@ class HumanMovements:
 
         elif not direction_to_move:
             while boundary >= element_coordinates.get("y_offset"):
-                old_element_coordinates = self.get_element_location_window_offset(
+                old_element_coordinates = await self.get_element_location_window_offset(
                     html_web_element
                 )
-                time.sleep(0.1)
-                element_coordinates = self.get_element_location_window_offset(
+                await asyncio.sleep(0.3)
+                element_coordinates = await self.get_element_location_window_offset(
                     html_web_element
                 )
 
@@ -538,10 +356,10 @@ class HumanMovements:
                     "y_offset"
                 ):
                     offset_same_count += 1
-        self.keyboard.up(key)
+        await self.keyboard.up(key)
         return True
 
-    def read_with_mouse_to_scrollbar(
+    async def read_with_mouse_to_scrollbar(
         self,
         coordinates_offset_overshoot=dict(
             x=0,
@@ -560,20 +378,17 @@ class HumanMovements:
                 pyautogui.mouseUp()
                 pyautogui.mouseDown()
 
-        self.simulate_human_mouse_move_behavior_to_point(
-            coordinates_offset_overshoot["x"],
-            coordinates_offset_overshoot["y"],
-            coordinates_offset_overshoot["x_offset_percentage"],
-            coordinates_offset_overshoot["y_offset_percentage"],
-            coordinates_offset_overshoot["max_overshoot"],
-            coordinates_offset_overshoot["probability_of_overshoot"],
-            True,
-            is_asychronous,
+        asyncio.create_task(
+            self.simulate_human_mouse_move_behavior_to_point(
+                coordinates_offset_overshoot["x"],
+                coordinates_offset_overshoot["y"],
+                coordinates_offset_overshoot["probability_of_overshoot"],
+            )
         )
         pyautogui.mouseUp()
         return counter
 
-    def read_with_touch(
+    async def read_with_touch(
         self, px_to_adjust_by, duration=random.uniform(0.1, 2), force_screen_reset=False
     ):
         # A List Containing The Browser's Page 9-Ways Splitted Dimension In The Following Format
@@ -648,7 +463,7 @@ class HumanMovements:
 
         self.smart_click_trigger((x_start, y_start), self.device_type)
 
-    def scroll_element_into_vertical_view(
+    async def scroll_element_into_vertical_view(
         self,
         html_web_element: WebElement,
         element_scroll_to=1,
@@ -662,8 +477,8 @@ class HumanMovements:
         :return: Return True When Scroll Is Complete
         """
 
-        def has_page_offset_changed():
-            document_offsets = self.get_window_document_offsets()
+        async def has_page_offset_changed():
+            document_offsets = await self.get_window_document_offsets()
             document_offsets = [
                 document_offsets["x_offset"],
                 document_offsets["y_offset"],
@@ -673,130 +488,133 @@ class HumanMovements:
             else:
                 return True
 
-        def scroll(key):
+        async def scroll(key, direction):
             """
             Use Directional Keys To Scroll To Element
             :return: True
             """
-            self.keyboard.down_persistent(key)
-            time.sleep(random.uniform(1.1, 1.75))
-            self.keyboard.up(key)
-            time.sleep(random.uniform(0.5, 1.5))
+            if random.random() < 0.85:
+                await self.mouse.mouse_wheel(
+                    *pyautogui.position(),
+                    random.randint(10, 100),
+                    is_reading=False,
+                    deltaY=self.identity.mouse_delta_y,
+                    yDirection=direction,
+                )
+            else:
+                asyncio.create_task(self.keyboard.down_persistent(key))
+                await asyncio.sleep(random.uniform(1.1, 1.75))
+                await self.keyboard.up(key)
+                await asyncio.sleep(random.uniform(0.5, 1.5))
 
-        def scroll_with_touch(direction, duration):
+        async def scroll_with_touch(direction, duration):
             if direction:
                 px_to_adjust_by = random.randint(1, 500)
             if not direction:
                 px_to_adjust_by = random.randint(-500, -1)
-            self.read_with_touch(px_to_adjust_by, duration)
+            await self.read_with_touch(px_to_adjust_by, duration)
 
-        element_browser_coordinates = self.get_element_window_location_screen_offsets(
+        element_browser_coordinates = await self.get_element_location_screen_offset(
             html_web_element
         )
 
         if simulate_human_behaviour:
             if element_scroll_to == 0:
                 if (
-                    element_browser_coordinates["html_web_element"][1]
+                    element_browser_coordinates["html_web_element"]["y_offset"]
                     > element_browser_coordinates["browser_window_rect"][1]
                 ):
                     while (
-                        element_browser_coordinates["html_web_element"][1]
+                        element_browser_coordinates["html_web_element"]["y_offset"]
                         >= element_browser_coordinates["browser_window_rect"][1]
                     ):
                         if isinstance(self.touch, Touchscreen):
-                            scroll_with_touch(True, 1)
+                            await scroll_with_touch(True, 1)
                         else:
-                            scroll(K_Keys["ArrowDown"])
-                        if not has_page_offset_changed():
+                            await scroll(K_Keys["ArrowDown"], True)
+                        if not await has_page_offset_changed():
                             return True
                         element_browser_coordinates = (
-                            self.get_element_window_location_screen_offsets(
+                            await self.get_element_location_screen_offset(
                                 html_web_element
                             )
                         )
                 elif (
-                    element_browser_coordinates["html_web_element"][1]
+                    element_browser_coordinates["html_web_element"]["y_offset"]
                     < element_browser_coordinates["browser_window_rect"][1]
                 ):
                     while (
-                        element_browser_coordinates["html_web_element"][1]
+                        element_browser_coordinates["html_web_element"]["y_offset"]
                         <= element_browser_coordinates["browser_window_rect"][1]
                     ):
                         if isinstance(self.touch, Touchscreen):
-                            scroll_with_touch(False, 1)
+                            await scroll_with_touch(False, 1)
                         else:
-                            scroll(K_Keys["ArrowUp"])
+                            scroll(K_Keys["ArrowUp"], False)
                         if not has_page_offset_changed():
                             return True
                         element_browser_coordinates = (
-                            self.get_element_window_location_screen_offsets(
+                            await self.get_element_location_screen_offset(
                                 html_web_element
                             )
                         )
 
             elif element_scroll_to == 1:
                 if (
-                    element_browser_coordinates["html_web_element"][2]
+                    element_browser_coordinates["html_web_element"]["bottom"]
                     > element_browser_coordinates["browser_window_rect"][2]
                 ):
                     while (
-                        element_browser_coordinates["html_web_element"][2]
+                        element_browser_coordinates["html_web_element"]["bottom"]
                         >= element_browser_coordinates["browser_window_rect"][2]
                     ):
                         if isinstance(self.touch, Touchscreen):
-                            scroll_with_touch(True, 1)
+                            await scroll_with_touch(True, 1)
                         else:
-                            scroll(K_Keys["ArrowDown"])
+                            await scroll(K_Keys["ArrowDown"])
                         if not has_page_offset_changed():
                             return True
                         element_browser_coordinates = (
-                            self.get_element_window_location_screen_offsets(
-                                html_web_element
-                            )
+                            self.get_element_location_screen_offset(html_web_element)
                         )
                 elif (
-                    element_browser_coordinates["html_web_element"][1]
+                    element_browser_coordinates["html_web_element"]["y_offset"]
                     < element_browser_coordinates["browser_window_rect"][1]
                 ):
                     while (
-                        element_browser_coordinates["html_web_element"][1]
+                        element_browser_coordinates["html_web_element"]["y_offset"]
                         <= element_browser_coordinates["browser_window_rect"][1]
                     ):
                         if isinstance(self.touch, Touchscreen):
-                            scroll_with_touch(False, 1)
+                            await scroll_with_touch(False, 1)
                         else:
-                            scroll(K_Keys["ArrowUp"])
+                            await scroll(K_Keys["ArrowUp"])
                         if not has_page_offset_changed():
                             return True
                         element_browser_coordinates = (
-                            self.get_element_window_location_screen_offsets(
-                                html_web_element
-                            )
+                            self.get_element_location_screen_offset(html_web_element)
                         )
 
         else:
-            self.browser_action_chains.move_to_element(html_web_element)
+            await html_web_element.scroll_into_view()
 
-    def send_mouse_to_scrollbar(self, is_asychronous=False):
+    async def send_mouse_to_scrollbar(self, is_asychronous=False):
         scroll_bar = self.get_scroll_bar_coordinates(2)
-        return self.simulate_human_mouse_move_behavior_to_area(
-            scroll_bar["x_pos"] + 2,
-            scroll_bar["y_pos"] + 2,
-            scroll_bar["width"],
-            scroll_bar["height"],
-            random.randint(0, 100),
-            random.randint(0, 100),
-            30,
-            random.uniform(0.4, 1.0),
-            is_asychronous,
+        return asyncio.create_task(
+            self.simulate_human_mouse_move_behavior_to_area(
+                scroll_bar["x_pos"] + 2,
+                scroll_bar["y_pos"] + 2,
+                scroll_bar["width"],
+                scroll_bar["height"],
+                random.uniform(0.4, 1.0),
+            )
         )
 
-    def click_trigger(self, x_coord=50, y_coord=50, device_type="is_pc"):
+    async def click_trigger(self, x_coord=50, y_coord=50, device_type="computer"):
         if device_type == "is_smartphone":
             self.human_movements.touch.tap(x_coord, y_coord)
             return True
-        elif device_type == "is_pc":
+        elif device_type == "computer":
             pyautogui.click()
             return True
         else:
@@ -805,7 +623,7 @@ class HumanMovements:
             )
             return False
 
-    def smart_click_trigger(self, coordinates=(100, 100), device_type="is_pc"):
+    async def smart_click_trigger(self, coordinates=(100, 100), device_type="computer"):
         if self.no_of_clicks > 0:
             if random.uniform(0, 1) <= self.probability_of_click:
                 self.probability_of_click -= utils.fetch_percentage_value(

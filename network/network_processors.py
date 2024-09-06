@@ -1,30 +1,21 @@
-import time
+import asyncio
 import re
-import requests as main_requests
-from requests.exceptions import SSLError, ProxyError
+from contextlib import asynccontextmanager
+from urllib.parse import urlparse
 
-from seleniumwire.utils import decode
-from seleniumwire.thirdparty.mitmproxy.net.http import encoding
-from seleniumwire import request
-import requests_cache
+from requests.exceptions import SSLError, ProxyError
+from nodriver import cdp
+
+from aiohttp_client_cache import CachedSession, SQLiteBackend, CachedResponse
+from bots.devtools import devtools_primary
 
 from bots import utils
-from constants import bot_constants
+from constants import config, bot_constants, browser_constants
 from identity.client import Identity
-from constants import config
 
 
 class NetworkRunner:
     def __init__(self, bot_process_id, identity: Identity, use_proxy=False):
-        self.cached_requests_session = requests_cache.CachedSession(
-            bot_constants.FULL_DIRECTORY_PATH + "/caches/request_caches/requests_cache"
-        )
-        self.proxy_requests_session = requests_cache.CachedSession(
-            bot_constants.FULL_DIRECTORY_PATH
-            + "/caches/request_caches/proxy_requests_cache",
-            cache_control=True,
-        )
-
         self.identity = identity
         self.referer_use_times = 0
         self.total_request_size = 0
@@ -32,11 +23,8 @@ class NetworkRunner:
         self.un_cached_response_size = 0
         self.cached_response_size = 0
         self.url_through_proxy_response_size = 0
-        self.urls_cached = set()
         self.urls_through_proxy = set()
-
-        if not config.PRINT_NETWORK:
-            main_requests.packages.urllib3.disable_warnings()
+        self.proxy = None
 
         if use_proxy:
             self.proxy_url = self.identity.proxy_url
@@ -49,36 +37,42 @@ class NetworkRunner:
                 f"Bot Process Id {self.bot_process_id} <:::> Adding a proxy option for this session on this proxy"
                 f" path: {self.identity.proxy_url}"
             )
-            self.proxy_requests_session.proxies = self.proxy
 
-    def release_proxies(self):
+    @asynccontextmanager
+    # TODO: Disable caching
+    async def proxy_cached_session(self):
+        async with CachedSession(
+            cache=SQLiteBackend(
+                bot_constants.FULL_DIRECTORY_PATH
+                + "/data/cache/request_cache/proxy_requests_cache"
+            ),
+            proxy=self.proxy,
+        ) as session:
+            yield session
+
+    async def release_proxies(self):
         # release Proxyrack sticky session
         if self.identity.proxy_release_url:
             print(f"Bot Process Id {self.bot_process_id} <:::> Releasing proxy session")
-            try:
+            async with self.proxy_cached_session() as session:
                 print(  # add to config,
-                    main_requests.request(
+                    await session.request(
                         url=self.identity.proxy_release_url,
                         method="GET",
                         proxies=self.proxy,
                     ).json()
                 )
-            except:
-                print(
-                    f"Bot Process Id {self.bot_process_id} <:::> An error occurred, might have failed to release"
-                )
 
-    def inject_referer_into_header(self, request: request.Request):
+    async def inject_referer_into_header(self, request: cdp.network.Request):
         if self.referer_use_times < 1:
-            del request.headers["Referer"]
-            request.headers.add_header("Referer", self.identity.referer)
+            request.headers["Referer"] = self.identity.referer
             self.referer_use_times += 1
 
-    def track_request_size(self, request):
-        request_size = len(request.body or "") / 1024
+    async def track_request_size(self, request: cdp.network.Request):
+        request_size = len(request.post_data or "") / 1024
         self.total_request_size += request_size
 
-    def print_total_usage(self):
+    async def print_total_usage(self):
         print(
             f"Bot Process Id {self.bot_process_id} <:::> Total request size: {self.total_request_size:.2f} KB"
         )
@@ -96,9 +90,9 @@ class NetworkRunner:
             f"{self.total_request_size + self.un_cached_response_size + self.url_through_proxy_response_size:.2f} KB"
         )
 
-    def track_response_size(self, request, response):
+    async def track_response_size(self, request: cdp.network.Request, response):
         if request.url in self.urls_through_proxy:
-            self.url_through_proxy_response_size += len(response.body or "") / 1024
+            self.url_through_proxy_response_size += len(response.content or "") / 1024
             self.urls_through_proxy.remove(request.url)
         elif request.url not in self.urls_cached:
             self.un_cached_response_size += len(response.body or "") / 1024
@@ -110,8 +104,8 @@ class NetworkRunner:
             self.urls_cached.remove(request.url)
             self.cached_response_size += len(response.body or "") / 1024
 
-    def response_interceptor(
-        self, request: request.Request, response: request.Response
+    async def response_interceptor(
+        self, request: cdp.network.Request, response: CachedResponse
     ):
         self.track_response_size(request, response)
         if config.PRINT_NETWORK:
@@ -122,8 +116,8 @@ class NetworkRunner:
             request, response
         )
 
-    def inject_js_to_spoof_fingerprintable_objects_on_website_server_response(
-        self, request: request.Request, response: request.Response
+    async def inject_js_to_spoof_fingerprintable_objects_on_website_server_response(
+        self, request: cdp.network.Response, response: CachedResponse
     ):
         """
         A Method
@@ -132,6 +126,7 @@ class NetworkRunner:
         :return: True On Success, False On Failure
         """
         if response:
+            body = await response.text()
             try:
                 if (
                     (
@@ -140,13 +135,8 @@ class NetworkRunner:
                         or re.match(r"(.html|.htm)$", request.url)
                     )
                     and request.method == "GET"
-                    and response.status_code == 200
+                    and response.status == 200
                 ):
-                    body = decode(
-                        response.body,
-                        response.headers.get("Content-Encoding", "identity"),
-                    )
-                    body = body.decode("utf-8")
                     if (
                         body.find("<!DOCTYPE") == 0
                         or body.find("<html") == 0
@@ -197,7 +187,6 @@ class NetworkRunner:
                             has_battery=has_battery,
                             referer=self.identity.referer,
                         )
-                        self.identity.referer = ""
                         if isinstance(body, str):
                             if body.find("<head>") != -1:
                                 body = utils.insert_text_into_string(
@@ -215,118 +204,136 @@ class NetworkRunner:
                                     r"(<script>)|(<script .*?>)",
                                     True,
                                 )
-                            body = body.encode("utf-8")
-                            body = encoding.encode(
-                                body,
-                                response.headers.get("Content-Encoding", "identity"),
-                            )
-                            if "content-length" in response.headers:
-                                response.headers.replace_header(
-                                    "content-length", str(len(body))
-                                )
-                            response.body = body
-                            return True
+                            return body
+                return body
             except Exception:
                 pass
             self.identity.referrer = ""
         return False
 
-    def terminate_unnecessary_requests(self, request):
-        if request.url.endswith((".crx", "crx3")):
-            request.abort()
-            return True
-        return False
+    async def strip_chromium_headers(self, headers: list):
+        # fufill_request works in an unusual behaviour, it only responds to sec-ch headers
+        return []
 
-    def request_interceptor(self, request: request.Request):
-        if self.terminate_unnecessary_requests(request):
-            return
+    async def conform_headers_according_to_browser(self, headers: list):
+        # If identity browser is not chromium
+        if self.identity.browser_name not in ["edge", "chrome"]:
+            return await self.strip_chromium_headers(headers)
+        return headers
 
-        def network_through_no_proxy():
-            try:
-                response = self.cached_requests_session.request(
-                    url=request.url,
-                    verify=False,
-                    headers=request.headers,
-                    allow_redirects=False,
-                    method=request.method,
-                    data=request.body,
-                )
-                if response.from_cache:
-                    self.urls_cached.add(request.url)
+    async def request_interceptor(
+        self, pausedRequest: cdp.fetch.RequestPaused, *args, **kwarg
+    ):
+        request = pausedRequest.request
+        reqHost = urlparse(request.url).netloc
 
-                response.body = response.content
-                request.response = response
-                return True
-            except SSLError:
-                print(
-                    f"Bot Process Id {self.bot_process_id} <:::> {request.url} would not be able to go through the "
-                    f"cacher as a result of an ssl error"
-                )
-                return False
-
-        def network_through_proxy(generate_empty_response_on_fail=True, retries=0):
+        async def network_through_proxy(
+            generate_empty_response_on_fail=True, retries=0
+        ):
             print(
                 f"Bot Process Id {self.bot_process_id} <:::> {request.url} is passing through the proxy"
             )
             try:
-                response = self.proxy_requests_session.request(
-                    url=request.url,
-                    verify=False,
-                    headers=request.headers,
-                    allow_redirects=False,
-                    method=request.method,
-                    data=request.body,
-                )
-                self.urls_through_proxy.add(request.url)
-                response.body = response.content
-                request.response = response
-                return True
+                async with self.proxy_cached_session() as session:
+                    async with session.request(
+                        url=request.url,
+                        headers=request.headers,
+                        allow_redirects=False,
+                        method=request.method,
+                        data=request.post_data,
+                    ) as response:
+                        self.urls_through_proxy.add(request.url)
+                        response_body = await self.inject_js_to_spoof_fingerprintable_objects_on_website_server_response(
+                            request, response
+                        )
+                        asyncio.create_task(
+                            devtools_primary.fulfill_request(
+                                self.web_browser_driver,
+                                pausedRequest.request_id,
+                                response.status,
+                                response_headers=await self.conform_headers_according_to_browser(
+                                    [
+                                        cdp.fetch.HeaderEntry(k, v)
+                                        for k, v in response.headers.items()
+                                    ]
+                                ),
+                                body=response_body.encode(),
+                            )
+                        )
+                        return True
             except (SSLError, ProxyError):
                 # fix against ip leaks
                 if generate_empty_response_on_fail and retries < 1:
-                    time.sleep(0.5)
+                    await asyncio.sleep(0.5)
                     return network_through_proxy(retries=retries + 1)
                 else:
-                    response = main_requests.Response()
-                    response.status_code = 408
-                    response._content = b""
-                    response.body = response.content
-                    request.response = response
+                    asyncio.create_task(
+                        devtools_primary.continue_request(
+                            self.web_browser_driver,
+                            pausedRequest.request_id,
+                            headers=await self.conform_headers_according_to_browser(
+                                [
+                                    cdp.fetch.HeaderEntry(k, v)
+                                    for k, v in request.headers.items()
+                                ]
+                            ),
+                        )
+                    )
                     print(
                         f"Bot Process Id {self.bot_process_id} <:::> {request.url} generated an ssl or proxy error, "
                         f"it won't go through proxy, so dud response was generated"
                     )
                 return False
 
-        self.track_request_size(request)
+        await self.track_request_size(request)
         if config.PRINT_NETWORK:
             print(f"Request url: {request.url}[{request.method}]")
-            self.print_total_usage()
-        self.inject_referer_into_header(request)
+            await self.print_total_usage()
+        await self.inject_referer_into_header(request)
         if bot_constants.PROXY_WHITELISTED_DOMAINS == "*":
             if utils.url_ends_with(
-                request.url, bot_constants.PROXY_BLACKLISTED_EXTENSIONS
-            ) or utils.has_string_in(
-                request.host, bot_constants.PROXY_BLACKLISTED_DOMAINS
-            ):
-                network_through_no_proxy()
+                request, bot_constants.PROXY_BLACKLISTED_EXTENSIONS
+            ) or utils.has_string_in(reqHost, bot_constants.PROXY_BLACKLISTED_DOMAINS):
+                asyncio.create_task(
+                    devtools_primary.continue_request(
+                        self.web_browser_driver,
+                        pausedRequest.request_id,
+                        headers=await self.conform_headers_according_to_browser(
+                            [
+                                cdp.fetch.HeaderEntry(k, v)
+                                for k, v in request.headers.items()
+                            ]
+                        ),
+                    )
+                )
             else:
-                network_through_proxy()
+                asyncio.create_task(network_through_proxy())
         # fetching driver.current_url while a page is loading posed some issues, you can find alternate ways to
         # implement the check of if current url equates browser active loading url
         elif not (
             (
                 utils.has_string_in(
-                    request.host, bot_constants.PROXY_WHITELISTED_DOMAINS
+                    request.headers, bot_constants.PROXY_WHITELISTED_DOMAINS
                 )
                 and not utils.url_ends_with(
                     request.url, bot_constants.PROXY_BLACKLISTED_EXTENSIONS
                 )
             )
             and not utils.has_string_in(
-                request.host, bot_constants.PROXY_BLACKLISTED_DOMAINS
+                reqHost, bot_constants.PROXY_BLACKLISTED_DOMAINS
             )
         ):
-            network_through_no_proxy()
+            asyncio.create_task(
+                devtools_primary.continue_request(
+                    self.web_browser_driver,
+                    pausedRequest.request_id,
+                    headers=await self.conform_headers_according_to_browser(
+                        [
+                            cdp.fetch.HeaderEntry(k, v)
+                            for k, v in request.headers.items()
+                        ]
+                    ),
+                )
+            )
         else:
-            network_through_proxy()
+            asyncio.create_task(network_through_proxy())

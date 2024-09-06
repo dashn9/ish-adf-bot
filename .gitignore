@@ -5,6 +5,12 @@
 /executables
 identity/account_details.temp.conf
 /chrome_cache
+/data
 /caches
 /config.ini
 /config.docker.ini
+*.key
+*_key.pem
+.DS_Store
+
+**/scripts/k8s/gens/*
