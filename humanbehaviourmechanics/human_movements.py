@@ -18,7 +18,7 @@ class HumanMovements:
         self._keyboard = Keyboard(self.web_browser_driver)
         pyautogui.FAILSAFE = False
         self._touch = None
-        if self.has_touch == "has_touch":
+        if self.has_touch:
             self._touch = Touchscreen(self.web_browser_driver, self._keyboard)
         self._mouse = Mouse(self.web_browser_driver, self._keyboard)
         self.last_document_offsets = [0, 0]
@@ -457,11 +457,11 @@ class HumanMovements:
         x_end = x_end if x_end >= 0 else 0
         y_end = y_end if y_end >= 0 else 0
 
-        self.touch.simulate_human_touch_movement_with_mouse(
+        await self.touch.simulate_human_touch_movement_with_mouse(
             (x_start, y_start), (x_end, y_end), duration
         )
 
-        self.smart_click_trigger((x_start, y_start), self.device_type)
+        await self.smart_click_trigger((x_start, y_start), self.device_type)
 
     async def scroll_element_into_vertical_view(
         self,
@@ -550,8 +550,8 @@ class HumanMovements:
                         if isinstance(self.touch, Touchscreen):
                             await scroll_with_touch(False, 1)
                         else:
-                            scroll(K_Keys["ArrowUp"], False)
-                        if not has_page_offset_changed():
+                            await scroll(K_Keys["ArrowUp"], False)
+                        if not await has_page_offset_changed():
                             return True
                         element_browser_coordinates = (
                             await self.get_element_location_screen_offset(

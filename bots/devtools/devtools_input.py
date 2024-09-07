@@ -298,7 +298,7 @@ class Mouse:
 
 
 class Touchscreen:
-    async def __init__(self, web_browser_driver: Browser, keyboard: Keyboard):
+    def __init__(self, web_browser_driver: Browser, keyboard: Keyboard):
         self.web_browser_driver = web_browser_driver
         self.keyboard = keyboard
 

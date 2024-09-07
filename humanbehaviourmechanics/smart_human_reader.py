@@ -304,7 +304,6 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
                 SmartHumanReader.active_on_mouse_movement.value = (
                     -self.bot_process_id if self.bot_process_id != 0 else -500
                 )
-
             mode = "arrow_keys"
             # use device type
             if self.has_touch:

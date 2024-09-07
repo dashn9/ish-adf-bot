@@ -15,7 +15,7 @@ async def activate_mobile(
         }, 
     max_touch_points=5
 ):
-    await web_driver.main_tab.send(cdp.emulation.set_device_metrics_override(
+    await web_driver.connection.send(cdp.emulation.set_device_metrics_override(
         width=device_metrics['width'], 
         height=device_metrics["height"], 
         device_scale_factor=device_metrics["device_scale_factor"],
