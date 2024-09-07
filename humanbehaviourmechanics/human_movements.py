@@ -85,7 +85,7 @@ class HumanMovements:
         """
         if area_width > 1 and area_height > 1:
             x_coordinate = int(random.uniform(x_coordinate, area_width))
-            y_coordinate = int(random.uniform(y_coordinate, area_width))
+            y_coordinate = int(random.uniform(y_coordinate, area_height))
 
         return await self.simulate_human_mouse_move_behavior_to_point(
             x_coordinate, y_coordinate, probability_of_overshoot
