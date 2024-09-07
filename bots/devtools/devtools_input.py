@@ -372,12 +372,14 @@ class Touchscreen:
         print("Generated Durations To Wait For: ", generated_durations[1])
         generated_durations = generated_durations[0]
         for i in range(len(points)):
-            touch_points = [{"x": points[i][0], "y": points[i][1]}]
+            touch_points = [cdp.input_.TouchPoint(x=points[i][0], y=points[i][1])]
             if i == 0:
                 await self.web_browser_driver.main_tab.send(
                     cdp.input_.dispatch_touch_event(
                         type_="touchStart",
-                        touch_points=[{"x": points[0][0], "y": points[0][1]}],
+                        touch_points=[
+                            cdp.input_.TouchPoint(x=points[0][0], y=points[0][1])
+                        ],
                     )
                 )
             else:

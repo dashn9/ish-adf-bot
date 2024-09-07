@@ -37,7 +37,7 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
         px_to_adjust_by = max(px_to_adjust_by, 10)
         # Stamp the initial time before reading began
         read_mode_time_used = time.time()
-        if random.random() < 0.25:
+        if random.random() < 0.25 and not self.has_touch:
             await self.move_mouse_to_random_area_on_element(html_web_element)
         if mode == "arrow_keys":
             key = K_Keys["ArrowDown"]
@@ -158,7 +158,10 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
         # print("px adjusted by ===>", px_adjusted_by)
         # print("total px to adjust by ===>", total_px_to_adjust_by)
         # print("read time ===>", read_time)
-        # print("time expected to have used based on px adjusted ==>", time_allocated_to_px_adjusted_by)
+        # print(
+        #     "time expected to have used based on px adjusted ==>",
+        #     time_allocated_to_px_adjusted_by,
+        # )
         # print("time expected time used margin ==>", time_allocated_time_used_margin)
 
         time_to_pause_activity = px_to_adjust_by * avg_time_per_px
@@ -217,9 +220,10 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
         )
 
         # if px_to_adjust_by is greater than px_adjusted_by by a margin of 100(acceptable margin) it means it couldn't go further because it's now at document end
+        # Allowed for a wider margin because of touchscreen
         if (
             kwargs["rem_px_to_adjust_by"] <= 0
-            or (px_to_adjust_by - kwargs["px_adjusted_by"]) >= 100
+            or (px_to_adjust_by - kwargs["px_adjusted_by"]) >= 500
         ):
             return True
 

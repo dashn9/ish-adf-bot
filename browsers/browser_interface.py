@@ -220,8 +220,10 @@ class BrowserInterface:
         """
         browser_inner_size = await self.get_browser_inner_size()
         browser_window_rect = (await self.web_browser_driver.main_tab.get_window())[1]
-        return dict(y=browser_window_rect.top + (browser_window_rect.height - browser_inner_size["height"]),
-                    x=browser_window_rect.left + (browser_window_rect.width - browser_inner_size["width"]),
+        # In the case of mobile devices, the browser inner size could potentially be larger than it's window size
+        # It helps with y but not with x
+        return dict(y=browser_window_rect.top + max((browser_window_rect.height - browser_inner_size["height"]), 0),
+                    x=browser_window_rect.left + max((browser_window_rect.width - browser_inner_size["width"]), 0),
                     width=browser_inner_size["width"], height=browser_inner_size["height"])
 
     async def get_element_location_window_offset(self, html_web_element: WebElement):
