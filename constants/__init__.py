@@ -61,7 +61,6 @@ def load_configurations():
         brc.KIOSK_MODE_PROBABILITY = browser_conf.getfloat(
             "kiosk-mode-probability", brc.KIOSK_MODE_PROBABILITY
         )
-        brc.IGNORE_SSL = browser_conf.getboolean("ignore-ssl", brc.IGNORE_SSL)
         brc.CHROME_DATA_DIRECTORY = browser_conf.getboolean(
             "chrome-data-directory", brc.CHROME_DATA_DIRECTORY
         )

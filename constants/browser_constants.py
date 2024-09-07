@@ -8,8 +8,6 @@ FULL_DIRECTORY_PATH = os.path.dirname(os.path.realpath(__file__)).replace(
 )
 CHROME_DATA_DIRECTORY = FULL_DIRECTORY_PATH + "/data/browsers/chrome"
 
-IGNORE_SSL = False
-
 # Identify Browser To Use
 RAND_BROWSER = 9999
 NO_BROWSER = 0
