@@ -343,14 +343,14 @@ class BrowserInterface:
         # Opens a Chrome browser
         if self.browser_to_use_id == browser_constants.CHROME_ID:
             print(f"Bot Process Id {self.bot_process_id} <:::> Opening Chrome Browser")
-            browser_config = uc.Config(browser_args=['--disable-background-networking',
+            browser_config = uc.Config(browser_args=[
                 '--disable-background-timer-throttling',
                 '--disable-backgrounding-occluded-windows',
                 '--enable-logging=0',
                 '--disable-remote-fonts',
-                '--disable-extensions',
-                '--disable-gpu',
-                f'--load-extension={bot_constants.FULL_DIRECTORY_PATH+browser_constants.CHROME_EXTENSIONS_LOCATION+"/browser_spoofer.crx"}'], user_data_dir=browser_constants.CHROME_DATA_DIRECTORY+"/profiles/"+str(self.identity_id))
+                '--disable-gpu'
+                ], user_data_dir=browser_constants.CHROME_DATA_DIRECTORY+"/profiles/"+str(self.identity_id))
+            browser_config.add_extension(f'{bot_constants.FULL_DIRECTORY_PATH+browser_constants.CHROME_EXTENSIONS_LOCATION+"/browser_spoofer.crx"}')
             if config.CONTAINERIZED:
                 browser_config.add_argument('--no-sandbox')
             if self.user_agent:

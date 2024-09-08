@@ -22,15 +22,16 @@ class ServeIdentity:
             {
                 "*": aiohttp_cors.ResourceOptions(
                     allow_credentials=True,
-                    expose_headers=("X-Custom-Server-Header",),
-                    allow_headers=("X-Requested-With", "Content-Type"),
+                    allow_headers="*",
                     max_age=3600,
                 )
             },
         )
 
     def setup_cors(self):
-        return aiohttp_cors.setup(self._app)
+        return aiohttp_cors.setup(
+            self._app, defaults={"*": aiohttp_cors.ResourceOptions()}
+        )
 
     async def handle_get(self, request):
         return web.json_response(self.get_identity_browser_data())
