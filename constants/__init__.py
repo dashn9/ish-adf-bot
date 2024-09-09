@@ -95,6 +95,9 @@ def load_configurations():
         brc.CHROME_BINARY_LOCATION = executables.get(
             "chrome-binary-location", brc.CHROME_BINARY_LOCATION
         )
+        brc.CHROME_EXTENSIONS_LOCATION = executables.get(
+            "chrome-extensions-location", brc.CHROME_EXTENSIONS_LOCATION
+        )
         brc.FIREFOX_BINARY_LOCATION = executables.get(
             "firefox-binary-location", brc.FIREFOX_BINARY_LOCATION
         )

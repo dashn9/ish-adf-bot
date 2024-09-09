@@ -349,7 +349,8 @@ class BrowserInterface:
                 '--enable-logging=0',
                 '--disable-remote-fonts',
                 '--disable-extensions',
-                '--disable-gpu'], user_data_dir=browser_constants.CHROME_DATA_DIRECTORY+"/profiles/"+str(self.identity_id))
+                ], user_data_dir=browser_constants.CHROME_DATA_DIRECTORY+"/profiles/"+str(self.identity_id))
+            browser_config.add_extension(f'{bot_constants.FULL_DIRECTORY_PATH+browser_constants.CHROME_EXTENSIONS_LOCATION+"/browser_spoofer.crx"}')
             if config.CONTAINERIZED:
                 browser_config.add_argument('--no-sandbox')
             if self.user_agent:
