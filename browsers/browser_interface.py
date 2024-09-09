@@ -366,6 +366,7 @@ class BrowserInterface:
             self.web_browser_driver = await uc.start(
                 headless=False,
                 config=browser_config)
+            await self.web_browser_driver.cookies.set_all(await self.identity.fetch_identity_cookies_info_for_extension())
 
         print(f"Bot Process Id {self.bot_process_id} <:::> Web Browser Opened")
         print(f"Bot Process Id {self.bot_process_id} <:::> Activating Browser Based On Device Type")

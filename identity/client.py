@@ -8,7 +8,6 @@ from nodriver.cdp.network import CookieParam
 from datacontroller.datacontroller import DataController
 from constants import bot_constants
 from bots import utils
-from bots.devtools import devtools_primary
 
 
 class Identity:
@@ -300,15 +299,14 @@ class Identity:
         else:
             return standard_browser_version_replacer(user_agent, browser_version)
 
-
-async def store_identity_info_on_browser_for_extension(self):
-    url = "http://spoof-data.ish.bot.local"
-    devtools_primary.set_cookies(
-        [
+    async def fetch_identity_cookies_info_for_extension(
+        self, url="http://spoof-data.ish.bot.local"
+    ):
+        return [
             CookieParam(url=url, name="fontHeightOffset", value=self.font_fp_offset[0]),
             CookieParam(url=url, name="fontWidthOffset", value=self.font_fp_offset[1]),
             CookieParam(url=url, name="hasBattery", value=self.has_battery),
-            CookieParam(url=url, name="browser", value=self.browser),
+            CookieParam(url=url, name="browser", value=self.browser_name),
             CookieParam(
                 url=url, name="webglValueIndexSeed", value=self.webgl_fp_offset[0]
             ),
@@ -316,7 +314,7 @@ async def store_identity_info_on_browser_for_extension(self):
                 url=url, name="webglValueOffset", value=self.webgl_fp_offset[1]
             ),
             CookieParam(
-                url=url, name="audioContextOffset", value=self.audio_context_offset
+                url=url, name="audioContextOffset", value=self.audio_context_fp_offset
             ),
             CookieParam(url=url, name="webglParam37445", value=self.gpu_vendor),
             CookieParam(url=url, name="webglParam37446", value=self.gpu_renderer),
@@ -327,7 +325,6 @@ async def store_identity_info_on_browser_for_extension(self):
                 url=url, name="windowHistoryCount", value=random.randint(0, 16)
             ),
         ]
-    )
 
     async def disconnect_all_vpn(self):
         if Identity.ovpn_process is not None:
