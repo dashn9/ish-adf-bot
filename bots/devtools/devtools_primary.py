@@ -197,4 +197,4 @@ async def fulfill_request(
 
 
 async def set_all_cookies(web_driver: Browser, cookies):
-    await web_driver.cookies.set_all(cookies)
+    await web_driver.connection.send(cdp.storage.set_cookies([cdp.network.CookieParam.from_json(cookie) for cookie in cookies]))

@@ -348,7 +348,6 @@ class BrowserInterface:
                 '--disable-backgrounding-occluded-windows',
                 '--enable-logging=0',
                 '--disable-remote-fonts',
-                '--disable-extensions',
                 ], user_data_dir=browser_constants.CHROME_DATA_DIRECTORY+"/profiles/"+str(self.identity_id))
             browser_config.add_extension(f'{bot_constants.FULL_DIRECTORY_PATH+browser_constants.CHROME_EXTENSIONS_LOCATION+"/browser_spoofer.crx"}')
             if config.CONTAINERIZED:
@@ -367,7 +366,6 @@ class BrowserInterface:
             self.web_browser_driver = await uc.start(
                 headless=False,
                 config=browser_config)
-            await self.web_browser_driver.cookies.set_all(await self.identity.fetch_identity_cookies_info_for_extension())
 
         print(f"Bot Process Id {self.bot_process_id} <:::> Web Browser Opened")
         print(f"Bot Process Id {self.bot_process_id} <:::> Activating Browser Based On Device Type")
@@ -396,4 +394,5 @@ class BrowserInterface:
 
         await devtools_primary.enable_network_interception(self.web_browser_driver)
         await devtools_primary.add_request_interception(self.web_browser_driver, self.request_interceptor)
+        await devtools_primary.set_all_cookies(self.web_browser_driver, await self.identity.fetch_identity_cookies_info_for_extension())
         asyncio.create_task(self.quit_browser_after_max_alive())

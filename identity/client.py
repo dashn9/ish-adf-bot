@@ -3,8 +3,6 @@ import string
 import subprocess
 import asyncio
 
-from nodriver.cdp.network import CookieParam
-
 from datacontroller.datacontroller import DataController
 from constants import bot_constants
 from bots import utils
@@ -303,27 +301,21 @@ class Identity:
         self, url="http://spoof-data.ish.bot.local"
     ):
         return [
-            CookieParam(url=url, name="fontHeightOffset", value=self.font_fp_offset[0]),
-            CookieParam(url=url, name="fontWidthOffset", value=self.font_fp_offset[1]),
-            CookieParam(url=url, name="hasBattery", value=self.has_battery),
-            CookieParam(url=url, name="browser", value=self.browser_name),
-            CookieParam(
-                url=url, name="webglValueIndexSeed", value=self.webgl_fp_offset[0]
-            ),
-            CookieParam(
-                url=url, name="webglValueOffset", value=self.webgl_fp_offset[1]
-            ),
-            CookieParam(
+            dict(url=url, name="fontHeightOffset", value=self.font_fp_offset[0]),
+            dict(url=url, name="fontWidthOffset", value=self.font_fp_offset[1]),
+            dict(url=url, name="hasBattery", value=self.has_battery),
+            dict(url=url, name="browser", value=self.browser_name),
+            dict(url=url, name="webglValueIndexSeed", value=self.webgl_fp_offset[0]),
+            dict(url=url, name="webglValueOffset", value=self.webgl_fp_offset[1]),
+            dict(
                 url=url, name="audioContextOffset", value=self.audio_context_fp_offset
             ),
-            CookieParam(url=url, name="webglParam37445", value=self.gpu_vendor),
-            CookieParam(url=url, name="webglParam37446", value=self.gpu_renderer),
-            CookieParam(url=url, name="memory", value=self.memory),
-            CookieParam(url=url, name="referrer", value=self.referrer),
-            CookieParam(url=url, name="canvasIndexes", value=self.canvas_fp_offset),
-            CookieParam(
-                url=url, name="windowHistoryCount", value=random.randint(0, 16)
-            ),
+            dict(url=url, name="webglParam37445", value=self.gpu_vendor),
+            dict(url=url, name="webglParam37446", value=self.gpu_renderer),
+            dict(url=url, name="memory", value=self.memory),
+            dict(url=url, name="referrer", value=self.referrer),
+            dict(url=url, name="canvasIndexes", value=self.canvas_fp_offset),
+            dict(url=url, name="windowHistoryCount", value=random.randint(0, 16)),
         ]
 
     async def disconnect_all_vpn(self):
