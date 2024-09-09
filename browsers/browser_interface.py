@@ -395,4 +395,6 @@ class BrowserInterface:
         await devtools_primary.enable_network_interception(self.web_browser_driver)
         await devtools_primary.add_request_interception(self.web_browser_driver, self.request_interceptor)
         await devtools_primary.set_all_cookies(self.web_browser_driver, await self.identity.fetch_identity_cookies_info_for_extension())
+        # give browser time to settle
+        await asyncio.sleep(0.2)
         asyncio.create_task(self.quit_browser_after_max_alive())
