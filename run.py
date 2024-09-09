@@ -21,7 +21,6 @@ from urllib3.exceptions import MaxRetryError, NewConnectionError, ProtocolError
 
 from bots.webbot import WebBot
 from identity.client import Identity
-from identity.serve_identity import ServeIdentity
 import constants.browser_constants as brc
 import constants.bot_constants as boc
 from datacontroller.datacontroller import DataController
@@ -164,14 +163,8 @@ async def run_bot(
     print("Successfully Completed Activity For Identity:", identity.id)
 
 
-import asyncio
-from threading import Thread
-
-
 async def main():
     identity = Identity()
-    identity_server = ServeIdentity(identity)
-    identity_server.start_server()
 
     await identity.auto_initiate_identity(FETCH_BY, FETCH_BY_VALUE)
 

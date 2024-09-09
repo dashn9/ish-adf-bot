@@ -1,6 +1,5 @@
 nodriver
 aiohttp-client-cache
-aiohttp_cors
 aiosqlite
 pyautogui
 pyclick

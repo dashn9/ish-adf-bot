@@ -1,3 +1,4 @@
+import json
 import random
 import string
 import subprocess
@@ -6,10 +7,9 @@ import asyncio
 from datacontroller.datacontroller import DataController
 from constants import bot_constants
 from bots import utils
-from .serve_identity import ServeIdentity
 
 
-class Identity(ServeIdentity):
+class Identity:
     ovpn_process = None
 
     def __init__(

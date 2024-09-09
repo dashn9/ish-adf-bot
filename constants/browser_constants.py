@@ -17,7 +17,6 @@ FIREFOX_ID = 2
 
 # Browser Binaries/Executables Locations
 CHROME_BINARY_LOCATION = r"/bin/google-chrome-stable"
-CHROME_EXTENSIONS_LOCATION = "/executables/extensions/chrome"
 FIREFOX_BINARY_LOCATION = r"/opt/firefox/firefox"
 
 MAXIMUM_WINDOW_PROBABILITY = 0.92
