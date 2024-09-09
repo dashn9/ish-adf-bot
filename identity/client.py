@@ -300,6 +300,9 @@ class Identity:
     async def fetch_identity_cookies_info_for_extension(
         self, url="http://spoof-data.ish.bot.local"
     ):
+        browser_name = self.browser_name
+        if browser_name == "chrome" and self.os == "iOS":
+            browser_name = "chrome-ios"
         return [
             dict(url=url, name="fontHeightOffset", value=self.font_fp_offset[0]),
             dict(url=url, name="fontWidthOffset", value=self.font_fp_offset[1]),
