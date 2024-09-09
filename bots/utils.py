@@ -35,7 +35,7 @@ def return_fingerprintables_spoof_js_code(
     browser_vendor="",
     hardware_specs={"hardware_concurrency": 8, "memory": 8},
     has_battery=False,
-    referer="",
+    referrer="",
 ):
     """
     :param offset_color: Color Of The Canvas Value To Spoof, Value Ranges are r, g, b, a. If Dict Type, Extract Value From

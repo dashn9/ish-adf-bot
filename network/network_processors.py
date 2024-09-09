@@ -17,7 +17,7 @@ from identity.client import Identity
 class NetworkRunner:
     def __init__(self, bot_process_id, identity: Identity, use_proxy=False):
         self.identity = identity
-        self.referer_use_times = 0
+        self.referrer_use_times = 0
         self.total_request_size = 0
         self.bot_process_id = bot_process_id
         self.un_cached_response_size = 0
@@ -63,10 +63,10 @@ class NetworkRunner:
                     ).json()
                 )
 
-    async def inject_referer_into_header(self, request: cdp.network.Request):
-        if self.referer_use_times < 1:
-            request.headers["Referer"] = self.identity.referer
-            self.referer_use_times += 1
+    async def inject_referrer_into_header(self, request: cdp.network.Request):
+        if self.referrer_use_times < 1:
+            request.headers["referrer"] = self.identity.referrer
+            self.referrer_use_times += 1
 
     async def track_request_size(self, request: cdp.network.Request):
         request_size = len(request.post_data or "") / 1024
@@ -185,7 +185,7 @@ class NetworkRunner:
                                 "memory": self.identity.memory,
                             },
                             has_battery=has_battery,
-                            referer=self.identity.referer,
+                            referrer=self.identity.referrer,
                         )
                         if isinstance(body, str):
                             if body.find("<head>") != -1:
@@ -289,7 +289,7 @@ class NetworkRunner:
         if config.PRINT_NETWORK:
             print(f"Request url: {request.url}[{request.method}]")
             await self.print_total_usage()
-        await self.inject_referer_into_header(request)
+        await self.inject_referrer_into_header(request)
         if bot_constants.PROXY_WHITELISTED_DOMAINS == "*":
             if utils.url_ends_with(
                 request, bot_constants.PROXY_BLACKLISTED_EXTENSIONS

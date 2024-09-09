@@ -51,7 +51,7 @@ class WebBot(
                 screen_resolution=None,
                 gpu_vendor="Google Inc. (Intel)",
                 gpu_renderer="Intel(R) HD Graphics",
-                referer="https://l.facebook.com",
+                referrer="https://l.facebook.com",
                 reading_speed=900,
                 timezone=["Etc/GMT", 0, "AM Coordinated Time"],
                 mouse_delta_y=50,

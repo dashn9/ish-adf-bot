@@ -1,12 +1,14 @@
-import json
 import random
 import string
 import subprocess
 import asyncio
 
+from nodriver.cdp.network import CookieParam
+
 from datacontroller.datacontroller import DataController
 from constants import bot_constants
 from bots import utils
+from bots.devtools import devtools_primary
 
 
 class Identity:
@@ -43,7 +45,7 @@ class Identity:
         gpu_renderer="",
         proxy_client="",
         proxy_geo="",
-        referer="",
+        referrer="",
         reading_speed=None,
         timezone=None,
         languages=["en-US", "en"],
@@ -85,7 +87,7 @@ class Identity:
         self.gpu_renderer = gpu_renderer
         self.proxy_client = proxy_client
         self.proxy_geo = proxy_geo
-        self.referer = referer
+        self.referrer = referrer
         self.referrals = None
         self.reading_speed = reading_speed
         self.user_agent = None
@@ -149,7 +151,7 @@ class Identity:
         self.proxy_geo = identity["PROXY_GEO"]
         identity["REFERRALS"] = identity["REFERRALS"]
         self.referrals = identity["REFERRALS"]
-        self.referer = None
+        self.referrer = None
         self.reading_speed = identity["READING_SPEED"]
         self.user_agent = identity["USER_AGENT"]
         self.languages = identity["LANGUAGE"]
@@ -176,7 +178,7 @@ class Identity:
             self.browser_name,
             self.browser_version,
         )
-        await asyncio.gather(self.resolve_timezone(), self.resolve_referer())
+        await asyncio.gather(self.resolve_timezone(), self.resolve_referrer())
 
     async def resolve_timezone(self):
         resolved_proxy_url = self.proxy_url if bot_constants.USE_PROXY else None
@@ -230,8 +232,8 @@ class Identity:
             print("geo location: ", identity_timezone)
             print("Successfully Resolved Timezone")
 
-    async def resolve_referer(self):
-        self.referer = random.choice(self.referrals)
+    async def resolve_referrer(self):
+        self.referrer = random.choice(self.referrals)
 
     async def update_cookies(self, cookies=None):
         if not cookies:
@@ -297,6 +299,35 @@ class Identity:
             return edge_browser_version_replacer(user_agent, browser_version)
         else:
             return standard_browser_version_replacer(user_agent, browser_version)
+
+
+async def store_identity_info_on_browser_for_extension(self):
+    url = "http://spoof-data.ish.bot.local"
+    devtools_primary.set_cookies(
+        [
+            CookieParam(url=url, name="fontHeightOffset", value=self.font_fp_offset[0]),
+            CookieParam(url=url, name="fontWidthOffset", value=self.font_fp_offset[1]),
+            CookieParam(url=url, name="hasBattery", value=self.has_battery),
+            CookieParam(url=url, name="browser", value=self.browser),
+            CookieParam(
+                url=url, name="webglValueIndexSeed", value=self.webgl_fp_offset[0]
+            ),
+            CookieParam(
+                url=url, name="webglValueOffset", value=self.webgl_fp_offset[1]
+            ),
+            CookieParam(
+                url=url, name="audioContextOffset", value=self.audio_context_offset
+            ),
+            CookieParam(url=url, name="webglParam37445", value=self.gpu_vendor),
+            CookieParam(url=url, name="webglParam37446", value=self.gpu_renderer),
+            CookieParam(url=url, name="memory", value=self.memory),
+            CookieParam(url=url, name="referrer", value=self.referrer),
+            CookieParam(url=url, name="canvasIndexes", value=self.canvas_fp_offset),
+            CookieParam(
+                url=url, name="windowHistoryCount", value=random.randint(0, 16)
+            ),
+        ]
+    )
 
     async def disconnect_all_vpn(self):
         if Identity.ovpn_process is not None:
