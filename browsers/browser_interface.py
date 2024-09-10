@@ -8,9 +8,6 @@ from functools import reduce
 from threading import Thread
 
 from nodriver import Element as WebElement
-from selenium.webdriver.support.wait import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.common import NoAlertPresentException
 import nodriver as uc
 
 from bots import utils
@@ -46,15 +43,6 @@ class BrowserInterface:
         self.cookies_update_callback = cookies_update_callback
         self.identity_id = identity_id
         self.dom_storage = None
-
-    async def wait_for_element_visible(self, locator):
-        """
-        Waits for an element to be visible on the page
-        :param locator: tuple of (By, locator) used to identify the element
-        :return: the WebElement when it is visible
-        """
-        wait = WebDriverWait(self.web_browser_driver, 10)
-        return wait.until(EC.visibility_of_element_located(locator))
 
     async def update_cookies_to_cloud(self):
         if self.cookies_update_callback:
@@ -334,12 +322,11 @@ class BrowserInterface:
 
     async def open_web_browser(self):
         open_browser_in_full_screen = True
-        window_size = (bot_constants.SCREEN_WIDTH, bot_constants.SCREEN_HEIGHT)
+        window_size = (self.identity.screen_width, self.identity.screen_height)
         # An 8% chance and device is pc that randomly resize the web browser in a manner that is un-obstructive
         if random.random() >= browser_constants.MAXIMUM_WINDOW_PROBABILITY and self.device_type == "computer":
             open_browser_in_full_screen = False
-            window_size = utils.fetch_random_window_size_relative_to_screen(
-                bot_constants.SCREEN_WIDTH, bot_constants.SCREEN_HEIGHT)
+            window_size = utils.fetch_random_window_size_relative_to_screen(*window_size)
         # Opens a Chrome browser
         if self.browser_to_use_id == browser_constants.CHROME_ID:
             print(f"Bot Process Id {self.bot_process_id} <:::> Opening Chrome Browser")
@@ -348,24 +335,24 @@ class BrowserInterface:
                 '--disable-backgrounding-occluded-windows',
                 '--enable-logging=0',
                 '--disable-remote-fonts',
-                ], user_data_dir=browser_constants.CHROME_DATA_DIRECTORY+"/profiles/"+str(self.identity_id))
+                ], user_data_dir=browser_constants.CHROME_DATA_DIRECTORY+"/profiles/"+str(self.identity_id), 
+                browser_executable_path=bot_constants.FULL_DIRECTORY_PATH+browser_constants.CHROME_BINARY_LOCATION)
             browser_config.add_extension(f'{bot_constants.FULL_DIRECTORY_PATH+browser_constants.CHROME_EXTENSIONS_LOCATION+"/browser_spoofer.crx"}')
-            if config.CONTAINERIZED:
-                browser_config.add_argument('--no-sandbox')
             if self.user_agent:
                 browser_config.add_argument(f"--user-agent={self.user_agent}")
             browser_config.binary_location = browser_constants.CHROME_BINARY_LOCATION
-            if open_browser_in_full_screen:
-                if random.random() <= browser_constants.KIOSK_MODE_PROBABILITY:
-                    browser_config.add_argument("--kiosk")
-                else:
-                    browser_config.add_argument("--start-maximized")
-            else:
-                browser_config.add_argument(f"--window-size={window_size[0]},{window_size[1]}")
-            browser_config.browser_executable_path=bot_constants.FULL_DIRECTORY_PATH+browser_constants.CHROME_BINARY_LOCATION
             self.web_browser_driver = await uc.start(
                 headless=False,
                 config=browser_config)
+            
+            if open_browser_in_full_screen:
+                if random.random() <= browser_constants.KIOSK_MODE_PROBABILITY:
+                    await self.web_browser_driver.main_tab.set_window_state(state="fullscreen")
+                else:
+                    await self.web_browser_driver.main_tab.set_window_state(state="maximized")
+            else:
+                print(window_size)
+                await self.web_browser_driver.main_tab.set_window_state(0, 0, int(window_size[0]), int(window_size[1]))
 
         print(f"Bot Process Id {self.bot_process_id} <:::> Web Browser Opened")
         print(f"Bot Process Id {self.bot_process_id} <:::> Activating Browser Based On Device Type")
@@ -388,13 +375,10 @@ class BrowserInterface:
             await devtools_primary.change_user_agent(
                 self.web_browser_driver,
                 self.user_agent, self.platform, self.languages, self.identity.browser_name, self.identity.device_type == "smartphone", self.identity.device_model)
-        # self.web_browser_driver.set_window_position(0, 0)
-        if not open_browser_in_full_screen:
-            await self.web_browser_driver.main_tab.set_window_size(0, 0, *window_size)
 
         await devtools_primary.enable_network_interception(self.web_browser_driver)
         await devtools_primary.add_request_interception(self.web_browser_driver, self.request_interceptor)
         await devtools_primary.set_all_cookies(self.web_browser_driver, await self.identity.fetch_identity_cookies_info_for_extension())
         # give browser time to settle
-        await asyncio.sleep(0.2)
+        await asyncio.sleep(4)
         asyncio.create_task(self.quit_browser_after_max_alive())

@@ -2,5 +2,10 @@
 /.idea
 /.git
 /.deployment
-/executables
-example.conig.ini
+/executables/browsers
+/data
+/tests
+/.deployment
+/.github
+/__pycache__
+example.config.ini

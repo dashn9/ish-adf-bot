@@ -4,13 +4,9 @@ import random
 import asyncio
 from multiprocessing import Value
 
-from selenium.common import StaleElementReferenceException
-from selenium.webdriver.common.by import By
 from nodriver import Element as WebElement
 
-from browsers.browser_interface import BrowserInterface
 from constants import bot_constants
-from humanbehaviourmechanics.human_movements import HumanMovements
 
 
 class HumanBehaviourReveries:
@@ -82,8 +78,8 @@ class HumanBehaviourReveries:
     async def open_link_in_elements(self, elements):
         links_to_follow = []
         for el in elements:
-            for link in el.find_elements(By.TAG_NAME, "a"):
-                link_children = link.find_elements(By.CSS_SELECTOR, "*")
+            for link in el.query_selector_all("a"):
+                link_children = link.query_selector_all("*")
                 if len(link_children) >= 1:
                     for link_child in link_children:
                         links_to_follow.append(link_child)
@@ -105,31 +101,29 @@ class HumanBehaviourReveries:
             await asyncio.sleep(random.uniform(0.2, 0.8))
             if self.has_touch:
                 await asyncio.sleep(random.uniform(0.3, 0.5))
-                try:
-                    element_location_and_dimensions = (
-                        self.get_element_location_window_offset(link_to_follow)
-                    )
-                    # Do click continually until page remained unchanged after click
+                element_location_and_dimensions = (
+                    self.get_element_location_window_offset(link_to_follow)
+                )
+                # Do click continually until page remained unchanged after click
+                self.touch.tap(
+                    element_location_and_dimensions["x_offset"]
+                    + random.uniform(0, link_to_follow.rect["width"]),
+                    element_location_and_dimensions["y_offset"]
+                    + random.uniform(0, link_to_follow.rect["height"]),
+                )
+                while self.revert_to_main_page():
                     self.touch.tap(
                         element_location_and_dimensions["x_offset"]
                         + random.uniform(0, link_to_follow.rect["width"]),
                         element_location_and_dimensions["y_offset"]
                         + random.uniform(0, link_to_follow.rect["height"]),
                     )
-                    while self.revert_to_main_page():
-                        self.touch.tap(
-                            element_location_and_dimensions["x_offset"]
-                            + random.uniform(0, link_to_follow.rect["width"]),
-                            element_location_and_dimensions["y_offset"]
-                            + random.uniform(0, link_to_follow.rect["height"]),
-                        )
-                except StaleElementReferenceException:
-                    print(
-                        f"Bot Process Id {self.bot_process_id} <:::> An attempt to click on a link in the related "
-                        f"article section cause a StaleElementReference error. This is most likely the result of "
-                        f"external interaction with the browser that forced a new tab to open without script "
-                        f"awareness"
-                    )
+                    # print(
+                    #     f"Bot Process Id {self.bot_process_id} <:::> An attempt to click on a link in the related "
+                    #     f"article section cause a StaleElementReference error. This is most likely the result of "
+                    #     f"external interaction with the browser that forced a new tab to open without script "
+                    #     f"awareness"
+                    # )
             else:
                 # Do click continually until page remained unchanged after click
                 pyautogui.click()

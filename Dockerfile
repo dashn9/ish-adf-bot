@@ -29,16 +29,11 @@ RUN curl -sS -o /tmp/chrome.zip https://storage.googleapis.com/chrome-for-testin
 
 ENV DISPLAY=:0
 
-# You can configure a color depth of 8 here to save memory, however ad detection systems might look into it for patterns
-ENV RESOLUTION=1920x1080x24
-
 COPY . .
 
 COPY config.docker.ini /app/config.ini
 
-RUN chmod +x run.sh setup.sh
-
-RUN ./setup.sh
+RUN chmod +x run.sh create_display.sh
 
 EXPOSE 5900
 

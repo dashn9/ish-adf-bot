@@ -3,7 +3,6 @@ import time
 import asyncio
 
 import pyautogui
-from selenium.webdriver.common.by import By
 
 
 class SmartAdsInteractions:

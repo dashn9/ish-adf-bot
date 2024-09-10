@@ -5,21 +5,12 @@ import os
 import sys
 import time
 import traceback
-from selenium.common.exceptions import (
-    TimeoutException,
-    WebDriverException,
-    StaleElementReferenceException,
-    UnexpectedAlertPresentException,
-)
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
+import subprocess
 
 from requests import ReadTimeout
 
-from selenium.webdriver.common.by import By
 from urllib3.exceptions import MaxRetryError, NewConnectionError, ProtocolError
 
-from bots.webbot import WebBot
 from identity.client import Identity
 import constants.browser_constants as brc
 import constants.bot_constants as boc
@@ -53,6 +44,8 @@ async def run_bot(
     page_info: dict,
     process_id,
 ):
+    from bots.webbot import WebBot
+
     web_bot = WebBot(
         identity=identity,
         browser_to_use_id=brc.CHROME_ID,
@@ -90,21 +83,17 @@ async def run_bot(
                 )
                 == "ad_clicked"
             ):
-                try:
-                    await asyncio.sleep(random.uniform(0.7, 1.5))
+                await asyncio.sleep(random.uniform(0.7, 1.5))
+                body_element = web_bot.web_browser_driver.main_tab.select("body", 4)
+                await web_bot.read_element_content(body_element)
+                while random.random() < identity.page_depth:
+                    web_bot.time_activated = time.time()
+                    web_bot.open_link_in_elements([body_element])
                     body_element = web_bot.web_browser_driver.main_tab.select("body", 4)
-                    await web_bot.read_element_content(body_element)
-                    while random.random() < identity.page_depth:
-                        web_bot.time_activated = time.time()
-                        web_bot.open_link_in_elements([body_element])
-                        body_element = web_bot.web_browser_driver.main_tab.select(
-                            "body", 4
-                        )
-                        web_bot.read_element_content(body_element)
-                except TimeoutException:
-                    print(
-                        "Body Element Of The Ad Page Could Not Be Found Or Not Loaded On Time"
-                    )
+                    web_bot.read_element_content(body_element)
+                # print(
+                #     "Body Element Of The Ad Page Could Not Be Found Or Not Loaded On Time"
+                # )
             else:
                 if page_info.get("related_articles_elements_type") and page_info.get(
                     "related_articles_elements_name"
@@ -151,10 +140,6 @@ async def run_bot(
         ConnectionResetError,
         ProtocolError,
         ReadTimeout,
-        StaleElementReferenceException,
-        WebDriverException,
-        TimeoutException,
-        UnexpectedAlertPresentException,
     ):
         if DEBUG:
             print(traceback.format_exc())
@@ -168,6 +153,12 @@ async def main():
 
     await identity.auto_initiate_identity(FETCH_BY, FETCH_BY_VALUE)
 
+    subprocess.run(
+        [
+            brc.FULL_DIRECTORY_PATH + "/create_display.sh",
+            f"{identity.screen_width}x{identity.screen_height}x24",
+        ]
+    )
     page_info = await DataController.fetch_active_random_url()
 
     boc.PROXY_WHITELISTED_DOMAINS = page_info.get("proxy_domain_whitelists", "*")

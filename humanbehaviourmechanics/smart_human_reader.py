@@ -5,8 +5,6 @@ import time
 import asyncio
 from multiprocessing import Value
 
-from selenium.webdriver.common.by import By
-
 from nodriver import Element as WebElement
 
 from bots import utils as global_utils
