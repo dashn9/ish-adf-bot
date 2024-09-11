@@ -58,8 +58,8 @@ def load_configurations():
         brc.MAXIMUM_WINDOW_PROBABILITY = browser_conf.getfloat(
             "maximum-window-probability", brc.MAXIMUM_WINDOW_PROBABILITY
         )
-        brc.KIOSK_MODE_PROBABILITY = browser_conf.getfloat(
-            "kiosk-mode-probability", brc.KIOSK_MODE_PROBABILITY
+        brc.FULLSCREEN_PROBABILITY = browser_conf.getfloat(
+            "fullscreen-probability", brc.FULLSCREEN_PROBABILITY
         )
         brc.CHROME_DATA_DIRECTORY = browser_conf.getboolean(
             "chrome-data-directory", brc.CHROME_DATA_DIRECTORY

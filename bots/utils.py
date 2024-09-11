@@ -310,8 +310,10 @@ def fetch_random_file_name_from_directory(
 
 def fetch_random_window_size_relative_to_screen(screen_width, screen_height):
     dimensions_to_use = (
-        screen_width - fetch_percentage_value(screen_width, random.uniform(6, 30)),
-        screen_height - fetch_percentage_value(screen_height, random.uniform(6, 30)),
+        int(screen_width - fetch_percentage_value(screen_width, random.uniform(6, 30))),
+        int(
+            screen_height - fetch_percentage_value(screen_height, random.uniform(6, 30))
+        ),
     )
     return dimensions_to_use
 

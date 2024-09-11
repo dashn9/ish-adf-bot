@@ -322,7 +322,7 @@ class BrowserInterface:
 
     async def open_web_browser(self):
         open_browser_in_full_screen = True
-        window_size = (self.identity.screen_width, self.identity.screen_height)
+        window_size = (self.screen_width, self.screen_height)
         # An 8% chance and device is pc that randomly resize the web browser in a manner that is un-obstructive
         if random.random() >= browser_constants.MAXIMUM_WINDOW_PROBABILITY and self.device_type == "computer":
             open_browser_in_full_screen = False
@@ -335,6 +335,8 @@ class BrowserInterface:
                 '--disable-backgrounding-occluded-windows',
                 '--enable-logging=0',
                 '--disable-remote-fonts',
+                '--disable-dev-shm-usage',
+                '--start-maximized'
                 ], user_data_dir=browser_constants.CHROME_DATA_DIRECTORY+"/profiles/"+str(self.identity_id), 
                 browser_executable_path=bot_constants.FULL_DIRECTORY_PATH+browser_constants.CHROME_BINARY_LOCATION)
             browser_config.add_extension(f'{bot_constants.FULL_DIRECTORY_PATH+browser_constants.CHROME_EXTENSIONS_LOCATION+"/browser_spoofer.crx"}')
@@ -346,13 +348,17 @@ class BrowserInterface:
                 config=browser_config)
             
             if open_browser_in_full_screen:
-                if random.random() <= browser_constants.KIOSK_MODE_PROBABILITY:
-                    await self.web_browser_driver.main_tab.set_window_state(state="fullscreen")
+                if random.random() <= browser_constants.FULLSCREEN_PROBABILITY:
+                    await self.web_browser_driver.main_tab.set_window_state(0, 0, *window_size, state="fullscreen")
                 else:
-                    await self.web_browser_driver.main_tab.set_window_state(state="maximized")
+                    if not config.CONTAINERIZED:
+                        await self.web_browser_driver.main_tab.set_window_state(0, 0, *window_size, state="maximized")
+                    else:
+                        # Fixes the one pixel deficiency in the container application
+                        await self.web_browser_driver.main_tab.set_window_state(0, 0, *window_size, state="fullscreen")
+                        await self.web_browser_driver.main_tab.set_window_state(0, 0, *window_size, state="maximized")
             else:
-                print(window_size)
-                await self.web_browser_driver.main_tab.set_window_state(0, 0, int(window_size[0]), int(window_size[1]))
+                await self.web_browser_driver.main_tab.set_window_state(0, 0, *window_size)
 
         print(f"Bot Process Id {self.bot_process_id} <:::> Web Browser Opened")
         print(f"Bot Process Id {self.bot_process_id} <:::> Activating Browser Based On Device Type")

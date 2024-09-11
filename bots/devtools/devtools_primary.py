@@ -7,6 +7,20 @@ from nodriver import Browser, cdp
 from .. import utils
 
 
+async def simulate_screen(    web_driver: Browser, device_metrics: dict = {
+        "width": 1366,
+        "height": 768, "device_scale_factor": 2,
+        "mobile": False
+        }):
+    await web_driver.main_tab.send(cdp.emulation.set_device_metrics_override(
+        position_x=0,
+        position_y=0,
+        width=device_metrics['width'], 
+        height=device_metrics["height"], 
+        device_scale_factor=device_metrics["device_scale_factor"],
+        mobile=device_metrics["mobile"],
+        ))
+    
 async def activate_mobile(
     web_driver: Browser, device_metrics: dict = {
         "width": 1366,
@@ -15,16 +29,7 @@ async def activate_mobile(
         }, 
     max_touch_points=5
 ):
-    await web_driver.main_tab.send(cdp.emulation.set_device_metrics_override(
-        position_x=0,
-        position_y=0,
-        width=device_metrics['width'], 
-        height=device_metrics["height"], 
-        device_scale_factor=device_metrics["device_scale_factor"],
-        mobile=device_metrics["mobile"],
-        # screen_orientation=cdp.emulation.ScreenOrientation(type_=device_metrics["screen_orientation"]["type"], angle=device_metrics["screen_orientation"]["angle"])
-        )
-        )
+    await simulate_screen(web_driver, device_metrics)
     await web_driver.main_tab.send(cdp.emulation.set_touch_emulation_enabled(enabled=True, max_touch_points=max_touch_points))
     await web_driver.main_tab.send(cdp.emulation.set_emit_touch_events_for_mouse(enabled=True))
 
@@ -147,6 +152,9 @@ async def clear_all_cookies(web_driver: Browser):
 async def enable_network_interception(web_driver: Browser):
     await web_driver.connection.send(cdp.fetch.enable())
 
+
+async def disable_network_interception(web_driver: Browser):
+    await web_driver.connection.send(cdp.fetch.disable())
 
 async def add_request_interception(
     web_driver: Browser, req_fufiller: Callable[[cdp.fetch.RequestPaused], bool]

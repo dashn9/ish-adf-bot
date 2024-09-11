@@ -31,8 +31,8 @@ async def restart_plug():
     if not RUN_INFINITELY:
         exit()
     else:
-        print("Attempting to rerun operations")
-        os.execv(sys.executable, ["python"] + sys.argv)
+        print("Attempting to ReRun operations")
+        os.execv(sys.executable, ["python", "-u"] + sys.argv)
 
 
 if FETCH_BY == "scr":
