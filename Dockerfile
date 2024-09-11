@@ -16,7 +16,7 @@ RUN pip install -r requirements.txt
 
 RUN mkdir -p executables/browsers/chrome
 
-RUN curl -sS -o /tmp/chrome.zip https://storage.googleapis.com/chrome-for-testing-public/124.0.6367.201/linux64/chrome-linux64.zip \
+RUN curl -sS -o /tmp/chrome.zip https://storage.googleapis.com/chrome-for-testing-public/128.0.6613.137/linux64/chrome-linux64.zip \
     && unzip /tmp/chrome.zip -d /tmp \
     && mv /tmp/chrome-linux64/* executables/browsers/chrome \
     && rm -r /tmp/chrome.zip /tmp/chrome-linux64

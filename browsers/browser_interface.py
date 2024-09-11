@@ -336,7 +336,6 @@ class BrowserInterface:
                 '--enable-logging=0',
                 '--disable-remote-fonts',
                 '--disable-dev-shm-usage',
-                '--start-maximized'
                 ], user_data_dir=browser_constants.CHROME_DATA_DIRECTORY+"/profiles/"+str(self.identity_id), 
                 browser_executable_path=bot_constants.FULL_DIRECTORY_PATH+browser_constants.CHROME_BINARY_LOCATION)
             browser_config.add_extension(f'{bot_constants.FULL_DIRECTORY_PATH+browser_constants.CHROME_EXTENSIONS_LOCATION+"/browser_spoofer.crx"}')

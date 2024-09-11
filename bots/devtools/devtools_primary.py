@@ -35,7 +35,7 @@ async def activate_mobile(
 
 
 async def activate_all_focus(web_driver: Browser):
-    web_driver.execute_cdp_cmd("Emulation.setFocusEmulationEnabled", {"enabled": True})
+    await web_driver.main_tab.send(cdp.emulation.set_focus_emulation_enabled(True))
 
 
 async def change_user_agent(
