@@ -3,11 +3,10 @@ import re
 from contextlib import asynccontextmanager
 from urllib.parse import urlparse
 
-from requests.exceptions import SSLError, ProxyError
 from nodriver import cdp
 
 from aiohttp_client_cache import CachedSession, SQLiteBackend, CachedResponse
-from aiohttp.client_exceptions import ClientConnectionError
+from aiohttp.client_exceptions import ClientConnectionError, ClientHttpProxyError
 from bots.devtools import devtools_primary
 
 from bots import utils
@@ -161,33 +160,26 @@ class NetworkRunner:
                             )
                         )
                         return True
-            except (SSLError, ProxyError):
+            except ClientHttpProxyError as e:
+                if e.code == 407:
+                    # Configure notification to admin
+                    print(
+                        f"Bot Process Id {self.bot_process_id} <:::> Invalid Proxy Credentials, Exiting to avoid getting burnt"
+                    )
+                    exit()
                 # fix against ip leaks
                 if generate_empty_response_on_fail and retries < 1:
                     await asyncio.sleep(0.5)
                     return network_through_proxy(retries=retries + 1)
                 else:
                     asyncio.create_task(
-                        devtools_primary.continue_request(
-                            self.web_browser_driver,
-                            pausedRequest.request_id,
-                            headers=(
-                                (
-                                    await self.conform_headers_according_to_browser(
-                                        [
-                                            cdp.fetch.HeaderEntry(k, v)
-                                            for k, v in request.headers.items()
-                                        ]
-                                    )
-                                )
-                                if request.method.lower() not in ["options"]
-                                else request.headers
-                            ),
+                        devtools_primary.fail_request(
+                            request_id=pausedRequest.request_id
                         )
                     )
                     print(
                         f"Bot Process Id {self.bot_process_id} <:::> {request.url} generated an ssl or proxy error, "
-                        f"it won't go through proxy, so dud response was generated"
+                        f"it won't go through proxy, so it was failed"
                     )
                 return False
             except ClientConnectionError as e:
@@ -224,17 +216,17 @@ class NetworkRunner:
                 )
             else:
                 asyncio.create_task(network_through_proxy())
-        elif not (
-            (
-                utils.has_string_in(reqHost, bot_constants.PROXY_WHITELISTED_DOMAINS)
-                and not utils.url_ends_with(
-                    request.url, bot_constants.PROXY_BLACKLISTED_EXTENSIONS
-                )
+        elif (
+            utils.has_string_in(reqHost, bot_constants.PROXY_WHITELISTED_DOMAINS)
+            and not utils.url_ends_with(
+                request.url, bot_constants.PROXY_BLACKLISTED_EXTENSIONS
             )
             and not utils.has_string_in(
                 reqHost, bot_constants.PROXY_BLACKLISTED_DOMAINS
             )
         ):
+            asyncio.create_task(network_through_proxy())
+        else:
             asyncio.create_task(
                 devtools_primary.continue_request(
                     self.web_browser_driver,
@@ -253,5 +245,3 @@ class NetworkRunner:
                     ),
                 )
             )
-        else:
-            asyncio.create_task(network_through_proxy())

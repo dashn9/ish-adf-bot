@@ -203,6 +203,12 @@ async def fulfill_request(
         )
     )
 
+async def fail_request(
+        web_driver: Browser,
+        request_id: str,
+        error_reason: cdp.network.ErrorReason.CONNECTION_ABORTED
+):
+    await web_driver.connection.send(cdp.fetch.fail_request(request_id, error_reason))
 
 async def set_all_cookies(web_driver: Browser, cookies):
     await web_driver.connection.send(cdp.storage.set_cookies([cdp.network.CookieParam.from_json(cookie) for cookie in cookies]))
