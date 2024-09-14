@@ -6,6 +6,7 @@ import asyncio
 from datacontroller.datacontroller import DataController
 from constants import bot_constants
 from bots import utils
+from constants import config
 
 
 class Identity:
@@ -161,12 +162,32 @@ class Identity:
             "keywords_click_probability"
         ]
         self.ad_type_to_click = identity["ADS"]["type"]
+        self.proxy_type = identity.get("PROXY_TYPE")
         self.proxy_url = identity.get("PROXY_URL")
         self.proxy_release_url = identity.get("PROXY_RELEASE_URL", None)
         self._raw_identity = identity
 
+    async def add_credentials_to_proxy_url(self):
+        if "dataimpulse" in self.proxy_client:
+            if self.proxy_type == "mobile":
+                self.proxy_url = self.proxy_url.replace(
+                    "<proxy_user>", config.DATAIMPULSE_MOBILE_PROXY_CREDENTIALS["user"]
+                ).replace(
+                    "<proxy_password>",
+                    config.DATAIMPULSE_MOBILE_PROXY_CREDENTIALS["password"],
+                )
+            else:
+                self.proxy_url = self.proxy_url.replace(
+                    "<proxy_user>",
+                    config.DATAIMPULSE_RESIDENTIAL_PROXY_CREDENTIALS["user"],
+                ).replace(
+                    "<proxy_password>",
+                    config.DATAIMPULSE_RESIDENTIAL_PROXY_CREDENTIALS["password"],
+                )
+
     async def auto_initiate_identity(self, method, method_value):
         await self.resolve_identity_from_cloud(method, method_value)
+        await self.add_credentials_to_proxy_url()
         ua_os_version = self.platform.get("version", None) or self.os_version
         self.user_agent = self.user_agent or await self.form_user_agent(
             self.os,

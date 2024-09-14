@@ -7,10 +7,11 @@ from requests.exceptions import SSLError, ProxyError
 from nodriver import cdp
 
 from aiohttp_client_cache import CachedSession, SQLiteBackend, CachedResponse
+from aiohttp.client_exceptions import ClientConnectionError
 from bots.devtools import devtools_primary
 
 from bots import utils
-from constants import config, bot_constants, browser_constants
+from constants import config, bot_constants
 from identity.client import Identity
 
 
@@ -28,11 +29,7 @@ class NetworkRunner:
 
         if use_proxy:
             self.proxy_url = self.identity.proxy_url
-            self.proxy = {
-                "http": "http://" + self.identity.proxy_url,
-                "https": "http://" + self.identity.proxy_url,
-                "no_proxy": "localhost,127.0.0.1",
-            }
+            self.proxy = "http://" + self.identity.proxy_url
             print(
                 f"Bot Process Id {self.bot_process_id} <:::> Adding a proxy option for this session on this proxy"
                 f" path: {self.identity.proxy_url}"
@@ -46,7 +43,6 @@ class NetworkRunner:
                 bot_constants.FULL_DIRECTORY_PATH
                 + "/data/cache/request_cache/proxy_requests_cache"
             ),
-            proxy=self.proxy,
         ) as session:
             yield session
 
@@ -59,7 +55,6 @@ class NetworkRunner:
                     await session.request(
                         url=self.identity.proxy_release_url,
                         method="GET",
-                        proxies=self.proxy,
                     ).json()
                 )
 
@@ -112,105 +107,6 @@ class NetworkRunner:
             print(f"Response url: {request.url}[{response.status_code}]")
             self.print_total_usage()
 
-        self.inject_js_to_spoof_fingerprintable_objects_on_website_server_response(
-            request, response
-        )
-
-    async def inject_js_to_spoof_fingerprintable_objects_on_website_server_response(
-        self, request: cdp.network.Response, response: CachedResponse
-    ):
-        """
-        A Method
-        :param: The Orginal Request
-        :param response: The Response of The Web Server To Adjust Before Reaching Browser
-        :return: True On Success, False On Failure
-        """
-        if response:
-            body = await response.text()
-            try:
-                if (
-                    (
-                        response.headers.get("content-type").find("text/html")
-                        or not re.search(r"(?<!https:)(?<!https:/)(\/\w)$", request.url)
-                        or re.match(r"(.html|.htm)$", request.url)
-                    )
-                    and request.method == "GET"
-                    and response.status == 200
-                ):
-                    if (
-                        body.find("<!DOCTYPE") == 0
-                        or body.find("<html") == 0
-                        or body.find("<!--") == 0
-                    ):
-                        if self.identity.has_battery == "has_battery":
-                            has_battery = True
-                        else:
-                            has_battery = False
-                        fingerprintables_spoof_code = utils.return_fingerprintables_spoof_js_code(
-                            offset_color_value=tuple(self.identity.canvas_fp_offset),
-                            audio_context_offset=self.identity.audio_context_fp_offset,
-                            webgl_params=(
-                                self.identity.gpu_vendor,
-                                15,
-                                12,
-                                14,
-                                14,
-                                13,
-                                4,
-                                4,
-                                4,
-                                4,
-                                3,
-                                3,
-                                3,
-                                3,
-                                6,
-                                11,
-                                12,
-                                12,
-                                self.identity.gpu_renderer,
-                            ),
-                            browser_vendor=(
-                                "Apple Computer, Inc."
-                                if self.identity.browser_name == "safari"
-                                else ""
-                            ),
-                            font_width_offset=self.identity.font_fp_offset[0],
-                            font_height_offset=self.identity.font_fp_offset[1],
-                            navigator_platform=self.identity.platform.get(
-                                "navigator_platform", ""
-                            ),
-                            hardware_specs={
-                                "hardware_concurrency": self.identity.hardware_concurrency,
-                                "memory": self.identity.memory,
-                            },
-                            has_battery=has_battery,
-                            referrer=self.identity.referrer,
-                        )
-                        if isinstance(body, str):
-                            if body.find("<head>") != -1:
-                                body = utils.insert_text_into_string(
-                                    body,
-                                    "<script>"
-                                    + fingerprintables_spoof_code
-                                    + "</script>",
-                                    "<head>",
-                                    True,
-                                )
-                            else:
-                                body = utils.insert_text_into_string_reg(
-                                    body,
-                                    fingerprintables_spoof_code,
-                                    r"(<script>)|(<script .*?>)",
-                                    True,
-                                )
-                            return body
-                return body
-            except Exception:
-                pass
-            self.identity.referrer = ""
-        return False
-
     async def strip_chromium_headers(self, headers: list):
         # fufill_request works in an unusual behaviour, it only responds to sec-ch headers
         return []
@@ -241,23 +137,27 @@ class NetworkRunner:
                         allow_redirects=False,
                         method=request.method,
                         data=request.post_data,
+                        proxy=self.proxy,
                     ) as response:
                         self.urls_through_proxy.add(request.url)
-                        response_body = await self.inject_js_to_spoof_fingerprintable_objects_on_website_server_response(
-                            request, response
-                        )
                         asyncio.create_task(
                             devtools_primary.fulfill_request(
                                 self.web_browser_driver,
                                 pausedRequest.request_id,
                                 response.status,
-                                response_headers=await self.conform_headers_according_to_browser(
-                                    [
-                                        cdp.fetch.HeaderEntry(k, v)
-                                        for k, v in response.headers.items()
-                                    ]
+                                response_headers=(
+                                    (
+                                        await self.conform_headers_according_to_browser(
+                                            [
+                                                cdp.fetch.HeaderEntry(k, v)
+                                                for k, v in request.headers.items()
+                                            ]
+                                        )
+                                    )
+                                    if request.method.lower() not in ["options"]
+                                    else request.headers
                                 ),
-                                body=response_body.encode(),
+                                body=response._body,
                             )
                         )
                         return True
@@ -271,11 +171,17 @@ class NetworkRunner:
                         devtools_primary.continue_request(
                             self.web_browser_driver,
                             pausedRequest.request_id,
-                            headers=await self.conform_headers_according_to_browser(
-                                [
-                                    cdp.fetch.HeaderEntry(k, v)
-                                    for k, v in request.headers.items()
-                                ]
+                            headers=(
+                                (
+                                    await self.conform_headers_according_to_browser(
+                                        [
+                                            cdp.fetch.HeaderEntry(k, v)
+                                            for k, v in request.headers.items()
+                                        ]
+                                    )
+                                )
+                                if request.method.lower() not in ["options"]
+                                else request.headers
                             ),
                         )
                     )
@@ -284,6 +190,10 @@ class NetworkRunner:
                         f"it won't go through proxy, so dud response was generated"
                     )
                 return False
+            except ClientConnectionError as e:
+                print(
+                    f"Bot Process Id {self.bot_process_id} <:::> {request.url} did not connect"
+                )
 
         await self.track_request_size(request)
         if config.PRINT_NETWORK:
@@ -292,29 +202,31 @@ class NetworkRunner:
         await self.inject_referrer_into_header(request)
         if bot_constants.PROXY_WHITELISTED_DOMAINS == "*":
             if utils.url_ends_with(
-                request, bot_constants.PROXY_BLACKLISTED_EXTENSIONS
+                request.url, bot_constants.PROXY_BLACKLISTED_EXTENSIONS
             ) or utils.has_string_in(reqHost, bot_constants.PROXY_BLACKLISTED_DOMAINS):
                 asyncio.create_task(
                     devtools_primary.continue_request(
                         self.web_browser_driver,
                         pausedRequest.request_id,
-                        headers=await self.conform_headers_according_to_browser(
-                            [
-                                cdp.fetch.HeaderEntry(k, v)
-                                for k, v in request.headers.items()
-                            ]
+                        headers=(
+                            (
+                                await self.conform_headers_according_to_browser(
+                                    [
+                                        cdp.fetch.HeaderEntry(k, v)
+                                        for k, v in request.headers.items()
+                                    ]
+                                )
+                            )
+                            if request.method.lower() not in ["options"]
+                            else request.headers
                         ),
                     )
                 )
             else:
                 asyncio.create_task(network_through_proxy())
-        # fetching driver.current_url while a page is loading posed some issues, you can find alternate ways to
-        # implement the check of if current url equates browser active loading url
         elif not (
             (
-                utils.has_string_in(
-                    request.headers, bot_constants.PROXY_WHITELISTED_DOMAINS
-                )
+                utils.has_string_in(reqHost, bot_constants.PROXY_WHITELISTED_DOMAINS)
                 and not utils.url_ends_with(
                     request.url, bot_constants.PROXY_BLACKLISTED_EXTENSIONS
                 )
@@ -327,11 +239,17 @@ class NetworkRunner:
                 devtools_primary.continue_request(
                     self.web_browser_driver,
                     pausedRequest.request_id,
-                    headers=await self.conform_headers_according_to_browser(
-                        [
-                            cdp.fetch.HeaderEntry(k, v)
-                            for k, v in request.headers.items()
-                        ]
+                    headers=(
+                        (
+                            await self.conform_headers_according_to_browser(
+                                [
+                                    cdp.fetch.HeaderEntry(k, v)
+                                    for k, v in request.headers.items()
+                                ]
+                            )
+                        )
+                        if request.method.lower() not in ["options"]
+                        else request.headers
                     ),
                 )
             )

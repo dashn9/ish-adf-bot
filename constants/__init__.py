@@ -1,8 +1,10 @@
+import os
 import configparser
 
 import constants.browser_constants as brc
 import constants.bot_constants as boc
 from constants import config
+
 
 configParser = configparser.ConfigParser()
 configParser.read(boc.FULL_DIRECTORY_PATH + "/config.ini")
@@ -24,6 +26,15 @@ def load_configurations():
         )
         config.DEBUG = options.getboolean("debug", True)
         config.CONTAINERIZED = options.getboolean("containerized", False)
+        config.DATAIMPULSE_RESIDENTIAL_PROXY_CREDENTIALS = {
+            "user": os.environ.get("DATAIMPULSE_RESIDENTIAL_PROXY_USER") or "",
+            "password": os.environ.get("DATAIMPULSE_RESIDENTIAL_PROXY_PASSWORD") or "",
+        }
+
+        config.DATAIMPULSE_MOBILE_PROXY_CREDENTIALS = {
+            "user": os.environ.get("DATAIMPULSE_MOBILE_PROXY_USER") or "",
+            "password": os.environ.get("DATAIMPULSE_MOBILE_PROXY_PASSWORD") or "",
+        }
 
     if "WAIT_CONDITIONS" in configParser:
         options = configParser["OPTIONS"]
