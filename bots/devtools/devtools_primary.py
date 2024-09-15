@@ -56,41 +56,47 @@ async def change_user_agent(
     brand = []
     full_version_list = []
     browser_version = ""
-    if browser == "chrome":
-        browser_version = re.search(r"Chrome/(\d+\.\d+\.\d+\.\d+)", user_agent).group(1)
-        browser_version_fvi = browser_version.split(".")[0]
-        brand = [
+    def get_brands(chromium_version_fvi, chromium_version, browser_version_fvi, browser_version, browser_brand_name = "Google Chrome"):
+        if int(chromium_version) < 128:
+            return [
             {"brand": "Not)A;Brand", "version": "99"},
-            {"brand": "Google Chrome", "version": browser_version_fvi},
-            {"brand": "Chromium", "version": browser_version_fvi},
-        ]
-        full_version_list = [
+            {"brand": browser_brand_name, "version": browser_version},
+            {"brand": "Chromium", "version": chromium_version},
+        ], [
             {"brand": "Not)A;Brand", "version": "99.0.0.0"},
-            {"brand": "Google Chrome", "version": browser_version},
-            {"brand": "Chromium", "version": browser_version},
+            {"brand": browser_brand_name, "version": browser_version_fvi},
+            {"brand": "Chromium", "version": chromium_version_fvi},
         ]
+        else: 
+            return [
+            {"brand": "Chromium", "version": chromium_version},
+            {"brand": "Not;A=Brand", "version": "24"},
+            {"brand": browser_brand_name, "version": browser_version},
+        ],[
+            {"brand": "Chromium", "version": chromium_version_fvi},
+            {"brand": "Not;A=Brand", "version": "24.0.0.0"},
+            {"brand": browser_brand_name, "version": browser_version_fvi},
+        ]
+    if browser == "chrome" and platform["name"] != "iOS":
+        browser_version_fvi = re.search(r"Chrome/(\d+\.\d+\.\d+\.\d+)", user_agent).group(1)
+        browser_version = browser_version_fvi.split(".")[0]
+        brand, full_version_list = get_brands(browser_version_fvi, browser_version, browser_version_fvi, browser_version)
         user_agent = re.sub(
             r"Chrome/(\d+\.\d+\.\d*\.\d+)",  # Matches 1 to 4 parts in the version number
             lambda match: f"Chrome/{utils.normalize_version(match.group(1).split(".")[0])}",
             user_agent,
         )
+        if int(browser_version) >= 110 and platform["name"] == "Android":
+            user_agent = re.sub(r"\(.*?\)", "(Linux; Android 10; K)", user_agent, count=1)
+
     elif browser == "edge":
-        browser_version = re.search(r"Edg/(\d+\.\d+\.\d+\.\d+)", user_agent).group(1)
-        chromium_version = re.search(r"Chrome/(\d+\.\d+\.\d+\.\d+)", user_agent).group(
+        browser_version_fvi = re.search(r"Edg/(\d+\.\d+\.\d+\.\d+)", user_agent).group(1)
+        chromium_version_fvi = re.search(r"Chrome/(\d+\.\d+\.\d+\.\d+)", user_agent).group(
             1
         )
-        chromium_version_fvi = chromium_version.split(".")[0]
-        browser_version_fvi = browser_version.split(".")[0]
-        brand = [
-            {"brand": "Chromium", "version": chromium_version_fvi},
-            {"brand": "Not;A=Brand", "version": "24"},
-            {"brand": "Microsoft Edge", "version": browser_version_fvi},
-        ]
-        full_version_list = [
-            {"brand": "Chromium", "version": chromium_version},
-            {"brand": "Not;A=Brand", "version": "24.0.0.0"},
-            {"brand": "Microsoft Edge", "version": browser_version},
-        ]
+        chromium_version = chromium_version_fvi.split(".")[0]
+        browser_version = browser_version_fvi.split(".")[0]
+        brand, full_version_list = get_brands(chromium_version_fvi, chromium_version, browser_version_fvi, browser_version, "Microsoft Edge")
         user_agent = re.sub(
             r"(Edg|Chrome)/(\d+\.\d+\.\d*\.\d+)",  # Matches 1 to 4 parts in the version number
             lambda match: f"{match.group(1)}/{utils.normalize_version(match.group(2).split(".")[0])}",
@@ -105,6 +111,7 @@ async def change_user_agent(
         platform["architecture"] = ""
         platform["bitness"] = ""
         model = ""
+        browser_version_fvi=None
 
     await web_driver.main_tab.send(
         cdp.emulation.set_user_agent_override(
@@ -124,7 +131,7 @@ async def change_user_agent(
                     cdp.emulation.UserAgentBrandVersion.from_json(full_version)
                     for full_version in full_version_list
                 ],
-                full_version=browser_version,
+                full_version=browser_version_fvi,
                 bitness=platform["bitness"] or "",
                 wow64=False,
             ),

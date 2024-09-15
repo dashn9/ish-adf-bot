@@ -5,7 +5,7 @@ from urllib.parse import urlparse
 
 from nodriver import cdp
 
-from aiohttp_client_cache import CachedSession, SQLiteBackend, CachedResponse
+from aiohttp import ClientSession, ClientResponse
 from aiohttp.client_exceptions import ClientConnectionError, ClientHttpProxyError
 from bots.devtools import devtools_primary
 
@@ -36,20 +36,15 @@ class NetworkRunner:
 
     @asynccontextmanager
     # TODO: Disable caching
-    async def proxy_cached_session(self):
-        async with CachedSession(
-            cache=SQLiteBackend(
-                bot_constants.FULL_DIRECTORY_PATH
-                + "/data/cache/request_cache/proxy_requests_cache"
-            ),
-        ) as session:
+    async def proxy_session(self):
+        async with ClientSession() as session:
             yield session
 
     async def release_proxies(self):
         # release Proxyrack sticky session
         if self.identity.proxy_release_url:
             print(f"Bot Process Id {self.bot_process_id} <:::> Releasing proxy session")
-            async with self.proxy_cached_session() as session:
+            async with self.proxy_session() as session:
                 print(  # add to config,
                     await session.request(
                         url=self.identity.proxy_release_url,
@@ -99,7 +94,7 @@ class NetworkRunner:
             self.cached_response_size += len(response.body or "") / 1024
 
     async def response_interceptor(
-        self, request: cdp.network.Request, response: CachedResponse
+        self, request: cdp.network.Request, response: ClientResponse
     ):
         self.track_response_size(request, response)
         if config.PRINT_NETWORK:
@@ -112,7 +107,10 @@ class NetworkRunner:
 
     async def conform_headers_according_to_browser(self, headers: list):
         # If identity browser is not chromium
-        if self.identity.browser_name not in ["edge", "chrome"]:
+        if (
+            self.identity.browser_name not in ["edge", "chrome"]
+            or self.identity.os == "iOS"
+        ):
             return await self.strip_chromium_headers(headers)
         return headers
 
@@ -129,7 +127,7 @@ class NetworkRunner:
                 f"Bot Process Id {self.bot_process_id} <:::> {request.url} is passing through the proxy"
             )
             try:
-                async with self.proxy_cached_session() as session:
+                async with self.proxy_session() as session:
                     async with session.request(
                         url=request.url,
                         headers=request.headers,
@@ -156,7 +154,7 @@ class NetworkRunner:
                                     if request.method.lower() not in ["options"]
                                     else request.headers
                                 ),
-                                body=response._body,
+                                body=(await response.read()),
                             )
                         )
                         return True
@@ -170,11 +168,11 @@ class NetworkRunner:
                 # fix against ip leaks
                 if generate_empty_response_on_fail and retries < 1:
                     await asyncio.sleep(0.5)
-                    return network_through_proxy(retries=retries + 1)
+                    asyncio.create_task(network_through_proxy(retries=retries + 1))
                 else:
                     asyncio.create_task(
                         devtools_primary.fail_request(
-                            request_id=pausedRequest.request_id
+                            self.web_browser_driver, request_id=pausedRequest.request_id
                         )
                     )
                     print(

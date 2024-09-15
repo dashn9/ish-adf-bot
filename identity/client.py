@@ -189,6 +189,8 @@ class Identity:
         await self.resolve_identity_from_cloud(method, method_value)
         await self.add_credentials_to_proxy_url()
         ua_os_version = self.platform.get("version", None) or self.os_version
+        if self.os == "Android":
+            ua_os_version = self.os_version
         self.user_agent = self.user_agent or await self.form_user_agent(
             self.os,
             ua_os_version,
@@ -328,7 +330,7 @@ class Identity:
             dict(url=url, name="fontHeightOffset", value=self.font_fp_offset[0]),
             dict(url=url, name="fontWidthOffset", value=self.font_fp_offset[1]),
             dict(url=url, name="hasBattery", value=self.has_battery),
-            dict(url=url, name="browser", value=self.browser_name),
+            dict(url=url, name="browser", value=browser_name),
             dict(url=url, name="webglValueIndexSeed", value=self.webgl_fp_offset[0]),
             dict(url=url, name="webglValueOffset", value=self.webgl_fp_offset[1]),
             dict(
