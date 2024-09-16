@@ -189,38 +189,17 @@ class NetworkRunner:
         if config.PRINT_NETWORK:
             print(f"Request url: {request.url}[{request.method}]")
             await self.print_total_usage()
+
+        request_first_mime = request.headers.get("Accept", "*/*").split(",")[0]
         await self.inject_referrer_into_header(request)
-        if bot_constants.PROXY_WHITELISTED_DOMAINS == "*":
-            if utils.url_ends_with(
-                request.url, bot_constants.PROXY_BLACKLISTED_EXTENSIONS
-            ) or utils.has_string_in(reqHost, bot_constants.PROXY_BLACKLISTED_DOMAINS):
-                asyncio.create_task(
-                    devtools_primary.continue_request(
-                        self.web_browser_driver,
-                        pausedRequest.request_id,
-                        headers=(
-                            (
-                                await self.conform_headers_according_to_browser(
-                                    [
-                                        cdp.fetch.HeaderEntry(k, v)
-                                        for k, v in request.headers.items()
-                                    ]
-                                )
-                            )
-                            if request.method.lower() not in ["options"]
-                            else request.headers
-                        ),
-                    )
-                )
-            else:
-                asyncio.create_task(network_through_proxy())
-        elif (
-            utils.has_string_in(reqHost, bot_constants.PROXY_WHITELISTED_DOMAINS)
-            and not utils.url_ends_with(
-                request.url, bot_constants.PROXY_BLACKLISTED_EXTENSIONS
-            )
-            and not utils.has_string_in(
-                reqHost, bot_constants.PROXY_BLACKLISTED_DOMAINS
+        if (
+            bot_constants.PROXY_WHITELISTED_DOMAINS == "*"
+            or utils.has_string_in(reqHost, bot_constants.PROXY_WHITELISTED_DOMAINS)
+        ) and not (
+            utils.url_ends_with(request.url, bot_constants.PROXY_BLACKLISTED_EXTENSIONS)
+            or utils.has_string_in(reqHost, bot_constants.PROXY_BLACKLISTED_DOMAINS)
+            or not utils.has_string_in(
+                request_first_mime, bot_constants.PROXY_WHITELISTED_MIMES
             )
         ):
             asyncio.create_task(network_through_proxy())

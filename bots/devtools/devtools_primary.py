@@ -213,7 +213,7 @@ async def fulfill_request(
 async def fail_request(
         web_driver: Browser,
         request_id: str,
-        error_reason: cdp.network.ErrorReason.CONNECTION_ABORTED
+        error_reason = cdp.network.ErrorReason.CONNECTION_ABORTED
 ):
     await web_driver.connection.send(cdp.fetch.fail_request(request_id, error_reason))
 

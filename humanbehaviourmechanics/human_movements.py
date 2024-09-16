@@ -611,7 +611,7 @@ class HumanMovements:
         )
 
     async def click_trigger(self, x_coord=50, y_coord=50, device_type="computer"):
-        if device_type == "is_smartphone":
+        if device_type == "smartphone":
             self.human_movements.touch.tap(x_coord, y_coord)
             return True
         elif device_type == "computer":

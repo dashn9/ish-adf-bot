@@ -67,10 +67,11 @@ class SmartAdsInteractions:
         if not hasattr(self, "track_vignette_close"):
             self.track_vignette_close = 1
         # Smart reader calls this function after each read loop, and searching for elements is expensive, hence this
+        # Seperate the The count before checking into config, i reduced it to 1, because I can now afford it as i'm running a cluster now :-)
         if (
             self.ad_to_click != "vignette"
             and self.vignette_ad_close
-            and self.track_vignette_close >= 3
+            and self.track_vignette_close >= 1
         ):
             await self.trigger_vignette()
             self.track_vignette_close = 0
@@ -143,19 +144,17 @@ class SmartAdsInteractions:
         if ad_click_success and switch_focus_to_new_tab:
             await asyncio.sleep(1)
             self.web_browser_driver.switch_to.window(self.web_browser_driver.tabs[-1])
-        if self.device_type == "is_smartphone":
+        if self.device_type == "smartphone":
             self.activate_mobile()
         return ad_click_success
         # print(f"Bot Process Id {self.bot_process_id} <:::> No ads found, Try again")
 
     async def locate_ad_elements_in_iframe(self, ads_elements_selector):
         async def iframe_check():
-            # Temporarily not using until can debug properly
-            return
             iframe = await self.web_browser_driver.main_tab.select("iframe")
             if not iframe:
                 return
-            if self.device_type == "is_smartphone":
+            if self.device_type == "smartphone":
                 iframe_offset = await self.get_element_location_window_offset(iframe)
             else:
                 iframe_offset = (await self.get_element_location_screen_offset(iframe))[
@@ -167,7 +166,7 @@ class SmartAdsInteractions:
             ads_elements_rect = []
             for ad_element in ads_elements:
                 rect = ad_element.rect.copy()
-                if self.device_type == "is_smartphone":
+                if self.device_type == "smartphone":
                     rect["x"] = iframe_offset["x_offset"] + rect["x"]
                     rect["y"] = iframe_offset["y_offset"] + rect["y"]
                 else:
@@ -219,7 +218,7 @@ class SmartAdsInteractions:
                 previous_mouse_pos[0], previous_mouse_pos[1]
             )
             return True
-        elif self.device_type == "is_smartphone":
+        elif self.device_type == "smartphone":
             self.touch.tap(
                 ad_dimensions["x"] + random.uniform(0, ad_dimensions["width"]),
                 ad_dimensions["y"] + random.uniform(0, ad_dimensions["height"]),
