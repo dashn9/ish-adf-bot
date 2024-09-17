@@ -59,7 +59,7 @@ class BrowserInterface:
         return: Return True On Success
         """
         try:
-            await self.web_browser_driver.main_tab.evaluate(f"window.open();", await_promise=True)
+            await self.active_tab.evaluate(f"window.open();", await_promise=True)
             self.web_browser_driver.switch_to.window(self.web_browser_driver.tabs[-1])
             if url:
                 self.web_browser_driver.get(url)
@@ -102,13 +102,13 @@ class BrowserInterface:
         return False
 
     async def get_browser_window_body_size(self):
-        return dict(width=await self.web_browser_driver.main_tab.evaluate("document.body.getBoundingClientRect().width", await_promise=True),
-                    height=await self.web_browser_driver.main_tab.evaluate(
+        return dict(width=await self.active_tab.evaluate("document.body.getBoundingClientRect().width", await_promise=True),
+                    height=await self.active_tab.evaluate(
                         "document.body.getBoundingClientRect().height", await_promise=True))
 
     async def get_browser_inner_size(self):
-        return dict(width=await self.web_browser_driver.main_tab.evaluate("window.innerWidth", await_promise=True),
-                    height=await self.web_browser_driver.main_tab.evaluate("window.innerHeight", await_promise=True))
+        return dict(width=await self.active_tab.evaluate("window.innerWidth", await_promise=True),
+                    height=await self.active_tab.evaluate("window.innerHeight", await_promise=True))
 
     async def get_scroll_bar_coordinates(self, relative_to=0):
         """
@@ -125,11 +125,11 @@ class BrowserInterface:
             return False
 
         # Fetch Browser Document Inner Offset
-        window_page_y_offset = await self.web_browser_driver.main_tab.evaluate("window.pageYOffset")
+        window_page_y_offset = await self.active_tab.evaluate("window.pageYOffset")
         window_page_y_offset = 1 if window_page_y_offset <= 0 else window_page_y_offset
 
-        browser_outer_size = dict(width=await self.web_browser_driver.main_tab.evaluate("window.outerWidth", await_promise=True),
-                                  height=await self.web_browser_driver.main_tab.evaluate("window.outerHeight", await_promise=True))
+        browser_outer_size = dict(width=await self.active_tab.evaluate("window.outerWidth", await_promise=True),
+                                  height=await self.active_tab.evaluate("window.outerHeight", await_promise=True))
 
         scroll_bar_x_position = browser_window_body_size.get("width")
         scroll_bar_y_position = utils.fetch_percentage_value(
@@ -151,7 +151,7 @@ class BrowserInterface:
 
         # Bound To Screen
         if relative_to == 2:
-            browser_rect = self.web_browser_driver.main_tab.get_window()
+            browser_rect = self.active_tab.get_window()
             return {
                 "x_pos": scroll_bar_x_position + browser_rect.get("x") +
                          (browser_outer_size.get("width") - browser_inner_size.get("width")),
@@ -162,7 +162,7 @@ class BrowserInterface:
             }
         # Bound To Browser Window
         elif relative_to == 1:
-            browser_rect = await self.web_browser_driver.main_tab.get_window()
+            browser_rect = await self.active_tab.get_window()
             return {
                 "x_pos": scroll_bar_x_position + (browser_outer_size.get("width") - browser_inner_size.get("width")),
                 "y_pos": scroll_bar_y_position + (browser_outer_size.get("height") - browser_inner_size.get("height")),
@@ -191,7 +191,7 @@ class BrowserInterface:
 
         document_offset_from_screen = await self.get_document_offset_from_screen()
 
-        browser_window_rect = (await self.web_browser_driver.main_tab.get_window())[1]
+        browser_window_rect = (await self.active_tab.get_window())[1]
 
         web_element_x_offset = web_element_location_dimensions.x + document_offset_from_screen['x']
         web_element_y_offset = web_element_location_dimensions.y + document_offset_from_screen['y']
@@ -209,7 +209,7 @@ class BrowserInterface:
         :return: A dictionary holding document dimensions
         """
         browser_inner_size = await self.get_browser_inner_size()
-        browser_window_rect = (await self.web_browser_driver.main_tab.get_window())[1]
+        browser_window_rect = (await self.active_tab.get_window())[1]
         # In the case of mobile devices, the browser inner size could potentially be larger than it's window size
         # It helps with y but not with x
         return dict(y=browser_window_rect.top + max((browser_window_rect.height - browser_inner_size["height"]), 0),
@@ -232,11 +232,11 @@ class BrowserInterface:
         return {"x_offset": web_element_x_offset, "y_offset": web_element_y_offset, "bottom": web_element_bottom}
 
     async def get_window_document_offsets(self):
-        return {"y_offset": await self.web_browser_driver.main_tab.evaluate("window.pageYOffset", await_promise=True),
-                "x_offset": await self.web_browser_driver.main_tab.evaluate("window.pageXOffset", await_promise=True)}
+        return {"y_offset": await self.active_tab.evaluate("window.pageYOffset", await_promise=True),
+                "x_offset": await self.active_tab.evaluate("window.pageXOffset", await_promise=True)}
 
     async def bring_window_to_front(self):
-        await self.web_browser_driver.main_tab.bring_to_front()
+        await self.active_tab.bring_to_front()
 
     async def revert_to_active_page(self, recurse=False, time_interval_to_check=0.4):
         """
@@ -245,15 +245,14 @@ class BrowserInterface:
         :return: True if page changed, else false
         """
         await asyncio.sleep (time_interval_to_check)
-        # Switch to the new window and capture its handle
         if self.current_tab_length != len(self.web_browser_driver.tabs):
-            self.web_browser_driver.main_tab.activate()
+            await self.active_tab.activate()
             self.current_tab_length = len(self.web_browser_driver.tabs)
             if recurse:
-                self.revert_to_active_page(recurse, time_interval_to_check)
+                await self.revert_to_active_page(recurse, time_interval_to_check)
             return True
         if recurse:
-            self.revert_to_active_page(recurse, time_interval_to_check)
+            await self.revert_to_active_page(recurse, time_interval_to_check)
         return False
 
     async def activate_mobile(self, target_tab: Tab):
@@ -338,23 +337,23 @@ class BrowserInterface:
             self.web_browser_driver = await uc.start(
                 headless=False,
                 config=browser_config)
-            
+            self.active_tab = self.web_browser_driver.main_tab
             if open_browser_in_full_screen:
                 if random.random() <= browser_constants.FULLSCREEN_PROBABILITY:
-                    await self.web_browser_driver.main_tab.set_window_state(0, 0, *window_size, state="fullscreen")
+                    await self.active_tab.set_window_state(0, 0, *window_size, state="fullscreen")
                 else:
                     if not config.CONTAINERIZED:
-                        await self.web_browser_driver.main_tab.set_window_state(0, 0, *window_size, state="maximized")
+                        await self.active_tab.set_window_state(0, 0, *window_size, state="maximized")
                     else:
                         # Fixes the one pixel deficiency in the container application
-                        await self.web_browser_driver.main_tab.set_window_state(0, 0, *window_size, state="fullscreen")
-                        await self.web_browser_driver.main_tab.set_window_state(0, 0, *window_size, state="maximized")
+                        await self.active_tab.set_window_state(0, 0, *window_size, state="fullscreen")
+                        await self.active_tab.set_window_state(0, 0, *window_size, state="maximized")
             else:
-                await self.web_browser_driver.main_tab.set_window_state(0, 0, *window_size)
+                await self.active_tab.set_window_state(0, 0, *window_size)
 
         print(f"Bot Process Id {self.bot_process_id} <:::> Web Browser Opened")
-        await self.preliminary_tab_activation(self.web_browser_driver.main_tab)
-        self.preliminary_activated_tabs.add(self.web_browser_driver.main_tab.target.target_id)
+        await self.preliminary_tab_activation(self.active_tab)
+        self.preliminary_activated_tabs.add(self.active_tab.target.target_id)
         await devtools_primary.listen_to_tab_creation(self.web_browser_driver.connection, self._handle_new_tab_creation)
         await devtools_primary.set_all_cookies(self.web_browser_driver, await self.identity.fetch_identity_cookies_info_for_extension())
         # give browser time to settle
@@ -362,8 +361,10 @@ class BrowserInterface:
         asyncio.create_task(self.quit_browser_after_max_alive())
 
     async def _handle_new_tab_creation(self, new_tab):
-        """This function is reasonably effective, however when there is a lot of traffic going to the client(most likely a page making a lot of network requests), 
-        This function looses effectiveness albeit not completely
+        """This function is reasonably effective, however when there is a lot of traffic going to the client(most likely a page making a lot of network requests, or devtools input bombarding the browser(which is normal)), 
+        This function looses effectiveness albeit not completely.
+
+        A possible solution would be to suspend all cdp operations for a while giving time for prelimary_tab_activation to complete
 
         Args:
             new_tab (_type_): _description_

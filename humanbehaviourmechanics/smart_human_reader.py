@@ -245,9 +245,7 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
         :return: Returns Amount Of Seconds To Read Content For
         """
         if not html_web_element_to_read:
-            html_web_element_to_read = self.web_browser_driver.main_tab.select(
-                "article"
-            )
+            html_web_element_to_read = self.active_tab.select("article")
 
         all_element_words = html_web_element_to_read.text_all.split()
         words_len = len(all_element_words)

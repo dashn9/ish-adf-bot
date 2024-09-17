@@ -15,12 +15,12 @@ from bots import utils
 
 class HumanMovements:
     def __init__(self):
-        self._keyboard = Keyboard(self.web_browser_driver)
+        self._keyboard = Keyboard(self)
         pyautogui.FAILSAFE = False
         self._touch = None
         if self.has_touch:
-            self._touch = Touchscreen(self.web_browser_driver, self._keyboard)
-        self._mouse = Mouse(self.web_browser_driver, self._keyboard)
+            self._touch = Touchscreen(self, self._keyboard)
+        self._mouse = Mouse(self, self._keyboard)
         self.last_document_offsets = [0, 0]
         # No of clicks that could happen at the beginning of a scroll or touch scroll
         self.no_of_clicks = 0
@@ -29,20 +29,20 @@ class HumanMovements:
 
     @property
     def keyboard(self):
-        if self._keyboard and self._keyboard.web_browser_driver is None:
-            self._keyboard.web_browser_driver = self.web_browser_driver
+        if self._keyboard and self._keyboard.webbot is None:
+            self._keyboard.webbot = self
         return self._keyboard
 
     @property
     def mouse(self):
-        if self._mouse and self._mouse.web_browser_driver is None:
-            self._mouse.web_browser_driver = self.web_browser_driver
+        if self._mouse and self._mouse.webbot is None:
+            self._mouse.webbot = self
         return self._mouse
 
     @property
     def touch(self):
-        if self._touch and self._touch.web_browser_driver is None:
-            self._touch.web_browser_driver = self.web_browser_driver
+        if self._touch and self._touch.webbot is None:
+            self._touch.webbot = self
         return self._touch
 
     @staticmethod
@@ -192,7 +192,7 @@ class HumanMovements:
         self, html_web_element, percentage_to_scroll_to, time_to_sleep=1
     ):
         async def has_page_offset_changed():
-            document_offsets = self.get_window_document_offsets()
+            document_offsets = await self.get_window_document_offsets()
             document_offsets = [
                 document_offsets["x_offset"],
                 document_offsets["y_offset"],
@@ -288,7 +288,7 @@ class HumanMovements:
 
         # Element Height - Browser Window Makes It Possible To Eject Browser Dimensions From Calculations
         workable_height = (await html_web_element.get_position()).width - (
-            await self.web_browser_driver.main_tab.get_window()
+            await self.active_tab.get_window()
         )[1].height
 
         offset_to_adjust_to = utils.fetch_percentage_value(
@@ -461,7 +461,6 @@ class HumanMovements:
             (x_start, y_start), (x_end, y_end), duration
         )
         await self.smart_click_trigger((x_start, y_start), self.device_type)
-        await self.revert_to_active_page()
 
     async def scroll_element_into_vertical_view(
         self,
@@ -612,7 +611,7 @@ class HumanMovements:
 
     async def click_trigger(self, x_coord=50, y_coord=50, device_type="computer"):
         if device_type == "smartphone":
-            self.human_movements.touch.tap(x_coord, y_coord)
+            await self.touch.tap(x_coord, y_coord)
             return True
         elif device_type == "computer":
             pyautogui.click()
@@ -630,10 +629,12 @@ class HumanMovements:
                     self.probability_of_click, 15
                 )
                 self.no_of_clicks -= 1
-                self.click_trigger(coordinates[0], coordinates[1], device_type)
+                await self.click_trigger(coordinates[0], coordinates[1], device_type)
                 print(
                     f"Bot Process Id {self.bot_process_id} <:::> Click was triggered successfully"
                 )
+                asyncio.sleep(0.4)
+                await self.revert_to_active_page()
                 return True
             else:
                 self.probability_of_click += utils.fetch_percentage_value(

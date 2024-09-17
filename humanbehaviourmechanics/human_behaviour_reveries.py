@@ -105,14 +105,14 @@ class HumanBehaviourReveries:
                     self.get_element_location_window_offset(link_to_follow)
                 )
                 # Do click continually until page remained unchanged after click
-                self.touch.tap(
+                await self.touch.tap(
                     element_location_and_dimensions["x_offset"]
                     + random.uniform(0, link_to_follow.rect["width"]),
                     element_location_and_dimensions["y_offset"]
                     + random.uniform(0, link_to_follow.rect["height"]),
                 )
                 while self.revert_to_active_page():
-                    self.touch.tap(
+                    await self.touch.tap(
                         element_location_and_dimensions["x_offset"]
                         + random.uniform(0, link_to_follow.rect["width"]),
                         element_location_and_dimensions["y_offset"]

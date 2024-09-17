@@ -144,16 +144,14 @@ class SmartAdsInteractions:
         if ad_click_success and switch_focus_to_new_tab:
             await asyncio.sleep(1)
             self.web_browser_driver.tabs[-1].activate()
-            print("checking the main tab", self.web_browser_driver.main_tab)
+            print("checking the main tab", self.active_tab)
         return ad_click_success
         # print(f"Bot Process Id {self.bot_process_id} <:::> No ads found, Try again")
 
     async def locate_ad_elements_in_iframe(self, ads_elements_selector):
         async def iframe_check():
             try:
-                iframe = await self.web_browser_driver.main_tab.select(
-                    "iframe", timeout=2
-                )
+                iframe = await self.active_tab.select("iframe", timeout=2)
             # Iframe not found
             except asyncio.TimeoutError:
                 return
@@ -222,7 +220,7 @@ class SmartAdsInteractions:
             )
             return True
         elif self.device_type == "smartphone":
-            self.touch.tap(
+            await self.touch.tap(
                 ad_dimensions["x"] + random.uniform(0, ad_dimensions["width"]),
                 ad_dimensions["y"] + random.uniform(0, ad_dimensions["height"]),
             )

@@ -77,19 +77,17 @@ async def run_bot(
                 await web_bot.move_mouse_to_random_area_on_document()
             if (
                 await web_bot.read_element_content(
-                    await web_bot.web_browser_driver.main_tab.select(
-                        page_info["page_content_element"]
-                    )
+                    await web_bot.active_tab.select(page_info["page_content_element"])
                 )
                 == "ad_clicked"
             ):
                 await asyncio.sleep(random.uniform(0.7, 1.5))
-                body_element = web_bot.web_browser_driver.main_tab.select("body", 4)
+                body_element = web_bot.active_tab.select("body", 4)
                 await web_bot.read_element_content(body_element)
                 while random.random() < identity.page_depth:
                     web_bot.time_activated = time.time()
                     web_bot.open_link_in_elements([body_element])
-                    body_element = web_bot.web_browser_driver.main_tab.select("body", 4)
+                    body_element = web_bot.active_tab.select("body", 4)
                     web_bot.read_element_content(body_element)
                 # print(
                 #     "Body Element Of The Ad Page Could Not Be Found Or Not Loaded On Time"
@@ -102,15 +100,13 @@ async def run_bot(
                         web_bot.time_activated = time.time()
                         web_bot.no_of_clicks = page_info.get("page_clicks")
                         web_bot.open_link_in_elements(
-                            web_bot.web_browser_driver.main_tab.select_all(
+                            web_bot.active_tab.select_all(
                                 page_info["related_articles_elements"]
                             )
                         )
 
                         web_bot.read_element_content(
-                            web_bot.web_browser_driver.main_tab.select(
-                                page_info["page_content_element"]
-                            )
+                            web_bot.active_tab.select(page_info["page_content_element"])
                         )
                         identity.page_depth = identity.page_depth / 2
             if web_bot.identity.device_type == "computer":
