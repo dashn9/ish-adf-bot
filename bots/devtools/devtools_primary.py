@@ -2,17 +2,17 @@ import base64
 import re
 
 from typing import Callable, Optional, List, Dict
-from nodriver import Browser, cdp
+from nodriver import Tab, cdp
 
 from .. import utils
 
 
-async def simulate_screen(    web_driver: Browser, device_metrics: dict = {
+async def simulate_screen(tab: Tab, device_metrics: dict = {
         "width": 1366,
         "height": 768, "device_scale_factor": 2,
         "mobile": False
         }):
-    await web_driver.main_tab.send(cdp.emulation.set_device_metrics_override(
+    await tab.send(cdp.emulation.set_device_metrics_override(
         position_x=0,
         position_y=0,
         width=device_metrics['width'], 
@@ -22,24 +22,28 @@ async def simulate_screen(    web_driver: Browser, device_metrics: dict = {
         ))
     
 async def activate_mobile(
-    web_driver: Browser, device_metrics: dict = {
+    tab: Tab, device_metrics: dict = {
         "width": 1366,
         "height": 768, "device_scale_factor": 2,
         "mobile": False
         }, 
     max_touch_points=5
 ):
-    await simulate_screen(web_driver, device_metrics)
-    await web_driver.main_tab.send(cdp.emulation.set_touch_emulation_enabled(enabled=True, max_touch_points=max_touch_points))
-    await web_driver.main_tab.send(cdp.emulation.set_emit_touch_events_for_mouse(enabled=True))
+    await simulate_screen(tab, device_metrics)
+    await tab.send(cdp.emulation.set_touch_emulation_enabled(enabled=True, max_touch_points=max_touch_points))
+    await tab.send(cdp.emulation.set_emit_touch_events_for_mouse(enabled=True))
 
+async def listen_to_tab_creation(
+        browser, tab_creation_callback: Callable[[cdp.fetch.RequestPaused], bool]
+):
+    browser.add_handler(cdp.target.TargetCreated, tab_creation_callback)
 
-async def activate_all_focus(web_driver: Browser):
-    await web_driver.main_tab.send(cdp.emulation.set_focus_emulation_enabled(True))
+async def activate_all_focus(tab: Tab):
+    await tab.send(cdp.emulation.set_focus_emulation_enabled(True))
 
 
 async def change_user_agent(
-    web_driver: Browser,
+    tab: Tab,
     user_agent,
     platform={
         "architecture": "",
@@ -113,7 +117,7 @@ async def change_user_agent(
         model = ""
         browser_version_fvi=None
 
-    await web_driver.main_tab.send(
+    await tab.send(
         cdp.emulation.set_user_agent_override(
             user_agent=user_agent,
             accept_language=",".join(language),
@@ -137,40 +141,40 @@ async def change_user_agent(
             ),
         )
     )
-    await web_driver.main_tab.send(cdp.emulation.set_locale_override(language[0]))
+    await tab.send(cdp.emulation.set_locale_override(language[0]))
 
 
-async def set_hardware_concurrency(web_driver: Browser, hc=4):
-    await web_driver.main_tab.send(cdp.emulation.set_hardware_concurrency_override(hc))
+async def set_hardware_concurrency(tab: Tab, hc=4):
+    await tab.send(cdp.emulation.set_hardware_concurrency_override(hc))
 
 
-async def set_timezone(web_driver: Browser, timezone="Etc/GMT"):
-    await web_driver.main_tab.send(cdp.emulation.set_timezone_override(timezone))
+async def set_timezone(tab: Tab, timezone="Etc/GMT"):
+    await tab.send(cdp.emulation.set_timezone_override(timezone))
 
 
-async def get_all_cookies(web_driver: Browser, with_local_storage=True):
-    return await web_driver.cookies.get_all()
+async def get_all_cookies(tab: Tab, with_local_storage=True):
+    return await tab.cookies.get_all()
 
 
-async def clear_all_cookies(web_driver: Browser):
-    await web_driver.cookies.clear()
+async def clear_all_cookies(tab: Tab):
+    await tab.cookies.clear()
 
 
-async def enable_network_interception(web_driver: Browser):
-    await web_driver.main_tab.send(cdp.fetch.enable())
+async def enable_network_interception(tab: Tab):
+    await tab.send(cdp.fetch.enable())
 
 
-async def disable_network_interception(web_driver: Browser):
-    await web_driver.main_tab.send(cdp.fetch.disable())
+async def disable_network_interception(tab: Tab):
+    await tab.send(cdp.fetch.disable())
 
 async def add_request_interception(
-    web_driver: Browser, req_fufiller: Callable[[cdp.fetch.RequestPaused], bool]
+    tab: Tab, req_fufiller: Callable[[cdp.fetch.RequestPaused], bool]
 ):
-    web_driver.main_tab.add_handler(cdp.fetch.RequestPaused, req_fufiller)
+    tab.add_handler(cdp.fetch.RequestPaused, req_fufiller)
 
 
 async def continue_request(
-    web_driver: Browser,
+    tab: Tab,
     request_id: str,
     frame_id: cdp.page.FrameId,
     url: Optional[str] = None,
@@ -179,9 +183,7 @@ async def continue_request(
     headers: Optional[List[Dict[str, str]]] = None,
     intercept_response: Optional[bool] = None,
 ):
-    tab = None
-    print(frame_id, request_id)
-    await web_driver.main_tab.send(
+    await tab.send(
         cdp.fetch.continue_request(
             request_id=request_id,
             url=url,
@@ -194,7 +196,7 @@ async def continue_request(
 
 
 async def fulfill_request(
-    web_driver: Browser,
+    tab: Tab,
     request_id: str,
     frame_id: cdp.page.FrameId,
     response_code: int,
@@ -203,8 +205,7 @@ async def fulfill_request(
     body: Optional[str] = None,
     response_phrase: Optional[str] = None,
 ):
-    print(frame_id, request_id)
-    await web_driver.main_tab.send(
+    await tab.send(
         cdp.fetch.fulfill_request(
             request_id=request_id,
             response_code=response_code,
@@ -216,12 +217,12 @@ async def fulfill_request(
     )
 
 async def fail_request(
-        web_driver: Browser,
+        tab: Tab,
         request_id: str,
         frame_id: cdp.page.FrameId, 
         error_reason = cdp.network.ErrorReason.CONNECTION_ABORTED
 ):
-    await web_driver.main_tab.send(cdp.fetch.fail_request(request_id, error_reason))
+    await tab.send(cdp.fetch.fail_request(request_id, error_reason))
 
-async def set_all_cookies(web_driver: Browser, cookies):
-    await web_driver.connection.send(cdp.storage.set_cookies([cdp.network.CookieParam.from_json(cookie) for cookie in cookies]))
+async def set_all_cookies(tab: Tab, cookies):
+    await tab.connection.send(cdp.storage.set_cookies([cdp.network.CookieParam.from_json(cookie) for cookie in cookies]))

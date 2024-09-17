@@ -7,7 +7,7 @@ import tempfile
 from functools import reduce
 from threading import Thread
 
-from nodriver import Element as WebElement
+from nodriver import Element as WebElement, Tab
 import nodriver as uc
 
 from bots import utils
@@ -43,6 +43,8 @@ class BrowserInterface:
         self.cookies_update_callback = cookies_update_callback
         self.identity_id = identity_id
         self.dom_storage = None
+        self.preliminary_activated_tabs = set()
+        self.active_tab = None
 
     async def update_cookies_to_cloud(self):
         if self.cookies_update_callback:
@@ -236,41 +238,31 @@ class BrowserInterface:
     async def bring_window_to_front(self):
         await self.web_browser_driver.main_tab.bring_to_front()
 
-    async def revert_to_main_page(self, recurse=False, time_interval_to_check=0.4):
+    async def revert_to_active_page(self, recurse=False, time_interval_to_check=0.4):
         """
         Returns page to main if changed
         :param time_interval_to_check: number of seconds to wait for before checking, set to zero if wanted instantly
         :return: True if page changed, else false
         """
         await asyncio.sleep (time_interval_to_check)
-        print(self.web_browser_driver.tabs)
         # Switch to the new window and capture its handle
         if self.current_tab_length != len(self.web_browser_driver.tabs):
-            self.web_browser_driver.switch_to.window(self.web_browser_driver.current_window_handle)
+            self.web_browser_driver.main_tab.activate()
             self.current_tab_length = len(self.web_browser_driver.tabs)
             if recurse:
-                self.revert_to_main_page(recurse, time_interval_to_check)
+                self.revert_to_active_page(recurse, time_interval_to_check)
             return True
         if recurse:
-            self.revert_to_main_page(recurse, time_interval_to_check)
+            self.revert_to_active_page(recurse, time_interval_to_check)
         return False
 
-    async def activate_mobile(self):
-        await devtools_primary.activate_mobile(self.web_browser_driver,
+    async def activate_mobile(self, target_tab: Tab):
+        await devtools_primary.activate_mobile(target_tab,
                                          {"width": self.screen_width,
                                           "height": self.screen_height, "device_scale_factor":
                                               self.device_pixel_ratio, "screen_orientation":
                                               {"type": "portrait_primary", "angle": 0},
                                           "mobile": True})
-
-    async def revert_to_main_page_if_ever_changed(self):
-        """
-        Create Thread object to constantly check if page changed
-        :return: Thread object
-        """
-        t = Thread(target=self.revert_to_main_page, args=(True,))
-        t.daemon = True
-        return t.start()
 
     async def fetch_all_cookies(self):
         cookies = await devtools_primary.get_all_cookies(self.web_browser_driver)
@@ -361,30 +353,49 @@ class BrowserInterface:
                 await self.web_browser_driver.main_tab.set_window_state(0, 0, *window_size)
 
         print(f"Bot Process Id {self.bot_process_id} <:::> Web Browser Opened")
+        await self.preliminary_tab_activation(self.web_browser_driver.main_tab)
+        self.preliminary_activated_tabs.add(self.web_browser_driver.main_tab.target.target_id)
+        await devtools_primary.listen_to_tab_creation(self.web_browser_driver.connection, self._handle_new_tab_creation)
+        await devtools_primary.set_all_cookies(self.web_browser_driver, await self.identity.fetch_identity_cookies_info_for_extension())
+        # give browser time to settle
+        await asyncio.sleep(4)
+        asyncio.create_task(self.quit_browser_after_max_alive())
+
+    async def _handle_new_tab_creation(self, new_tab):
+        """This function is reasonably effective, however when there is a lot of traffic going to the client(most likely a page making a lot of network requests), 
+        This function looses effectiveness albeit not completely
+
+        Args:
+            new_tab (_type_): _description_
+        """
+        for tab in self.web_browser_driver.tabs:
+            target_id = tab.target.target_id
+            if target_id not in self.preliminary_activated_tabs:
+                await self.preliminary_tab_activation(tab)
+                self.preliminary_activated_tabs.add(target_id)
+
+    async def preliminary_tab_activation(self, target_tab: Tab):
         print(f"Bot Process Id {self.bot_process_id} <:::> Activating Browser Based On Device Type")
         # If device to emulate is a smartphone, set chrome to mobile mode
         if self.device_type == "smartphone":
             print(f"Bot Process Id {self.bot_process_id} <:::> Device Name:", self.hardware)
-            await self.activate_mobile()
+            await self.activate_mobile(target_tab)
         print(f"Bot Process Id {self.bot_process_id} <:::> Setting Page To Always Be In Focus")
         print(f"Bot Process Id {self.bot_process_id} <:::> Setting Timezone From Identity")
 
-        # Delete existing cookies
-        await devtools_primary.clear_all_cookies(self.web_browser_driver)
-        await devtools_primary.set_hardware_concurrency(self.web_browser_driver, self.hardware_concurrency)
+        await devtools_primary.set_hardware_concurrency(target_tab, self.hardware_concurrency)
         # Set Timezone
-        await devtools_primary.set_timezone(self.web_browser_driver, self.timezone_id)
+        await devtools_primary.set_timezone(target_tab, self.timezone_id)
         # If identity has a user agent, change browser user agent to identity's
         if self.user_agent:
             print(
                 f"Bot Process Id {self.bot_process_id} <:::> Setting User Agent: {self.user_agent} From Identity")
             await devtools_primary.change_user_agent(
-                self.web_browser_driver,
+                target_tab,
                 self.user_agent, self.platform, self.languages, self.identity.browser_name, self.identity.device_type == "smartphone", self.identity.device_model)
 
-        await devtools_primary.enable_network_interception(self.web_browser_driver)
-        await devtools_primary.add_request_interception(self.web_browser_driver, self.request_interceptor)
-        await devtools_primary.set_all_cookies(self.web_browser_driver, await self.identity.fetch_identity_cookies_info_for_extension())
-        # give browser time to settle
-        await asyncio.sleep(4)
-        asyncio.create_task(self.quit_browser_after_max_alive())
+        await self.add_network_interception_to_tab(target_tab)
+
+    async def add_network_interception_to_tab(self, target_tab: Tab):
+        await devtools_primary.enable_network_interception(target_tab)
+        await devtools_primary.add_request_interception(target_tab, await self.request_interceptor(target_tab))

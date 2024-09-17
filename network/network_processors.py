@@ -3,14 +3,14 @@ import re
 from contextlib import asynccontextmanager
 from urllib.parse import urlparse
 
-from nodriver import cdp
+from nodriver import cdp, Tab
 
 from aiohttp import ClientSession, ClientResponse
 from aiohttp.client_exceptions import ClientConnectionError, ClientHttpProxyError
 from bots.devtools import devtools_primary
 
 from bots import utils
-from constants import config, bot_constants
+from constants import config, bot_constants, browser_constants
 from identity.client import Identity
 
 
@@ -99,11 +99,14 @@ class NetworkRunner:
         self.track_response_size(request, response)
         if config.PRINT_NETWORK:
             print(f"Response url: {request.url}[{response.status_code}]")
-            self.print_total_usage()
 
-    async def strip_chromium_headers(self, headers: list):
+    async def strip_chromium_headers(self, headers):
         # fufill_request works in an unusual behaviour, it only responds to sec-ch headers
-        return []
+        new_headers = {}
+        for key, value in headers.items():
+            if key not in browser_constants.CHROMIUM_SPECIFIC_HEADERS:
+                new_headers[key] = value
+        return new_headers
 
     async def conform_headers_according_to_browser(self, headers: list):
         # If identity browser is not chromium
@@ -114,105 +117,107 @@ class NetworkRunner:
             return await self.strip_chromium_headers(headers)
         return headers
 
-    async def request_interceptor(
-        self, pausedRequest: cdp.fetch.RequestPaused, *args, **kwarg
-    ):
-        request = pausedRequest.request
-        reqHost = urlparse(request.url).netloc
+    async def request_interceptor(self, target_tab: Tab):
+        async def interceptor(pausedRequest: cdp.fetch.RequestPaused, *args, **kwarg):
+            request = pausedRequest.request
+            reqHost = urlparse(request.url).netloc
 
-        async def network_through_proxy(
-            generate_empty_response_on_fail=True, retries=0
-        ):
-            print(
-                f"Bot Process Id {self.bot_process_id} <:::> {request.url} is passing through the proxy"
-            )
-            try:
-                async with self.proxy_session() as session:
-                    async with session.request(
-                        url=request.url,
-                        headers=request.headers,
-                        allow_redirects=False,
-                        method=request.method,
-                        data=request.post_data,
-                        proxy=self.proxy,
-                    ) as response:
-                        self.urls_through_proxy.add(request.url)
-                        asyncio.create_task(
-                            devtools_primary.fulfill_request(
-                                self.web_browser_driver,
-                                pausedRequest.request_id,
-                                pausedRequest.frame_id,
-                                response.status,
-                                response_headers=[
-                                    cdp.fetch.HeaderEntry(k, str(v))
-                                    for k, v in response.headers.items()
-                                ],
-                                body=(await response.read()),
-                            )
-                        )
-                        return True
-            except ClientHttpProxyError as e:
-                if e.code == 407:
-                    # Configure notification to admin
-                    print(
-                        f"Bot Process Id {self.bot_process_id} <:::> Invalid Proxy Credentials, Exiting to avoid getting burnt"
-                    )
-                    exit()
-                # fix against ip leaks
-                if generate_empty_response_on_fail and retries < 1:
-                    await asyncio.sleep(0.5)
-                    asyncio.create_task(network_through_proxy(retries=retries + 1))
-                else:
-                    asyncio.create_task(
-                        devtools_primary.fail_request(
-                            self.web_browser_driver,
-                            request_id=pausedRequest.request_id,
-                            frame_id=pausedRequest.frame_id,
-                        )
-                    )
-                    print(
-                        f"Bot Process Id {self.bot_process_id} <:::> {request.url} generated an ssl or proxy error, "
-                        f"it won't go through proxy, so it was failed"
-                    )
-                return False
-            except ClientConnectionError as e:
+            async def network_through_proxy(
+                generate_empty_response_on_fail=True, retries=0
+            ):
                 print(
-                    f"Bot Process Id {self.bot_process_id} <:::> {request.url} did not connect"
+                    f"Bot Process Id {self.bot_process_id} <:::> {request.url} is passing through the proxy"
                 )
-
-        await self.track_request_size(request)
-        if config.PRINT_NETWORK:
-            print(f"Request url: {request.url}[{request.method}]")
-            await self.print_total_usage()
-
-        request_first_mime = request.headers.get("Accept", "*/*").split(",")[0]
-        await self.inject_referrer_into_header(request)
-        if (
-            bot_constants.PROXY_WHITELISTED_DOMAINS == "*"
-            or utils.has_string_in(reqHost, bot_constants.PROXY_WHITELISTED_DOMAINS)
-        ) and not (
-            utils.url_ends_with(request.url, bot_constants.PROXY_BLACKLISTED_EXTENSIONS)
-            or utils.has_string_in(reqHost, bot_constants.PROXY_BLACKLISTED_DOMAINS)
-            or not utils.has_string_in(
-                request_first_mime, bot_constants.PROXY_WHITELISTED_MIMES
-            )
-        ):
-            asyncio.create_task(network_through_proxy())
-        else:
-            asyncio.create_task(
-                devtools_primary.continue_request(
-                    self.web_browser_driver,
-                    pausedRequest.request_id,
-                    pausedRequest.frame_id,
-                    headers=(
-                        (
-                            await self.conform_headers_according_to_browser(
-                                [
-                                    cdp.fetch.HeaderEntry(k, str(v))
-                                    for k, v in request.headers.items()
-                                ]
+                try:
+                    async with self.proxy_session() as session:
+                        async with session.request(
+                            url=request.url,
+                            headers=await self.conform_headers_according_to_browser(
+                                request.headers.to_json()
+                            ),
+                            allow_redirects=False,
+                            method=request.method,
+                            data=request.post_data,
+                            proxy=self.proxy,
+                        ) as response:
+                            self.urls_through_proxy.add(request.url)
+                            asyncio.create_task(
+                                devtools_primary.fulfill_request(
+                                    target_tab,
+                                    pausedRequest.request_id,
+                                    pausedRequest.frame_id,
+                                    response.status,
+                                    response_headers=[
+                                        cdp.fetch.HeaderEntry(k, str(v))
+                                        for k, v in response.headers.items()
+                                    ],
+                                    body=(await response.read()),
+                                )
+                            )
+                            return True
+                except ClientHttpProxyError as e:
+                    if e.code == 407:
+                        # Configure notification to admin
+                        print(
+                            f"Bot Process Id {self.bot_process_id} <:::> Invalid Proxy Credentials, Exiting to avoid getting burnt"
+                        )
+                        exit()
+                    # fix against ip leaks
+                    if generate_empty_response_on_fail and retries < 1:
+                        await asyncio.sleep(0.5)
+                        asyncio.create_task(network_through_proxy(retries=retries + 1))
+                    else:
+                        asyncio.create_task(
+                            devtools_primary.fail_request(
+                                target_tab,
+                                request_id=pausedRequest.request_id,
+                                frame_id=pausedRequest.frame_id,
                             )
                         )
-                    ),
+                        print(
+                            f"Bot Process Id {self.bot_process_id} <:::> {request.url} generated an ssl or proxy error, "
+                            f"it won't go through proxy, so it was failed"
+                        )
+                    return False
+                except ClientConnectionError as e:
+                    print(
+                        f"Bot Process Id {self.bot_process_id} <:::> {request.url} did not connect"
+                    )
+
+            await self.track_request_size(request)
+            if config.PRINT_NETWORK:
+                print(f"Request url: {request.url}[{request.method}]")
+
+            request_first_mime = request.headers.get("Accept", "*/*").split(",")[0]
+            await self.inject_referrer_into_header(request)
+            if (
+                bot_constants.PROXY_WHITELISTED_DOMAINS == "*"
+                or utils.has_string_in(reqHost, bot_constants.PROXY_WHITELISTED_DOMAINS)
+            ) and not (
+                utils.url_ends_with(
+                    request.url, bot_constants.PROXY_BLACKLISTED_EXTENSIONS
                 )
-            )
+                or utils.has_string_in(reqHost, bot_constants.PROXY_BLACKLISTED_DOMAINS)
+                or not utils.has_string_in(
+                    request_first_mime, bot_constants.PROXY_WHITELISTED_MIMES
+                )
+            ):
+                asyncio.create_task(network_through_proxy())
+            else:
+                asyncio.create_task(
+                    devtools_primary.continue_request(
+                        target_tab,
+                        pausedRequest.request_id,
+                        pausedRequest.frame_id,
+                        headers=[
+                            cdp.fetch.HeaderEntry(k, str(v))
+                            for k, v in (
+                                await self.conform_headers_according_to_browser(
+                                    request.headers.to_json()
+                                )
+                            ).items()
+                        ],
+                    )
+                )
+
+        return interceptor

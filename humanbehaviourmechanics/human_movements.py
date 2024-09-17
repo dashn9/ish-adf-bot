@@ -374,7 +374,7 @@ class HumanMovements:
     ):
         pyautogui.mouseDown()
         if self.no_of_clicks > 0:
-            while self.revert_to_main_page():
+            while self.revert_to_active_page():
                 pyautogui.mouseUp()
                 pyautogui.mouseDown()
 
@@ -461,6 +461,7 @@ class HumanMovements:
             (x_start, y_start), (x_end, y_end), duration
         )
         await self.smart_click_trigger((x_start, y_start), self.device_type)
+        await self.revert_to_active_page()
 
     async def scroll_element_into_vertical_view(
         self,

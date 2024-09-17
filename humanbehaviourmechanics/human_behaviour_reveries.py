@@ -111,7 +111,7 @@ class HumanBehaviourReveries:
                     element_location_and_dimensions["y_offset"]
                     + random.uniform(0, link_to_follow.rect["height"]),
                 )
-                while self.revert_to_main_page():
+                while self.revert_to_active_page():
                     self.touch.tap(
                         element_location_and_dimensions["x_offset"]
                         + random.uniform(0, link_to_follow.rect["width"]),
@@ -127,7 +127,7 @@ class HumanBehaviourReveries:
             else:
                 # Do click continually until page remained unchanged after click
                 pyautogui.click()
-                while self.revert_to_main_page():
+                while self.revert_to_active_page():
                     pyautogui.click()
             print(
                 f"Bot Process Id {self.bot_process_id} <:::> Done Attempting To Open A Link In Related Articles"

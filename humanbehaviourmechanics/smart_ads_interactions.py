@@ -143,9 +143,8 @@ class SmartAdsInteractions:
                     )
         if ad_click_success and switch_focus_to_new_tab:
             await asyncio.sleep(1)
-            self.web_browser_driver.switch_to.window(self.web_browser_driver.tabs[-1])
-        if self.device_type == "smartphone":
-            await self.activate_mobile()
+            self.web_browser_driver.tabs[-1].activate()
+            print("checking the main tab", self.web_browser_driver.main_tab)
         return ad_click_success
         # print(f"Bot Process Id {self.bot_process_id} <:::> No ads found, Try again")
 
@@ -217,7 +216,7 @@ class SmartAdsInteractions:
             await asyncio.sleep(random.uniform(0.1, 0.4))
             pyautogui.click()
             if revert_back:
-                await self.revert_to_main_page()
+                await self.revert_to_active_page()
             await self.simulate_human_mouse_move_behavior_to_point(
                 previous_mouse_pos[0], previous_mouse_pos[1]
             )
@@ -228,5 +227,5 @@ class SmartAdsInteractions:
                 ad_dimensions["y"] + random.uniform(0, ad_dimensions["height"]),
             )
             if revert_back:
-                self.revert_to_main_page()
+                self.revert_to_active_page()
             return True
