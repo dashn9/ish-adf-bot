@@ -141,19 +141,12 @@ class NetworkRunner:
                             devtools_primary.fulfill_request(
                                 self.web_browser_driver,
                                 pausedRequest.request_id,
+                                pausedRequest.frame_id,
                                 response.status,
-                                response_headers=(
-                                    (
-                                        await self.conform_headers_according_to_browser(
-                                            [
-                                                cdp.fetch.HeaderEntry(k, v)
-                                                for k, v in request.headers.items()
-                                            ]
-                                        )
-                                    )
-                                    if request.method.lower() not in ["options"]
-                                    else request.headers
-                                ),
+                                response_headers=[
+                                    cdp.fetch.HeaderEntry(k, str(v))
+                                    for k, v in response.headers.items()
+                                ],
                                 body=(await response.read()),
                             )
                         )
@@ -172,7 +165,9 @@ class NetworkRunner:
                 else:
                     asyncio.create_task(
                         devtools_primary.fail_request(
-                            self.web_browser_driver, request_id=pausedRequest.request_id
+                            self.web_browser_driver,
+                            request_id=pausedRequest.request_id,
+                            frame_id=pausedRequest.frame_id,
                         )
                     )
                     print(
@@ -208,17 +203,16 @@ class NetworkRunner:
                 devtools_primary.continue_request(
                     self.web_browser_driver,
                     pausedRequest.request_id,
+                    pausedRequest.frame_id,
                     headers=(
                         (
                             await self.conform_headers_according_to_browser(
                                 [
-                                    cdp.fetch.HeaderEntry(k, v)
+                                    cdp.fetch.HeaderEntry(k, str(v))
                                     for k, v in request.headers.items()
                                 ]
                             )
                         )
-                        if request.method.lower() not in ["options"]
-                        else request.headers
                     ),
                 )
             )

@@ -134,6 +134,8 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
         if await self.smart_ad_click():
             return "ad_clicked"
 
+        await self.click_trigger()
+
         browser_inner_size = await self.get_browser_inner_size()
 
         element_base_offset = (await html_web_element.get_position()).y

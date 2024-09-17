@@ -157,28 +157,31 @@ async def clear_all_cookies(web_driver: Browser):
 
 
 async def enable_network_interception(web_driver: Browser):
-    await web_driver.connection.send(cdp.fetch.enable())
+    await web_driver.main_tab.send(cdp.fetch.enable())
 
 
 async def disable_network_interception(web_driver: Browser):
-    await web_driver.connection.send(cdp.fetch.disable())
+    await web_driver.main_tab.send(cdp.fetch.disable())
 
 async def add_request_interception(
     web_driver: Browser, req_fufiller: Callable[[cdp.fetch.RequestPaused], bool]
 ):
-    web_driver.connection.add_handler(cdp.fetch.RequestPaused, req_fufiller)
+    web_driver.main_tab.add_handler(cdp.fetch.RequestPaused, req_fufiller)
 
 
 async def continue_request(
     web_driver: Browser,
     request_id: str,
+    frame_id: cdp.page.FrameId,
     url: Optional[str] = None,
     method: Optional[str] = None,
     post_data: Optional[str] = None,
     headers: Optional[List[Dict[str, str]]] = None,
     intercept_response: Optional[bool] = None,
 ):
-    await web_driver.connection.send(
+    tab = None
+    print(frame_id, request_id)
+    await web_driver.main_tab.send(
         cdp.fetch.continue_request(
             request_id=request_id,
             url=url,
@@ -193,13 +196,15 @@ async def continue_request(
 async def fulfill_request(
     web_driver: Browser,
     request_id: str,
+    frame_id: cdp.page.FrameId,
     response_code: int,
     response_headers: Optional[List[Dict[str, str]]] = None,
     binary_response_headers: Optional[str] = None,
     body: Optional[str] = None,
     response_phrase: Optional[str] = None,
 ):
-    await web_driver.connection.send(
+    print(frame_id, request_id)
+    await web_driver.main_tab.send(
         cdp.fetch.fulfill_request(
             request_id=request_id,
             response_code=response_code,
@@ -213,9 +218,10 @@ async def fulfill_request(
 async def fail_request(
         web_driver: Browser,
         request_id: str,
+        frame_id: cdp.page.FrameId, 
         error_reason = cdp.network.ErrorReason.CONNECTION_ABORTED
 ):
-    await web_driver.connection.send(cdp.fetch.fail_request(request_id, error_reason))
+    await web_driver.main_tab.send(cdp.fetch.fail_request(request_id, error_reason))
 
 async def set_all_cookies(web_driver: Browser, cookies):
     await web_driver.connection.send(cdp.storage.set_cookies([cdp.network.CookieParam.from_json(cookie) for cookie in cookies]))

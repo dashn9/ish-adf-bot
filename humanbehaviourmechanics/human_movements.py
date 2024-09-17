@@ -224,9 +224,9 @@ class HumanMovements:
             if offset_to_adjust_to > element_coordinates["y_offset"]:
                 if isinstance(self.touch, Touchscreen):
                     while offset_to_adjust_to >= element_coordinates["y_offset"]:
-                        if not has_page_offset_changed():
+                        if not await has_page_offset_changed():
                             return True
-                        scroll_with_touch(False, 0.5)
+                        await scroll_with_touch(False, 0.5)
                         element_coordinates = self.get_element_location_window_offset(
                             html_web_element
                         )
@@ -460,7 +460,6 @@ class HumanMovements:
         await self.touch.simulate_human_touch_movement_with_mouse(
             (x_start, y_start), (x_end, y_end), duration
         )
-
         await self.smart_click_trigger((x_start, y_start), self.device_type)
 
     async def scroll_element_into_vertical_view(

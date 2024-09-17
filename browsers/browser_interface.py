@@ -197,7 +197,7 @@ class BrowserInterface:
         browser_window_rect_bottom = browser_window_rect.height + browser_window_rect.top
         web_element_bottom = web_element_y_offset + web_element_location_dimensions.height
         return {"html_web_element": {"x_offset": web_element_x_offset, "y_offset": web_element_y_offset,
-                                    "width": web_element_location_dimensions, "height": web_element_location_dimensions.height, "bottom": web_element_bottom},
+                                    "width": web_element_location_dimensions.width, "height": web_element_location_dimensions.height, "bottom": web_element_bottom},
                 "browser_window_rect": (
                     browser_window_rect.left, browser_window_rect.top, browser_window_rect_bottom)}
 
@@ -243,6 +243,7 @@ class BrowserInterface:
         :return: True if page changed, else false
         """
         await asyncio.sleep (time_interval_to_check)
+        print(self.web_browser_driver.tabs)
         # Switch to the new window and capture its handle
         if self.current_tab_length != len(self.web_browser_driver.tabs):
             self.web_browser_driver.switch_to.window(self.web_browser_driver.current_window_handle)
@@ -330,7 +331,7 @@ class BrowserInterface:
         # Opens a Chrome browser
         if self.browser_to_use_id == browser_constants.CHROME_ID:
             print(f"Bot Process Id {self.bot_process_id} <:::> Opening Chrome Browser")
-            browser_config = uc.Config(browser_args=['--disable-background-networking',
+            browser_config = uc.Config(browser_args=[
                 '--disable-background-timer-throttling',
                 '--disable-backgrounding-occluded-windows',
                 '--enable-logging=0',
