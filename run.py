@@ -82,7 +82,7 @@ async def run_bot(
                 == "ad_clicked"
             ):
                 await asyncio.sleep(random.uniform(0.7, 1.5))
-                body_element = web_bot.active_tab.select("body", 4)
+                body_element = await web_bot.active_tab.select("body", 4)
                 await web_bot.read_element_content(body_element)
                 while random.random() < identity.page_depth:
                     web_bot.time_activated = time.time()

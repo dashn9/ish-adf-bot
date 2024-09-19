@@ -14,7 +14,7 @@ from bots import utils
 
 
 class HumanMovements:
-    def __init__(self):
+    def __init__(self, no_of_clicks=0):
         self._keyboard = Keyboard(self)
         pyautogui.FAILSAFE = False
         self._touch = None
@@ -23,7 +23,7 @@ class HumanMovements:
         self._mouse = Mouse(self, self._keyboard)
         self.last_document_offsets = [0, 0]
         # No of clicks that could happen at the beginning of a scroll or touch scroll
-        self.no_of_clicks = 0
+        self.no_of_clicks = no_of_clicks
 
         super().__init__()
 
@@ -215,7 +215,7 @@ class HumanMovements:
                 px_to_adjust_by = random.randint(1, 500)
             if not direction:
                 px_to_adjust_by = random.randint(-500, -1)
-            self.read_with_touch(px_to_adjust_by, duration)
+            await self.read_with_touch(px_to_adjust_by, duration)
 
         async def offset_adjuster(offset_to_adjust_to, html_web_element):
             element_coordinates = await self.get_element_location_window_offset(
@@ -389,8 +389,11 @@ class HumanMovements:
         return counter
 
     async def read_with_touch(
-        self, px_to_adjust_by, duration=random.uniform(0.1, 2), force_screen_reset=False
+        self, px_to_adjust_by, duration=None, force_screen_reset=False
     ):
+        # In the future, take this of to config
+        duration = duration or random.uniform(0.1, 3)
+        px_to_adjust_by = 100 if px_to_adjust_by < 100 else px_to_adjust_by
         # A List Containing The Browser's Page 9-Ways Splitted Dimension In The Following Format
         # [[(x, y, width, height) x3] x3]
         generated_page_boundaries = []
@@ -622,6 +625,7 @@ class HumanMovements:
             )
             return False
 
+    # Look at this function when you decide to make use of popunders in prod
     async def smart_click_trigger(self, coordinates=(100, 100), device_type="computer"):
         if self.no_of_clicks > 0:
             if random.uniform(0, 1) <= self.probability_of_click:
@@ -633,7 +637,6 @@ class HumanMovements:
                 print(
                     f"Bot Process Id {self.bot_process_id} <:::> Click was triggered successfully"
                 )
-                asyncio.sleep(0.4)
                 await self.revert_to_active_page()
                 return True
             else:

@@ -20,7 +20,7 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
 
     def __init__(self, reading_speed=900, no_of_clicks=0):
         self.reading_speed = reading_speed
-        HumanMovements.__init__(self)
+        HumanMovements.__init__(self, no_of_clicks)
         SmartAdsInteractions.__init__(self, no_of_clicks)
         HumanBehaviourReveries.__init__(self)
 
@@ -149,23 +149,15 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
                 browser_inner_size.get("height"),
             )
         )
-
         if kwargs.get("rem_px_to_adjust_by", total_px_to_adjust_by) < px_to_adjust_by:
             px_to_adjust_by = kwargs.get("rem_px_to_adjust_by", total_px_to_adjust_by)
-
-        # print("px adjusted by ===>", px_adjusted_by)
-        # print("total px to adjust by ===>", total_px_to_adjust_by)
-        # print("read time ===>", read_time)
-        # print(
-        #     "time expected to have used based on px adjusted ==>",
-        #     time_allocated_to_px_adjusted_by,
-        # )
-        # print("time expected time used margin ==>", time_allocated_time_used_margin)
 
         time_to_pause_activity = px_to_adjust_by * avg_time_per_px
 
         # navigate up as thou looking for forgotten content, feature to reinforce human reading behaviour
-        if time_owed >= 0:
+        if time_owed > 0:
+            time_to_pause_activity = 0
+        else:
             if random.random() < 0.2:
                 await asyncio.sleep(random.uniform(0.4, 1.4))
 
@@ -187,10 +179,8 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
                     True,
                     **kwargs.get("read_by_mode_data", {}),
                 )
-            time_to_pause_activity = 0
 
         await asyncio.sleep(time_to_pause_activity)
-
         # Store read_by_mode data at each function iteration to be repassed, reason is for read_by_mode
         # mouse_to_scrollbar mode
         kwargs["read_by_mode_data"] = await self.read_by_mode(

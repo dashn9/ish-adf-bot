@@ -126,7 +126,7 @@ class NetworkRunner:
                 generate_empty_response_on_fail=True, retries=0
             ):
                 print(
-                    f"Bot Process Id {self.bot_process_id} <:::> {request.url} is passing through the proxy"
+                    f"Bot Process Id {self.bot_process_id} <:::> {pausedRequest.frame_id}: {request.url} is passing through the proxy"
                 )
                 try:
                     async with self.proxy_session() as session:

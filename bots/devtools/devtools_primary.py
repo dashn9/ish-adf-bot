@@ -226,3 +226,18 @@ async def fail_request(
 
 async def set_all_cookies(tab: Tab, cookies):
     await tab.connection.send(cdp.storage.set_cookies([cdp.network.CookieParam.from_json(cookie) for cookie in cookies]))
+
+async def stop_tab_loading(tab: Tab):
+    await tab.send(cdp.page.stop_loading())
+
+async def enable_network(tab: Tab):
+    await tab.send(cdp.network.enable())
+
+async def disable_network(tab: Tab):
+    await tab.send(cdp.network.disable())
+
+async def go_offline(tab: Tab):
+    await tab.send(cdp.network.emulate_network_conditions(offline=True, latency=0, download_throughput=0, upload_throughput=0))
+
+async def go_online(tab: Tab):
+    await tab.send(cdp.network.emulate_network_conditions(offline=False, latency=0, download_throughput=-1, upload_throughput=-1))

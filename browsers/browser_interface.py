@@ -278,6 +278,11 @@ class BrowserInterface:
                         print(f"Bot Process Id {self.bot_process_id} <:::> Updating Cookies To Cloud")
                         await asyncio.gather(self.release_proxies(), self.update_cookies_to_cloud())
                         self.web_browser_driver.stop()
+
+
+                        # I do not like this solution one bit because if the program was meant to be running at loop, it terminates.
+                        # I do not have a choice as I do not have a way to exit the current function. except i have a way to pass an event.
+                        exit()
                 except ConnectionRefusedError:
                     print(
                         "A connection refused error occurred, this would likely be as a result of a dead browser session")
@@ -328,9 +333,12 @@ class BrowserInterface:
                 '--enable-logging=0',
                 '--disable-remote-fonts',
                 '--disable-dev-shm-usage',
+                # supposed to help with storage usage, but i'm not sure
+                '--disk-cache-dir='+browser_constants.CHROME_DATA_DIRECTORY+"/cache",
                 ], user_data_dir=browser_constants.CHROME_DATA_DIRECTORY+"/profiles/"+str(self.identity_id), 
                 browser_executable_path=bot_constants.FULL_DIRECTORY_PATH+browser_constants.CHROME_BINARY_LOCATION)
             browser_config.add_extension(f'{bot_constants.FULL_DIRECTORY_PATH+browser_constants.CHROME_EXTENSIONS_LOCATION+"/browser_spoofer.crx"}')
+            browser_config.add_extension(f'{bot_constants.FULL_DIRECTORY_PATH+browser_constants.CHROME_EXTENSIONS_LOCATION+"/browser_network.crx"}')
             if self.user_agent:
                 browser_config.add_argument(f"--user-agent={self.user_agent}")
             browser_config.binary_location = browser_constants.CHROME_BINARY_LOCATION
@@ -352,12 +360,15 @@ class BrowserInterface:
                 await self.active_tab.set_window_state(0, 0, *window_size)
 
         print(f"Bot Process Id {self.bot_process_id} <:::> Web Browser Opened")
+
         await self.preliminary_tab_activation(self.active_tab)
+        await asyncio.sleep(1)
+        await devtools_primary.set_all_cookies(self.web_browser_driver, await self.identity.fetch_identity_cookies_info_for_extension())
+        await asyncio.sleep(1)
         self.preliminary_activated_tabs.add(self.active_tab.target.target_id)
         await devtools_primary.listen_to_tab_creation(self.web_browser_driver.connection, self._handle_new_tab_creation)
-        await devtools_primary.set_all_cookies(self.web_browser_driver, await self.identity.fetch_identity_cookies_info_for_extension())
         # give browser time to settle
-        await asyncio.sleep(4)
+        await self.active_tab.sleep(4)
         asyncio.create_task(self.quit_browser_after_max_alive())
 
     async def _handle_new_tab_creation(self, new_tab):
@@ -372,10 +383,18 @@ class BrowserInterface:
         for tab in self.web_browser_driver.tabs:
             target_id = tab.target.target_id
             if target_id not in self.preliminary_activated_tabs:
+                # The first url does not go through the proxy for obvious reasons as the tab was created with the url before adding the interceptor
+                # I created an extension(browser_network) to help deal with this issue by stopping early requests
+                await devtools_primary.stop_tab_loading(tab)
                 await self.preliminary_tab_activation(tab)
                 self.preliminary_activated_tabs.add(target_id)
+                await asyncio.sleep(1.5)
+                # sometimes, the tab does not reload, if it's a serious issue, create a task that checks if it has loaded 
+                # else exec reload again
+                await tab.reload()
 
     async def preliminary_tab_activation(self, target_tab: Tab):
+        await self.add_network_interception_to_tab(target_tab)
         print(f"Bot Process Id {self.bot_process_id} <:::> Activating Browser Based On Device Type")
         # If device to emulate is a smartphone, set chrome to mobile mode
         if self.device_type == "smartphone":
@@ -394,8 +413,6 @@ class BrowserInterface:
             await devtools_primary.change_user_agent(
                 target_tab,
                 self.user_agent, self.platform, self.languages, self.identity.browser_name, self.identity.device_type == "smartphone", self.identity.device_model)
-
-        await self.add_network_interception_to_tab(target_tab)
 
     async def add_network_interception_to_tab(self, target_tab: Tab):
         await devtools_primary.enable_network_interception(target_tab)

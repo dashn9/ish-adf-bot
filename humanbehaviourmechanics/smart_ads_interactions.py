@@ -143,8 +143,8 @@ class SmartAdsInteractions:
                     )
         if ad_click_success and switch_focus_to_new_tab:
             await asyncio.sleep(1)
-            self.web_browser_driver.tabs[-1].activate()
-            print("checking the main tab", self.active_tab)
+            await self.web_browser_driver.tabs[-1].activate()
+            self.active_tab = self.web_browser_driver.tabs[-1]
         return ad_click_success
         # print(f"Bot Process Id {self.bot_process_id} <:::> No ads found, Try again")
 
@@ -155,27 +155,21 @@ class SmartAdsInteractions:
             # Iframe not found
             except asyncio.TimeoutError:
                 return
-            if self.device_type == "smartphone":
-                iframe_offset = iframe.get_window()
-            else:
-                iframe_offset = iframe.get_window()
             ads_elements = None
             print(ads_elements_selector)
             ads_elements = await iframe.query_selector_all(ads_elements_selector)
             ads_elements_rect = []
             for ad_element in ads_elements:
-                print(ad_element.get_position)
-                print(ad_element.get_postion(abs=True))
-                rect = ad_element.get_position().copy()
+                # If you are going to make use of in page push, look into this method
+                rect = (await ad_element.get_position()).copy()
                 if self.device_type == "smartphone":
-                    rect["x"] = iframe_offset["x_offset"] + rect["x"]
-                    rect["y"] = iframe_offset["y_offset"] + rect["y"]
+                    rect["x"] = rect["x"]
+                    rect["y"] = rect["y"]
                 else:
-                    rect["x"] = iframe_offset[0] + rect["x"]
-                    rect["y"] = iframe_offset[1] + rect["y"]
-                rect["text_content"] = ad_element.text_all()
+                    rect["x"] = rect["x"]
+                    rect["y"] = rect["y"]
+                rect["text_content"] = await ad_element.text_all()
                 ads_elements_rect.append(rect)
-            self.web_browser_driver.switch_to.default_content()
             return ads_elements_rect
 
         if ads_elements_selector.startswith("//iframe"):
