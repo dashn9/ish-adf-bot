@@ -186,6 +186,13 @@ class NetworkRunner:
 
             await self.track_request_size(request)
             if config.PRINT_NETWORK:
+                asyncio.create_task(
+                    devtools_primary.fail_request(
+                        target_tab,
+                        request_id=pausedRequest.request_id,
+                        frame_id=pausedRequest.frame_id,
+                    )
+                )
                 print(f"Request url: {request.url}[{request.method}]")
 
             request_first_mime = request.headers.get("Accept", "*/*").split(",")[0]

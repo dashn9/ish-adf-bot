@@ -53,13 +53,6 @@ class SmartAdsInteractions:
         print(
             f"Bot Process Id {self.bot_process_id} <:::> Vignette ad trigger attempted"
         )
-        await asyncio.sleep(0.5)
-        await self.trigger_vignette()
-        # I no longer use Expected conditions in the iframe_check for locating elements, so this branch of code may
-        # never be reached, look for other ways
-        # print(
-        #     f"Bot Process Id {self.bot_process_id} <:::> No active vignette to close"
-        # )
         return
 
     async def smart_ad_click(self, switch_focus_to_new_tab=True):
@@ -155,20 +148,24 @@ class SmartAdsInteractions:
             # Iframe not found
             except asyncio.TimeoutError:
                 return
-            ads_elements = None
-            print(ads_elements_selector)
+            if self.device_type == "smartphone":
+                iframe_offset = await self.get_element_location_window_offset(iframe)
+            else:
+                iframe_offset = (await self.get_element_location_screen_offset(iframe))[
+                    "html_web_element"
+                ]
             ads_elements = await iframe.query_selector_all(ads_elements_selector)
             ads_elements_rect = []
+            # You would need to make upgrades before ad keyword click would work with vignettes
             for ad_element in ads_elements:
-                # If you are going to make use of in page push, look into this method
-                rect = (await ad_element.get_position()).copy()
-                if self.device_type == "smartphone":
-                    rect["x"] = rect["x"]
-                    rect["y"] = rect["y"]
-                else:
-                    rect["x"] = rect["x"]
-                    rect["y"] = rect["y"]
-                rect["text_content"] = await ad_element.text_all()
+                element_position = await ad_element.get_position()
+                rect = {
+                    "x": iframe_offset["x_offset"] + element_position.x,
+                    "y": iframe_offset["y_offset"] + element_position.y,
+                    "width": element_position.width,
+                    "height": element_position.height,
+                    "text_content": ad_element.text_all,
+                }
                 ads_elements_rect.append(rect)
             return ads_elements_rect
 
@@ -201,12 +198,13 @@ class SmartAdsInteractions:
             await self.simulate_human_mouse_move_behavior_to_area(
                 ad_dimensions["x"],
                 ad_dimensions["y"],
-                ad_dimensions["width"],
-                ad_dimensions["height"],
+                ad_dimensions["width"] + ad_dimensions["x"],
+                ad_dimensions["height"] + ad_dimensions["y"],
                 probability_of_overshoot=round(random.random(), 2),
             )
             await asyncio.sleep(random.uniform(0.1, 0.4))
             pyautogui.click()
+            await asyncio.sleep(random.uniform(0.1, 0.4))
             if revert_back:
                 await self.revert_to_active_page()
             await self.simulate_human_mouse_move_behavior_to_point(

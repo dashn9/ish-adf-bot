@@ -181,8 +181,8 @@ class HumanMovements:
                 await self.simulate_human_mouse_move_behavior_to_area(
                     el_pos["area_x"] + 1,
                     el_pos["area_y"] + 1,
-                    el_pos["area_width"] - 2,
-                    el_pos["area_height"] - 2,
+                    el_pos["area_x"] + el_pos["area_width"] - 2,
+                    el_pos["area_y"] + el_pos["area_height"] - 2,
                     probability_of_overshoot=round(random.random(), 2),
                 )
         else:

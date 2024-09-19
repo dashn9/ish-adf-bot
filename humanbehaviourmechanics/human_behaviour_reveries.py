@@ -63,15 +63,18 @@ class HumanBehaviourReveries:
 
     async def move_mouse_to_random_area_on_element(self, element: WebElement):
         element_screen_position = await self.get_element_location_screen_offset(element)
+        # optimize
         await self.move_mouse_to_random_area_on_screen(
             {
                 "x": element_screen_position["html_web_element"]["x_offset"],
                 "y": (await self.get_document_offset_from_screen())["y"],
-                "width": (await element.get_position()).width,
+                "width": (await element.get_position()).width
+                + element_screen_position["html_web_element"]["x_offset"],
                 "height": min(
                     element_screen_position["html_web_element"]["bottom"],
                     (await self.get_browser_inner_size())["height"],
-                ),
+                )
+                + (await self.get_document_offset_from_screen())["y"],
             }
         )
 
