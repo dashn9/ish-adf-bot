@@ -336,7 +336,6 @@ class BrowserInterface:
                 '--window-position=0,0',
                 '--start-fullscreen'
                 # supposed to help with storage usage, but i'm not sure
-                '--disk-cache-dir='+browser_constants.CHROME_DATA_DIRECTORY+"/cache",
                 ], user_data_dir=browser_constants.CHROME_DATA_DIRECTORY+"/profiles/"+str(self.identity_id), 
                 browser_executable_path=bot_constants.FULL_DIRECTORY_PATH+browser_constants.CHROME_BINARY_LOCATION)
             browser_config.add_extension(f'{bot_constants.FULL_DIRECTORY_PATH+browser_constants.CHROME_EXTENSIONS_LOCATION+"/browser_spoofer.crx"}')
@@ -378,19 +377,20 @@ class BrowserInterface:
         Args:
             new_tab (_type_): _description_
         """
+        async def tab_reloader_if_redirect_link(tab, old_url):
+            pass
         for tab in self.web_browser_driver.tabs:
             target_id = tab.target.target_id
             if target_id not in self.preliminary_activated_tabs:
                 # The first url does not go through the proxy for obvious reasons as the tab was created with the url before adding the interceptor
                 # I created an extension(browser_network) to help deal with this issue by stopping early requests
-                await devtools_primary.stop_tab_loading(tab)
                 await self.preliminary_tab_activation(tab)
                 self.preliminary_activated_tabs.add(target_id)
-                await asyncio.sleep(2)
-                await tab.sleep(2)
                 # sometimes, the tab does not reload, if it's a serious issue, create a task that checks if it has loaded 
                 # else exec reload again
-                await tab.reload()
+                await asyncio.sleep(2)
+                await tab.sleep(1)
+                await tab.get(tab.target.url)
 
     async def preliminary_tab_activation(self, target_tab: Tab):
         await self.add_network_interception_to_tab(target_tab)

@@ -172,6 +172,11 @@ async def add_request_interception(
 ):
     tab.add_handler(cdp.fetch.RequestPaused, req_fufiller)
 
+async def get_response_body(
+    tab: Tab, request_id: str
+):
+    await tab.send(cdp.fetch.get_response_body(request_id))
+
 
 async def continue_request(
     tab: Tab,
@@ -235,6 +240,9 @@ async def enable_network(tab: Tab):
 
 async def disable_network(tab: Tab):
     await tab.send(cdp.network.disable())
+
+async def listen_to_failed_loading_requests(tab: Tab, failed_loading_request_handler: Callable[[cdp.fetch.RequestPaused], bool]):
+    tab.add_handler(cdp.network.LoadingFailed, failed_loading_request_handler)
 
 async def go_offline(tab: Tab):
     await tab.send(cdp.network.emulate_network_conditions(offline=True, latency=0, download_throughput=0, upload_throughput=0))

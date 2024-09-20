@@ -119,6 +119,9 @@ def load_configurations():
         boc.PROXY_WHITELISTED_DOMAINS = ads.get(
             "proxy-whitelisted-domains", boc.PROXY_WHITELISTED_DOMAINS
         ).split(",")
+        boc.PROXY_WHITELISTED_VIP_DOMAINS = ads.get(
+            "proxy-whitelisted-vip-domains", boc.PROXY_WHITELISTED_VIP_DOMAINS
+        ).split(",")
         boc.PROXY_BLACKLISTED_DOMAINS = ads.get(
             "proxy-blacklisted-domains", boc.PROXY_BLACKLISTED_DOMAINS
         ).split(",")

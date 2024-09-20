@@ -174,8 +174,8 @@ class HumanMovements:
                 el_pos = dict(
                     area_x=element_screen_position["html_web_element"]["x_offset"],
                     area_y=element_screen_position["html_web_element"]["y_offset"],
-                    area_width=html_web_element.rect["width"],
-                    area_height=html_web_element.rect["height"],
+                    area_width=element_screen_position["html_web_element"]["width"],
+                    area_height=element_screen_position["html_web_element"]["height"],
                 )
 
                 await self.simulate_human_mouse_move_behavior_to_area(
@@ -573,11 +573,13 @@ class HumanMovements:
                         if isinstance(self.touch, Touchscreen):
                             await scroll_with_touch(True, 1)
                         else:
-                            await scroll(K_Keys["ArrowDown"])
-                        if not has_page_offset_changed():
+                            await scroll(K_Keys["ArrowDown"], True)
+                        if not await has_page_offset_changed():
                             return True
                         element_browser_coordinates = (
-                            self.get_element_location_screen_offset(html_web_element)
+                            await self.get_element_location_screen_offset(
+                                html_web_element
+                            )
                         )
                 elif (
                     element_browser_coordinates["html_web_element"]["y_offset"]
@@ -590,11 +592,13 @@ class HumanMovements:
                         if isinstance(self.touch, Touchscreen):
                             await scroll_with_touch(False, 1)
                         else:
-                            await scroll(K_Keys["ArrowUp"])
-                        if not has_page_offset_changed():
+                            await scroll(K_Keys["ArrowUp"], False)
+                        if not await has_page_offset_changed():
                             return True
                         element_browser_coordinates = (
-                            self.get_element_location_screen_offset(html_web_element)
+                            await self.get_element_location_screen_offset(
+                                html_web_element
+                            )
                         )
 
         else:

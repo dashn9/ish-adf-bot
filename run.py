@@ -81,36 +81,39 @@ async def run_bot(
                 )
                 == "ad_clicked"
             ):
-                # wait this amount to give tab time to fully load
-                await asyncio.sleep(random.uniform(10, 12.5))
+                # wait this amount to give tab time to fully load, it's excessive, could be lesser in prod, probably switch to config
+                await asyncio.sleep(random.uniform(8, 9.5))
                 await web_bot.active_tab.sleep(3)
                 await web_bot.read_element_content(
                     await web_bot.active_tab.select("body")
                 )
                 while random.random() < identity.page_depth:
                     web_bot.time_activated = time.time()
-                    body_element = await web_bot.active_tab.select("body")
-                    await web_bot.open_link_in_elements([body_element])
-                    await web_bot.read_element_content(body_element)
+                    await web_bot.open_link_in_elements(
+                        [await web_bot.active_tab.select("body")]
+                    )
+                    await web_bot.read_element_content(
+                        await web_bot.active_tab.select("body")
+                    )
                     identity.page_depth = identity.page_depth / 2
                 # print(
                 #     "Body Element Of The Ad Page Could Not Be Found Or Not Loaded On Time"
                 # )
             else:
-                if page_info.get("related_articles_elements_type") and page_info.get(
-                    "related_articles_elements_name"
-                ):
+                if page_info.get("related_articles_elements", None):
                     while random.random() < identity.page_depth:
                         web_bot.time_activated = time.time()
                         web_bot.no_of_clicks = page_info.get("page_clicks")
-                        web_bot.open_link_in_elements(
-                            web_bot.active_tab.select_all(
+                        await web_bot.open_link_in_elements(
+                            await web_bot.active_tab.select_all(
                                 page_info["related_articles_elements"]
                             )
                         )
 
-                        web_bot.read_element_content(
-                            web_bot.active_tab.select(page_info["page_content_element"])
+                        await web_bot.read_element_content(
+                            await web_bot.active_tab.select(
+                                page_info["page_content_element"]
+                            )
                         )
                         identity.page_depth = identity.page_depth / 2
             if web_bot.identity.device_type == "computer":
@@ -161,7 +164,9 @@ async def main():
     )
     page_info = await DataController.fetch_active_random_url()
 
+    # please correct config, and use the one in it
     boc.PROXY_WHITELISTED_DOMAINS = page_info.get("proxy_domain_whitelists", "*")
+    boc.PROXY_WHITELISTED_VIP_DOMAINS = page_info.get("proxy_domain_vip_whitelists", [])
 
     await run_bot(identity, page_info, 0)
     await restart_plug()

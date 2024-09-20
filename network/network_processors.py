@@ -118,22 +118,39 @@ class NetworkRunner:
         return headers
 
     async def request_interceptor(self, target_tab: Tab):
+        await devtools_primary.enable_network(target_tab)
+        failed_loading_requests = []
+
+        async def handle_failed_loading_request(failed_request, *args, **kwargs):
+            failed_loading_requests.append(failed_request.request_id)
+            print(failed_loading_requests)
+
+        await devtools_primary.listen_to_failed_loading_requests(
+            target_tab, handle_failed_loading_request
+        )
+
         async def interceptor(pausedRequest: cdp.fetch.RequestPaused, *args, **kwarg):
             request = pausedRequest.request
             reqHost = urlparse(request.url).netloc
+            # Not intercepted at request level
+            if (
+                pausedRequest.response_error_reason
+                or pausedRequest.response_status_code
+            ):
+                return False
 
             async def network_through_proxy(
                 generate_empty_response_on_fail=True, retries=0
             ):
                 print(
-                    f"Bot Process Id {self.bot_process_id} <:::> {pausedRequest.frame_id}: {request.url} is passing through the proxy"
+                    f"Bot Process Id {self.bot_process_id} <:::> {pausedRequest.frame_id}: {request.url} is passing through the proxy [{pausedRequest.resource_type}]"
                 )
                 try:
                     async with self.proxy_session() as session:
                         async with session.request(
                             url=request.url,
                             headers=await self.conform_headers_according_to_browser(
-                                request.headers.to_json()
+                                request.headers
                             ),
                             allow_redirects=False,
                             method=request.method,
@@ -141,19 +158,20 @@ class NetworkRunner:
                             proxy=self.proxy,
                         ) as response:
                             self.urls_through_proxy.add(request.url)
-                            asyncio.create_task(
-                                devtools_primary.fulfill_request(
-                                    target_tab,
-                                    pausedRequest.request_id,
-                                    pausedRequest.frame_id,
-                                    response.status,
-                                    response_headers=[
-                                        cdp.fetch.HeaderEntry(k, str(v))
-                                        for k, v in response.headers.items()
-                                    ],
-                                    body=(await response.read()),
+                            if pausedRequest.network_id not in failed_loading_requests:
+                                asyncio.create_task(
+                                    devtools_primary.fulfill_request(
+                                        target_tab,
+                                        pausedRequest.request_id,
+                                        pausedRequest.frame_id,
+                                        response.status,
+                                        response_headers=[
+                                            cdp.fetch.HeaderEntry(k, str(v))
+                                            for k, v in response.headers.items()
+                                        ],
+                                        body=(await response.read()),
+                                    )
                                 )
-                            )
                             return True
                 except ClientHttpProxyError as e:
                     if e.code == 407:
@@ -197,20 +215,32 @@ class NetworkRunner:
 
             request_first_mime = request.headers.get("Accept", "*/*").split(",")[0]
             await self.inject_referrer_into_header(request)
-            if (
-                bot_constants.PROXY_WHITELISTED_DOMAINS == "*"
-                or utils.has_string_in(reqHost, bot_constants.PROXY_WHITELISTED_DOMAINS)
-            ) and not (
-                utils.url_ends_with(
-                    request.url, bot_constants.PROXY_BLACKLISTED_EXTENSIONS
+            if utils.has_string_in(
+                reqHost, bot_constants.PROXY_WHITELISTED_VIP_DOMAINS
+            ) or (
+                (
+                    bot_constants.PROXY_WHITELISTED_DOMAINS == "*"
+                    or utils.has_string_in(
+                        reqHost, bot_constants.PROXY_WHITELISTED_DOMAINS
+                    )
                 )
-                or utils.has_string_in(reqHost, bot_constants.PROXY_BLACKLISTED_DOMAINS)
-                or not utils.has_string_in(
-                    request_first_mime, bot_constants.PROXY_WHITELISTED_MIMES
+                and not (
+                    utils.url_ends_with(
+                        request.url, bot_constants.PROXY_BLACKLISTED_EXTENSIONS
+                    )
+                    or utils.has_string_in(
+                        reqHost, bot_constants.PROXY_BLACKLISTED_DOMAINS
+                    )
+                    or not utils.has_string_in(
+                        request_first_mime, bot_constants.PROXY_WHITELISTED_MIMES
+                    )
                 )
             ):
                 asyncio.create_task(network_through_proxy())
             else:
+                print(
+                    f"Bot Process Id {self.bot_process_id} <:::> {pausedRequest.frame_id}: {request.url} is passing through the browser"
+                )
                 asyncio.create_task(
                     devtools_primary.continue_request(
                         target_tab,

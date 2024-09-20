@@ -68,7 +68,7 @@ class HumanBehaviourReveries:
             {
                 "x": element_screen_position["html_web_element"]["x_offset"],
                 "y": (await self.get_document_offset_from_screen())["y"],
-                "width": (await element.get_position()).width
+                "width": element_screen_position["html_web_element"]["width"]
                 + element_screen_position["html_web_element"]["x_offset"],
                 "height": min(
                     element_screen_position["html_web_element"]["bottom"],
@@ -97,10 +97,9 @@ class HumanBehaviourReveries:
                 f"Bot Process Id {self.bot_process_id} <:::> Attempting To Open A Link In Related Articles"
             )
             await self.bring_window_to_front()
-            link_to_follow = links_to_follow[
-                random.randint(0, len(links_to_follow) - 1)
-            ]
+            link_to_follow = random.choice(links_to_follow)
             await self.move_pointing_device_to_element(link_to_follow)
+            link_to_follow_position = await link_to_follow.get_position()
             await asyncio.sleep(random.uniform(0.2, 0.8))
             if self.has_touch:
                 await asyncio.sleep(random.uniform(0.3, 0.5))
@@ -110,16 +109,16 @@ class HumanBehaviourReveries:
                 # Do click continually until page remained unchanged after click
                 await self.touch.tap(
                     element_location_and_dimensions["x_offset"]
-                    + random.uniform(0, link_to_follow.rect["width"]),
+                    + random.uniform(0, link_to_follow_position.width),
                     element_location_and_dimensions["y_offset"]
-                    + random.uniform(0, link_to_follow.rect["height"]),
+                    + random.uniform(0, link_to_follow_position.height),
                 )
                 while await self.revert_to_active_page():
                     await self.touch.tap(
                         element_location_and_dimensions["x_offset"]
-                        + random.uniform(0, link_to_follow.rect["width"]),
+                        + random.uniform(0, link_to_follow_position.width),
                         element_location_and_dimensions["y_offset"]
-                        + random.uniform(0, link_to_follow.rect["height"]),
+                        + random.uniform(0, link_to_follow_position.height),
                     )
                     # print(
                     #     f"Bot Process Id {self.bot_process_id} <:::> An attempt to click on a link in the related "
