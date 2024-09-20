@@ -320,7 +320,11 @@ def fetch_random_window_size_relative_to_screen(screen_width, screen_height):
 
 def url_ends_with(string, endings):
     for ending in endings:
-        if string.endswith(ending) or (ending + "?" in string):
+        if (
+            string.endswith(ending)
+            or (ending + "?" in string)
+            or (ending + "%3F" in string)
+        ):
             return True
     return False
 

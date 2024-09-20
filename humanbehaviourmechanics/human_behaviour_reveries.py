@@ -81,8 +81,8 @@ class HumanBehaviourReveries:
     async def open_link_in_elements(self, elements):
         links_to_follow = []
         for el in elements:
-            for link in el.query_selector_all("a"):
-                link_children = link.query_selector_all("*")
+            for link in await el.query_selector_all("a"):
+                link_children = await link.query_selector_all("*")
                 if len(link_children) >= 1:
                     for link_child in link_children:
                         links_to_follow.append(link_child)
@@ -96,16 +96,16 @@ class HumanBehaviourReveries:
             print(
                 f"Bot Process Id {self.bot_process_id} <:::> Attempting To Open A Link In Related Articles"
             )
-            self.bring_window_to_front()
+            await self.bring_window_to_front()
             link_to_follow = links_to_follow[
                 random.randint(0, len(links_to_follow) - 1)
             ]
-            self.move_pointing_device_to_element(link_to_follow)
+            await self.move_pointing_device_to_element(link_to_follow)
             await asyncio.sleep(random.uniform(0.2, 0.8))
             if self.has_touch:
                 await asyncio.sleep(random.uniform(0.3, 0.5))
                 element_location_and_dimensions = (
-                    self.get_element_location_window_offset(link_to_follow)
+                    await self.get_element_location_window_offset(link_to_follow)
                 )
                 # Do click continually until page remained unchanged after click
                 await self.touch.tap(
@@ -114,7 +114,7 @@ class HumanBehaviourReveries:
                     element_location_and_dimensions["y_offset"]
                     + random.uniform(0, link_to_follow.rect["height"]),
                 )
-                while self.revert_to_active_page():
+                while await self.revert_to_active_page():
                     await self.touch.tap(
                         element_location_and_dimensions["x_offset"]
                         + random.uniform(0, link_to_follow.rect["width"]),
@@ -130,7 +130,7 @@ class HumanBehaviourReveries:
             else:
                 # Do click continually until page remained unchanged after click
                 pyautogui.click()
-                while self.revert_to_active_page():
+                while await self.revert_to_active_page():
                     pyautogui.click()
             print(
                 f"Bot Process Id {self.bot_process_id} <:::> Done Attempting To Open A Link In Related Articles"

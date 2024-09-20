@@ -333,6 +333,8 @@ class BrowserInterface:
                 '--enable-logging=0',
                 '--disable-remote-fonts',
                 '--disable-dev-shm-usage',
+                '--window-position=0,0',
+                '--start-fullscreen'
                 # supposed to help with storage usage, but i'm not sure
                 '--disk-cache-dir='+browser_constants.CHROME_DATA_DIRECTORY+"/cache",
                 ], user_data_dir=browser_constants.CHROME_DATA_DIRECTORY+"/profiles/"+str(self.identity_id), 
@@ -346,16 +348,12 @@ class BrowserInterface:
                 headless=False,
                 config=browser_config)
             self.active_tab = self.web_browser_driver.main_tab
+            await asyncio.sleep(0.6)
             if open_browser_in_full_screen:
                 if random.random() <= browser_constants.FULLSCREEN_PROBABILITY:
                     await self.active_tab.set_window_state(0, 0, *window_size, state="fullscreen")
                 else:
-                    if not config.CONTAINERIZED:
-                        await self.active_tab.set_window_state(0, 0, *window_size, state="maximized")
-                    else:
-                        # Fixes the one pixel deficiency in the container application
-                        await self.active_tab.set_window_state(0, 0, *window_size, state="fullscreen")
-                        await self.active_tab.set_window_state(0, 0, *window_size, state="maximized")
+                    await self.active_tab.set_window_state(0, 0, *window_size, state="maximized")
             else:
                 await self.active_tab.set_window_state(0, 0, *window_size)
 
@@ -388,7 +386,8 @@ class BrowserInterface:
                 await devtools_primary.stop_tab_loading(tab)
                 await self.preliminary_tab_activation(tab)
                 self.preliminary_activated_tabs.add(target_id)
-                await asyncio.sleep(1.5)
+                await asyncio.sleep(2)
+                await tab.sleep(2)
                 # sometimes, the tab does not reload, if it's a serious issue, create a task that checks if it has loaded 
                 # else exec reload again
                 await tab.reload()

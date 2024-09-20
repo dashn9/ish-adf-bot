@@ -81,19 +81,18 @@ async def run_bot(
                 )
                 == "ad_clicked"
             ):
-                # Reload is still triggered by the new tab detector handler, thisone to make sure
-                await asyncio.sleep(2.5)
-                await web_bot.active_tab.reload()
                 # wait this amount to give tab time to fully load
                 await asyncio.sleep(random.uniform(10, 12.5))
+                await web_bot.active_tab.sleep(3)
                 await web_bot.read_element_content(
-                    await web_bot.active_tab.select("body", 15)
+                    await web_bot.active_tab.select("body")
                 )
                 while random.random() < identity.page_depth:
                     web_bot.time_activated = time.time()
                     body_element = await web_bot.active_tab.select("body")
                     await web_bot.open_link_in_elements([body_element])
                     await web_bot.read_element_content(body_element)
+                    identity.page_depth = identity.page_depth / 2
                 # print(
                 #     "Body Element Of The Ad Page Could Not Be Found Or Not Loaded On Time"
                 # )

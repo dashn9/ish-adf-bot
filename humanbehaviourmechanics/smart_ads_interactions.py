@@ -136,7 +136,6 @@ class SmartAdsInteractions:
                     )
         if ad_click_success and switch_focus_to_new_tab:
             await asyncio.sleep(1)
-            await self.web_browser_driver.tabs[-1].activate()
             self.active_tab = self.web_browser_driver.tabs[-1]
         return ad_click_success
         # print(f"Bot Process Id {self.bot_process_id} <:::> No ads found, Try again")

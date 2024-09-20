@@ -164,11 +164,11 @@ class HumanMovements:
         :return: return true on success
         """
         if simulate_human_behaviour:
-            self.scroll_element_into_vertical_view(
+            await self.scroll_element_into_vertical_view(
                 html_web_element, element_scroll_to=1
             )
             if not isinstance(self.touch, Touchscreen):
-                element_screen_position = self.get_element_location_screen_offset(
+                element_screen_position = await self.get_element_location_screen_offset(
                     html_web_element
                 )
                 el_pos = dict(
