@@ -10,13 +10,15 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Create extensions directory
+      - name: Create Extensions Dir
         run: mkdir -p executables/extensions/chrome
 
-      - name: Download Chrome extensions
+      - name: Download Bot Extensions for Chrome
+        env:
+          GITHUB_TOKEN: ${{ secrets.ISH_BOT_EXTENSIONS_GITHUB_TOKEN }}
         run: |
-          curl -L https://github.com/Ishogbon/ish-bot-fp-spoofer/releases/download/v1.0.0/browser_spoofer.crx -o executables/extensions/chrome/browser_spoofer.crx
-          curl -L https://github.com/Ishogbon/ish-bot-chrome-network-extension/releases/download/v1.0.0/browser_network.crx -o executables/extensions/chrome/browser_network.crx
+          curl -L -H "Authorization: token $GITHUB_TOKEN" https://github.com/Ishogbon/ish-bot-fp-spoofer/releases/download/v1.0.0/browser_spoofer.crx -o executables/extensions/chrome/browser_spoofer.crx
+          curl -L -H "Authorization: token $GITHUB_TOKEN" https://github.com/Ishogbon/ish-bot-chrome-network-extension/releases/download/v1.0.0/browser_network.crx -o executables/extensions/chrome/browser_network.crx
 
       - name: Authenticate Google Cloud SDK
         uses: 'google-github-actions/auth@v2'
