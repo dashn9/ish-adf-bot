@@ -23,6 +23,8 @@ from constants.config import (
     FETCH_BY_VALUE,
 )
 
+# There is an issue where fetching an element position could crash the connection. Fix this by using an event handler to detect if the tab is in a loading stage
+# If so, throw an exception, best implement this in nodriver and raise a PR
 boc.FULL_DIRECTORY_PATH = os.path.dirname(os.path.realpath(__file__))
 brc.FULL_DIRECTORY_PATH = os.path.dirname(os.path.realpath(__file__))
 
@@ -82,8 +84,8 @@ async def run_bot(
                 == "ad_clicked"
             ):
                 # wait this amount to give tab time to fully load, it's excessive, could be lesser in prod, probably switch to config
-                await asyncio.sleep(random.uniform(8, 9.5))
-                await web_bot.active_tab.sleep(3)
+                await asyncio.sleep(random.uniform(10, 11.5))
+                await web_bot.active_tab.sleep(1)
                 await web_bot.read_element_content(
                     await web_bot.active_tab.select("body")
                 )

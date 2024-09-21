@@ -249,3 +249,10 @@ async def go_offline(tab: Tab):
 
 async def go_online(tab: Tab):
     await tab.send(cdp.network.emulate_network_conditions(offline=False, latency=0, download_throughput=-1, upload_throughput=-1))
+
+async def enable_page(tab: Tab):
+    await tab.send(cdp.page.enable())
+    await tab.send(cdp.page.set_lifecycle_events_enabled(True))
+
+async def listen_to_page_lifecycle(tab: Tab, page_lifecycle_handler: Callable[[cdp.fetch.RequestPaused], bool]):
+    tab.add_handler(cdp.page.LifecycleEvent, page_lifecycle_handler)

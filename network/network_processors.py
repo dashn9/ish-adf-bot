@@ -123,7 +123,6 @@ class NetworkRunner:
 
         async def handle_failed_loading_request(failed_request, *args, **kwargs):
             failed_loading_requests.append(failed_request.request_id)
-            print(failed_loading_requests)
 
         await devtools_primary.listen_to_failed_loading_requests(
             target_tab, handle_failed_loading_request
@@ -198,6 +197,13 @@ class NetworkRunner:
                         )
                     return False
                 except ClientConnectionError as e:
+                    asyncio.create_task(
+                        devtools_primary.fail_request(
+                            target_tab,
+                            request_id=pausedRequest.request_id,
+                            frame_id=pausedRequest.frame_id,
+                        )
+                    )
                     print(
                         f"Bot Process Id {self.bot_process_id} <:::> {request.url} did not connect"
                     )

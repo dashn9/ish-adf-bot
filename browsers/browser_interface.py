@@ -334,6 +334,7 @@ class BrowserInterface:
                 '--disable-remote-fonts',
                 '--disable-dev-shm-usage',
                 '--window-position=0,0',
+                '--start-maximized',
                 '--start-fullscreen'
                 # supposed to help with storage usage, but i'm not sure
                 ], user_data_dir=browser_constants.CHROME_DATA_DIRECTORY+"/profiles/"+str(self.identity_id), 
@@ -377,20 +378,27 @@ class BrowserInterface:
         Args:
             new_tab (_type_): _description_
         """
+        async def handle_page_lifecycle_events(lifecycle_event, *args, **kwargs):
+            nonlocal continue_reload
+            if lifecycle_event.name == "InteractiveTime":
+                continue_reload = False
         async def tab_reloader_if_redirect_link(tab, old_url):
             pass
         for tab in self.web_browser_driver.tabs:
+            continue_reload = True
             target_id = tab.target.target_id
             if target_id not in self.preliminary_activated_tabs:
+                await devtools_primary.enable_page(tab)
+                await devtools_primary.listen_to_page_lifecycle(tab, handle_page_lifecycle_events)
                 # The first url does not go through the proxy for obvious reasons as the tab was created with the url before adding the interceptor
                 # I created an extension(browser_network) to help deal with this issue by stopping early requests
                 await self.preliminary_tab_activation(tab)
                 self.preliminary_activated_tabs.add(target_id)
-                # sometimes, the tab does not reload, if it's a serious issue, create a task that checks if it has loaded 
-                # else exec reload again
-                await asyncio.sleep(2)
-                await tab.sleep(1)
-                await tab.get(tab.target.url)
+                await tab.sleep(1.5)
+                while continue_reload:
+                    await tab.reload()
+                    print("reload triggered")
+                    await tab.sleep(2.5)
 
     async def preliminary_tab_activation(self, target_tab: Tab):
         await self.add_network_interception_to_tab(target_tab)

@@ -211,7 +211,8 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
         # Allowed for a wider margin because of touchscreen
         if (
             kwargs["rem_px_to_adjust_by"] <= 0
-            or (px_to_adjust_by - kwargs["px_adjusted_by"]) >= 500
+            or (px_to_adjust_by - kwargs["px_adjusted_by"])
+            >= browser_inner_size.get("height") / 1.5
         ):
             return True
 
