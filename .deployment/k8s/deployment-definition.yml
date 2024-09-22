@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webbot-deployment
+  labels:
+    app: webbot
+    type: ishbot
+spec:
+  template:
+    metadata:
+      name: webbot-pod
+      labels:
+        app: webbot
+        type: ishbot
+    spec:
+      containers:
+        - name: webbot
+          image: us-east4-docker.pkg.dev/centering-rider-426308-i2/ish-bot/ish_bot:1f358c1c5afd3a5b0972b0499cf3466d093fd3ec
+          ports:
+            - containerPort: 5900
+              name: vnc
+          resources:
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+
+  replicas: 1
+  selector:
+    matchLabels:
+      type: ishbot
