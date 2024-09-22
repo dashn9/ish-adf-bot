@@ -23,7 +23,7 @@ variable "scripts_path" {
 }
 
 variable "configs_path" {
-    default = "../scripts/k8s/gens"
+    default = "../scripts/k8s/configs/"
 }
 
 variable "master_node_type" {
@@ -56,7 +56,7 @@ variable "master_node_count" {
 
 
 variable "worker_node_type" {
-    default = "t3a.xlarge"
+    default = "c6a.4xlarge"
 }
 
 variable "worker_node_image" {
@@ -80,5 +80,5 @@ variable "worker_node_root_storage_type" {
 }
 
 variable "worker_node_count" {
-    default = 2
+    default = 1
 }

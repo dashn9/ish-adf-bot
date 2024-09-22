@@ -145,8 +145,13 @@ resource "aws_instance" "ish_bot_kube_master" {
     }
 
     provisioner "file" {
-        source      = "${var.configs_path}/encryption-config.yaml"
+        source      = "${var.configs_path}/gens/encryption-config.yaml"
         destination = "/home/${var.master_node_user}/encryption-config.yaml"
+    }
+
+    provisioner "file" {
+        source      = "${var.configs_path}/coredns.yaml"
+        destination = "/home/${var.master_node_user}/coredns.yaml"
     }
 
     provisioner "remote-exec" {
