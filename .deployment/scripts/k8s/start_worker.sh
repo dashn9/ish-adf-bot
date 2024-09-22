@@ -150,7 +150,8 @@ Documentation=https://github.com/kubernetes/kubernetes
 
 [Service]
 ExecStart=/usr/local/bin/kube-proxy \\
-  --config=/var/lib/kube-proxy/kube-proxy-config.yaml
+  --config=/var/lib/kube-proxy/kube-proxy-config.yaml \
+  --masquerade-all
 Restart=on-failure
 RestartSec=5
 
@@ -162,3 +163,7 @@ EOF
 sudo systemctl daemon-reload
 sudo systemctl enable containerd kubelet kube-proxy
 sudo systemctl start containerd kubelet kube-proxy
+
+# Run this on the node so it can work with coreDNS
+# Also each node should have a running coreDNS pod
+# sudo /sbin/modprobe br_netfilter

@@ -13,4 +13,4 @@ identity/account_details.temp.conf
 *_key.pem
 .DS_Store
 
-**/scripts/k8s/gens/*
+**/scripts/k8s/configs/gens/*
