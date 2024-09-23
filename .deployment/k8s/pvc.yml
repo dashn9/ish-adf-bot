@@ -6,7 +6,7 @@ metadata:
   namespace: bots
 spec:
   accessModes:
-    - ReadWriteMany
+    - ReadWriteOnce
   storageClassName: ish-bot-ebs-sc
   resources:
     requests:
