@@ -124,4 +124,6 @@ sudo systemctl daemon-reload
 sudo systemctl enable kube-apiserver kube-controller-manager kube-scheduler
 sudo systemctl start kube-apiserver kube-controller-manager kube-scheduler
 
-# kubectl apply -f coredns.yaml --kubeconfig admin.kubeconfig
+# kubectl apply --kubeconfig admin.kubeconfig -k "github.com/kubernetes-sigs/aws-ebs-csi-driver/deploy/kubernetes/overlays/stable/?ref=release-1.35"
+
+# kubectl apply --kubeconfig admin.kubeconfig -f coredns.yaml

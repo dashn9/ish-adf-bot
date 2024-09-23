@@ -184,6 +184,7 @@ resource "aws_instance" "ish_bot_kube_worker" {
     key_name = aws_key_pair.tf_worker_node_ssh_keys[count.index].key_name
     subnet_id = aws_subnet.k8s_subnets[count.index].id
     vpc_security_group_ids = [ aws_security_group.k8s_sg.id ]
+    iam_instance_profile = aws_iam_instance_profile.ebs_csi_instance_profile.name
     
     user_data = <<-EOF
                 #!/bin/bash
@@ -261,18 +262,7 @@ resource "aws_instance" "ish_bot_kube_worker" {
     tags = {
         Name = "${var.worker_node_name}-${count.index}"
     }
-    root_block_device {
-        volume_size = var.worker_node_root_storage_size
-        volume_type = var.worker_node_root_storage_type
-    }
 
-}
-
-resource "aws_volume_attachment" "ish_bot_kube_worker_chrome_profiles_storage_attachment" {
-    count = var.worker_node_count
-    device_name = "/dev/sdf"
-    volume_id   = aws_ebs_volume.chrome_profiles_store.id
-    instance_id = aws_instance.ish_bot_kube_worker[count.index].id
 }
 
 resource "local_file" "master_node_ssh_keys" {

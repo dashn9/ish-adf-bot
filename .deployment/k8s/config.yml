@@ -1,0 +1,71 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ish-bot-config
+data:
+  config.ini: | 
+        [OPTIONS]
+        nordvpn-ovpn-files-path = /path/to/nordvpn-ovpn-files
+        ipvanish-ovpn-files-path = /path/to/ipvanish-ovpn-files
+        screen-width = 1920
+        screen-height = 1080
+        up-taskbar-height = 5
+        debug = True
+        containerized = True
+
+        [WAIT_CONDITIONS]
+        implicitly-wait-time = 15
+
+        [EXECUTABLES]
+        chrome-binary-location = /executables/browsers/chrome/chromebrowser.app/Contents/MacOS/Google Chrome for Testing
+        chrome-webdriver-location = /executables/drivers/chrome/chromedriver
+        chrome-extensions-location = /executables/extensions/chrome
+        firefox-binary-location = /executables/browsers/firefox
+        firefox-webdriver-location = /executables/drivers/geckodriver
+
+        [BOT]
+        bot-id = 0
+        max-alive-time = 300
+        min-alive-time = 240
+        run-infinitely = False
+        engage-reader = True
+        # Don't touch mouse-use-probability unless you know what it does
+        mouse-use-probability = 0.84
+
+        [BROWSER]
+        chrome-data-directory = 
+        maximum-window-probability = 0.92
+        # Useful for MacOS, Sets the Browser Window to Fullscreen
+        fullscreen-probability = 0.4
+        ignore-ssl = False
+
+        [OVPN]
+        max-connect-retries = 1
+        max-wait-time = 7
+
+        [SCROLL]
+        px-value = 250
+
+        [SITE]
+        proxy-whitelisted-domains = whouseem.com,dudialgator.com,bedrapiona.com,fleraprt.com
+        proxy-whitelisted-vip-domains = 
+        proxy-blacklisted-domains = googleapis,chrome,google,gstatic,gvt1,betsmarthq.com,googlesyndication
+        proxy-blacklisted-extensions = .html,.js,.json,.css,.jpg,.jpeg,.png,.gif,.svg,.woff,.woff2,.ttf,.ico,.webm,.ogg,.wav,.mp3,.mp4
+        proxy-whitelisted-mimes = */*,text/html
+        allow-url-through-proxy-if-matches-browser-active-url = True
+
+        [PROXY]
+        use-proxy = True
+
+        [IDENTITY]
+        # the following variable dictates on what base to fetch identity, the accepted values are 'scr'(screen resolution),
+        # 'device_type', 'proxy_geo'(careful here), 'id'(be careful with this one - very careful). If using screen-resolution,
+        # no need to set value
+        fetch-by = random
+        fetch-by-value = 
+
+        [IDENTITY_ENDPOINTS]
+        base-host = http://ec2-100-28-25-112.compute-1.amazonaws.com/api/
+
+        [DEBUGGING]
+        print-network = False
