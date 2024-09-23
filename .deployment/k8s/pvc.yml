@@ -11,3 +11,5 @@ spec:
   resources:
     requests:
       storage: 200Gi
+
+# Switch to GlusterFS in the future
