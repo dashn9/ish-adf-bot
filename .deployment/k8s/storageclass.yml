@@ -2,8 +2,9 @@ apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
   name: ish-bot-ebs-sc
-provisioner: ebs.csi.aws.com
+  namespace: bots
 parameters:
   type: sc1
 reclaimPolicy: Retain
+provisioner: ebs.csi.aws.com
 volumeBindingMode: WaitForFirstConsumer
