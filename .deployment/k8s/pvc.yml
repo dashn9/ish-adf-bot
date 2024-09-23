@@ -10,4 +10,4 @@ spec:
   storageClassName: ish-bot-ebs-sc
   resources:
     requests:
-      storage: 100Gi
+      storage: 200Gi

@@ -8,7 +8,7 @@
 # }
 
 resource "aws_iam_policy" "ebs_csi_policy" {
-  name        = "AmazonEKS_EBS_CSI_Driver_Policy"
+  name        = "ISH_BOT_EBS_CSI_Driver_Policy"
   description = "Policy for EBS CSI Driver"
   policy = jsonencode({
     "Version": "2012-10-17",
@@ -36,7 +36,7 @@ resource "aws_iam_policy" "ebs_csi_policy" {
 
 
 resource "aws_iam_role" "ebs_csi_role" {
-  name = "ISH_BOT_EBS_CSI_DriverRole"
+  name = "ISHBotDriverRole"
 
   assume_role_policy = jsonencode({
     "Version": "2012-10-17",
@@ -44,7 +44,7 @@ resource "aws_iam_role" "ebs_csi_role" {
       {
         "Effect": "Allow",
         "Principal": {
-          "Service": "eks.amazonaws.com"
+          "Service": "ec2.amazonaws.com"
         },
         "Action": "sts:AssumeRole"
       }
@@ -58,6 +58,6 @@ resource "aws_iam_role_policy_attachment" "attach_policy" {
 }
 
 resource "aws_iam_instance_profile" "ebs_csi_instance_profile" {
-  name = "ISH_BOT_EBS_CSI_InstanceProfile"
+  name = "ISHBotDriverRole"
   role = aws_iam_role.ebs_csi_role.name
 }
