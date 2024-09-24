@@ -17,6 +17,7 @@ import constants.bot_constants as boc
 from datacontroller.datacontroller import DataController
 from constants.config import (
     BOT_ID,
+    CONTAINERIZED,
     RUN_INFINITELY,
     DEBUG,
     FETCH_BY,
@@ -157,13 +158,19 @@ async def main():
     identity = Identity()
 
     await identity.auto_initiate_identity(FETCH_BY, FETCH_BY_VALUE)
-
-    subprocess.run(
-        [
-            brc.FULL_DIRECTORY_PATH + "/create_display.sh",
-            f"{identity.screen_width}x{identity.screen_height}x24",
-        ]
-    )
+    if CONTAINERIZED:
+        screen_width = identity.screen_width
+        screen_height = identity.screen_height
+        if identity.device_type == "smartphone":
+            # Seperate this below into config
+            boc.SCREEN_WIDTH = screen_width = 700
+            boc.SCREEN_HEIGHT = screen_height = 1100
+        subprocess.run(
+            [
+                brc.FULL_DIRECTORY_PATH + "/create_display.sh",
+                f"{screen_width}x{screen_height}x24",
+            ]
+        )
     page_info = await DataController.fetch_active_random_url()
 
     # please correct config, and use the one in it

@@ -334,8 +334,7 @@ class BrowserInterface:
                 '--disable-remote-fonts',
                 '--disable-dev-shm-usage',
                 '--window-position=0,0',
-                '--start-maximized',
-                '--start-fullscreen'
+                '--start-maximized'
                 # supposed to help with storage usage, but i'm not sure
                 ], user_data_dir=browser_constants.CHROME_DATA_DIRECTORY+"/profiles/"+str(self.identity_id), 
                 browser_executable_path=bot_constants.FULL_DIRECTORY_PATH+browser_constants.CHROME_BINARY_LOCATION)
@@ -353,9 +352,12 @@ class BrowserInterface:
                 if random.random() <= browser_constants.FULLSCREEN_PROBABILITY:
                     await self.active_tab.set_window_state(0, 0, *window_size, state="fullscreen")
                 else:
+                    await self.active_tab.set_window_state(0, 0, *window_size, state="fullscreen")
                     await self.active_tab.set_window_state(0, 0, *window_size, state="maximized")
             else:
                 await self.active_tab.set_window_state(0, 0, *window_size)
+            if self.device_type == "smartphone":
+                await self.active_tab.set_window_state(0, 0, bot_constants.SCREEN_WIDTH - 5, bot_constants.SCREEN_HEIGHT - 5)
 
         print(f"Bot Process Id {self.bot_process_id} <:::> Web Browser Opened")
 

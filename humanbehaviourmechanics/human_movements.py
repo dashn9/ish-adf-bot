@@ -227,8 +227,10 @@ class HumanMovements:
                         if not await has_page_offset_changed():
                             return True
                         await scroll_with_touch(False, 0.5)
-                        element_coordinates = self.get_element_location_window_offset(
-                            html_web_element
+                        element_coordinates = (
+                            await self.get_element_location_window_offset(
+                                html_web_element
+                            )
                         )
                 else:
                     while offset_to_adjust_to >= element_coordinates["y_offset"]:
@@ -245,8 +247,10 @@ class HumanMovements:
                             await asyncio.sleep(random.uniform(0.15, 0.6))
                         else:
                             await asyncio.sleep(0.3)
-                        element_coordinates = self.get_element_location_window_offset(
-                            html_web_element
+                        element_coordinates = (
+                            await self.get_element_location_window_offset(
+                                html_web_element
+                            )
                         )
                     await self.keyboard.up(K_Keys["ArrowUp"])
                     if random.random() > 0.5:
@@ -282,6 +286,7 @@ class HumanMovements:
                                 html_web_element
                             )
                         )
+
                     await self.keyboard.up(K_Keys["ArrowDown"])
                     if random.random() > 0.5:
                         await random_miscellaneous_key_presses(0.25)

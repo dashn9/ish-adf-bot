@@ -9,3 +9,4 @@
 /.github
 /__pycache__
 /configs
+!/configs/config.ini
