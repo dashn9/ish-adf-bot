@@ -8,4 +8,4 @@
 /.deployment
 /.github
 /__pycache__
-example.config.ini
+/configs

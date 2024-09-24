@@ -7,8 +7,8 @@ identity/account_details.temp.conf
 /chrome_cache
 /data
 /caches
-/config.ini
-/config.docker.ini
+/configs/*
+!/configs/example.config.ini
 *.key
 *_key.pem
 .DS_Store

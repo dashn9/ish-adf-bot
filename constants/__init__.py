@@ -7,7 +7,7 @@ from constants import config
 
 
 configParser = configparser.ConfigParser()
-configParser.read(boc.FULL_DIRECTORY_PATH + "/config.ini")
+configParser.read(boc.FULL_DIRECTORY_PATH + "/configs/config.ini")
 
 
 def load_configurations():
