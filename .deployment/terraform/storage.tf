@@ -11,34 +11,6 @@ resource "aws_iam_policy" "ebs_csi_policy" {
   name        = "ISH_BOT_EBS_CSI_Driver_Policy"
   description = "Policy for EBS CSI Driver"
   policy = jsonencode({
-    "Version": "2012-10-17",
-    "Statement": [
-      {
-        "Effect": "Allow",
-        "Action": [
-          "ec2:CreateSnapshot",
-          "ec2:AttachVolume",
-          "ec2:DetachVolume",
-          "ec2:ModifyVolume",
-          "ec2:DeleteVolume",
-          "ec2:DescribeAvailabilityZones",
-          "ec2:DescribeInstances",
-          "ec2:DescribeSnapshots",
-          "ec2:DescribeTags",
-          "ec2:DescribeVolumes",
-          "ec2:CreateTags"
-        ],
-        "Resource": "*"
-      }
-    ]
-  })
-}
-
-
-resource "aws_iam_role" "ebs_csi_role" {
-  name = "ISHBotDriverRole"
-
-  assume_role_policy = jsonencode({
   "Version": "2012-10-17",
   "Statement": [
     {
@@ -163,6 +135,24 @@ resource "aws_iam_role" "ebs_csi_role" {
     }
   ]
 })
+}
+
+
+resource "aws_iam_role" "ebs_csi_role" {
+  name = "ISHBotDriverRole"
+
+  assume_role_policy = jsonencode({
+    "Version": "2012-10-17",
+    "Statement": [
+            {
+                "Effect": "Allow",
+                "Principal": {
+                    "Service": "ec2.amazonaws.com"
+                },
+                "Action": "sts:AssumeRole"
+            }
+        ]
+    })
 }
 
 resource "aws_iam_role_policy_attachment" "attach_policy" {

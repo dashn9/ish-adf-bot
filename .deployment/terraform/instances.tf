@@ -263,6 +263,11 @@ resource "aws_instance" "ish_bot_kube_worker" {
         Name = "${var.worker_node_name}-${count.index}"
     }
 
+    root_block_device {
+        volume_size = var.worker_node_root_storage_size
+        volume_type = var.worker_node_root_storage_type
+    }
+
 }
 
 resource "local_file" "master_node_ssh_keys" {

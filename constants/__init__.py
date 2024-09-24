@@ -72,7 +72,7 @@ def load_configurations():
         brc.FULLSCREEN_PROBABILITY = browser_conf.getfloat(
             "fullscreen-probability", brc.FULLSCREEN_PROBABILITY
         )
-        brc.CHROME_DATA_DIRECTORY = browser_conf.getboolean(
+        brc.CHROME_DATA_DIRECTORY = browser_conf.get(
             "chrome-data-directory", brc.CHROME_DATA_DIRECTORY
         )
 
