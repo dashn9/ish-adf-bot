@@ -24,6 +24,12 @@ jobs:
         uses: 'google-github-actions/auth@v2'
         with:
           credentials_json: '${{ secrets.GCR_SERVICE_ACCOUNT_CREDENTIALS }}'
+
+      - name: Cache Docker layers
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-ish-bots
           
       - name: Set up Cloud SDK
         uses: 'google-github-actions/setup-gcloud@v2'
@@ -38,3 +44,9 @@ jobs:
       - name: Push the Docker image
         run: |
           docker push us-east4-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/ish-bot/ish_bot:${{ github.sha }}
+
+      - name: Save cache
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-ish-bot
