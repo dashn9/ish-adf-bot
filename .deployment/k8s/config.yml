@@ -18,7 +18,7 @@ data:
         implicitly-wait-time = 15
 
         [EXECUTABLES]
-        chrome-binary-location = /executables/browsers/chrome/chromebrowser.app/Contents/MacOS/Google Chrome for Testing
+        chrome-binary-location = /executables/browsers/chrome/chrome
         chrome-webdriver-location = /executables/drivers/chrome/chromedriver
         chrome-extensions-location = /executables/extensions/chrome
         firefox-binary-location = /executables/browsers/firefox
