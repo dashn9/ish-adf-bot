@@ -31,8 +31,7 @@ spec:
           - name: storage
             mountPath: /ebs
           - name: config-volume
-            mountPath: /app
-            subPath: config.ini
+            mountPath: /app/config.ini
 
       volumes:
       - name: storage
