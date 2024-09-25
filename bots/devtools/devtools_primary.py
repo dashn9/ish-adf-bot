@@ -1,6 +1,5 @@
 import base64
 import re
-import asyncio
 
 from typing import Callable, Optional, List, Dict
 from nodriver import Tab, cdp
@@ -31,9 +30,7 @@ async def activate_mobile(
     max_touch_points=5
 ):
     await simulate_screen(tab, device_metrics)
-    await asyncio.sleep(0.5)
     await tab.send(cdp.emulation.set_touch_emulation_enabled(enabled=True, max_touch_points=max_touch_points))
-    await asyncio.sleep(0.5)
     await tab.send(cdp.emulation.set_emit_touch_events_for_mouse(enabled=True))
 
 async def listen_to_tab_creation(
