@@ -25,8 +25,8 @@ spec:
               name: vnc
           resources:
             limits:
-              memory: "768Mi"
-              cpu: "500m"
+              memory: "1Gi"
+              cpu: "700m"
           volumeMounts:
           - name: storage
             mountPath: /ebs
