@@ -396,6 +396,7 @@ class BrowserInterface:
                 # I created an extension(browser_network) to help deal with this issue by stopping early requests
                 await self.preliminary_tab_activation(tab)
                 self.preliminary_activated_tabs.add(target_id)
+                # requires fix
                 await tab.sleep(1.5)
                 while continue_reload:
                     await tab.reload()
@@ -404,6 +405,7 @@ class BrowserInterface:
 
     async def preliminary_tab_activation(self, target_tab: Tab):
         await self.add_network_interception_to_tab(target_tab)
+        await asyncio.sleep(0.5)
         print(f"Bot Process Id {self.bot_process_id} <:::> Activating Browser Based On Device Type")
         # If device to emulate is a smartphone, set chrome to mobile mode
         if self.device_type == "smartphone":
@@ -411,7 +413,7 @@ class BrowserInterface:
             await self.activate_mobile(target_tab)
         print(f"Bot Process Id {self.bot_process_id} <:::> Setting Page To Always Be In Focus")
         print(f"Bot Process Id {self.bot_process_id} <:::> Setting Timezone From Identity")
-
+        await target_tab.sleep(0.5)
         await devtools_primary.set_hardware_concurrency(target_tab, self.hardware_concurrency)
         # Set Timezone
         await devtools_primary.set_timezone(target_tab, self.timezone_id)
