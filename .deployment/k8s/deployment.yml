@@ -25,7 +25,7 @@ spec:
               name: vnc
           resources:
             limits:
-              memory: "1Gi"
+              memory: "1600Mi"
               cpu: "700m"
           volumeMounts:
           - name: storage
