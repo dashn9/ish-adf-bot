@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: webbot
-          image: us-east4-docker.pkg.dev/centering-rider-426308-i2/ish-bot/ish_bot:ed34f0eb693591891eea916818ce5804c471f7c4
+          image: us-east4-docker.pkg.dev/centering-rider-426308-i2/ish-bot/ish_bot:1b32a9dfbe2f83d71f76610872ab57894cfc8320
           envFrom:
             - secretRef:
                 name: ish-bot-proxy-auths
@@ -25,8 +25,8 @@ spec:
               name: vnc
           resources:
             limits:
-              memory: "512Mi"
-              cpu: "500m"
+              memory: "612Mi"
+              cpu: "600m"
           volumeMounts:
           - name: storage
             mountPath: /ebs
