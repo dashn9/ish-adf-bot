@@ -209,13 +209,13 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
 
         # if px_to_adjust_by is greater than px_adjusted_by by a margin of 100(acceptable margin) it means it couldn't go further because it's now at document end
         # Allowed for a wider margin because of touchscreen
-        no_px_adjust_threshold = 100
+        no_px_adjustment_threshold = 100
         if mode == "touch":
-            no_px_adjust_threshold = 500
+            no_px_adjustment_threshold = 500
         if (
             kwargs["rem_px_to_adjust_by"] <= 0
             or (px_to_adjust_by - kwargs["px_adjusted_by"])
-            >= browser_inner_size.get("height") / 1.5
+            >= no_px_adjustment_threshold
         ):
             return True
 
