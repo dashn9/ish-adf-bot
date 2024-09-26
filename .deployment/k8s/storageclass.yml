@@ -1,10 +1,12 @@
+# Please switch to a static provision in the future, when financially stable and sticking to a cloud provider, you don't want to lose your sweet chrome profiles
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
   name: ish-bot-ebs-sc
   namespace: bots
 parameters:
-  type: sc1
+  type: gp3
+  throughput: "300"
 reclaimPolicy: Retain
 provisioner: ebs.csi.aws.com
 volumeBindingMode: WaitForFirstConsumer
