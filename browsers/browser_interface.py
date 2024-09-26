@@ -381,13 +381,15 @@ class BrowserInterface:
             new_tab (_type_): _description_
         """
         async def handle_page_lifecycle_events(lifecycle_event, *args, **kwargs):
-            nonlocal continue_reload
-            if lifecycle_event.name == "InteractiveTime":
+            nonlocal continue_reload, reload_count
+            if lifecycle_event.name == "InteractiveTime" or reload_count >= 4:
                 continue_reload = False
         async def tab_reloader_if_redirect_link(tab, old_url):
             pass
         for tab in self.web_browser_driver.tabs:
             continue_reload = True
+            # Please find another efficient way to make sure the url hasn't loaded before attempting a change, you can use target url change in combination
+            reload_count = 0
             target_id = tab.target.target_id
             if target_id not in self.preliminary_activated_tabs:
                 await devtools_primary.enable_page(tab)
@@ -402,6 +404,8 @@ class BrowserInterface:
                     await tab.reload()
                     print("reload triggered")
                     await tab.sleep(2.5)
+                    reload_count += 1
+
 
     async def preliminary_tab_activation(self, target_tab: Tab):
         await self.add_network_interception_to_tab(target_tab)

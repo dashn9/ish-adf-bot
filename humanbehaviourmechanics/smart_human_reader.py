@@ -211,11 +211,9 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
         # Allowed for a wider margin because of touchscreen
         no_px_adjustment_threshold = 100
         if mode == "touch":
-            no_px_adjustment_threshold = 500
-        if (
-            kwargs["rem_px_to_adjust_by"] <= 0
-            or (px_to_adjust_by - kwargs["px_adjusted_by"])
-            >= no_px_adjustment_threshold
+            no_px_adjustment_threshold = 400
+        if kwargs["rem_px_to_adjust_by"] <= 0 or (
+            (px_to_adjust_by - kwargs["px_adjusted_by"]) >= no_px_adjustment_threshold
         ):
             return True
 
