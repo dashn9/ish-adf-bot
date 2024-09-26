@@ -58,8 +58,9 @@ async def run_bot(
     await web_bot.open_web_browser()
     try:
         web_bot.time_activated = time.time()
+        print("Opening Web Browser Url")
         await web_bot.web_browser_driver.get(page_info.get("page_url"))
-
+        print("Opened Web Browser url")
         if random.random() >= identity.ad_keywords_click_probability:
             identity.ad_keywords = None
         ad_click_probability = random.random()
