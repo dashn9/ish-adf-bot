@@ -187,7 +187,10 @@ class BrowserInterface:
         :return: Offset Locations Of Element(tuple) And Browser(tuple) In a Dict()
         """
         # Getting HTML Web Element Coordinates Which Are Relative From The Window Point And Dimensions
-        web_element_location_dimensions = await html_web_element.get_position()
+        try:
+            web_element_location_dimensions = await html_web_element.get_position()
+        except:
+            web_element_location_dimensions = await html_web_element.get_position()
 
         document_offset_from_screen = await self.get_document_offset_from_screen()
 
@@ -223,7 +226,12 @@ class BrowserInterface:
         :return: Offset Locations Of Element(tuple) And Browser(tuple) In a Dict()
         """
         # Getting HTML Web Element Coordinates Which Are Relative From The Window Point) And Dimensions
-        web_element_location_dimensions = await html_web_element.get_position()
+        try:
+            web_element_location_dimensions = await html_web_element.get_position()
+        except:
+            # I know this is not right, will look for a better fix in the future, this one is urgent
+            web_element_location_dimensions = await html_web_element.get_position()
+
 
         web_element_x_offset = web_element_location_dimensions.x
         web_element_y_offset = web_element_location_dimensions.y
@@ -351,13 +359,15 @@ class BrowserInterface:
             if open_browser_in_full_screen:
                 if random.random() <= browser_constants.FULLSCREEN_PROBABILITY:
                     await self.active_tab.set_window_state(0, 0, *window_size, state="fullscreen")
-                else:
+                elif config.CONTAINERIZED:
                     await self.active_tab.set_window_state(0, 0, *window_size, state="fullscreen")
+                    await self.active_tab.set_window_state(0, 0, *window_size, state="maximized")
+                else:
                     await self.active_tab.set_window_state(0, 0, *window_size, state="maximized")
             else:
                 await self.active_tab.set_window_state(0, 0, *window_size)
-            if self.device_type == "smartphone":
-                await self.active_tab.set_window_state(0, 0, bot_constants.SCREEN_WIDTH - 5, bot_constants.SCREEN_HEIGHT - 5)
+            if self.device_type == "smartphone" and config.CONTAINERIZED:
+                await self.active_tab.set_window_state(0, 0, bot_constants.SCREEN_WIDTH - 1, bot_constants.SCREEN_HEIGHT - 1)
 
         print(f"Bot Process Id {self.bot_process_id} <:::> Web Browser Opened")
 
@@ -381,8 +391,8 @@ class BrowserInterface:
             new_tab (_type_): _description_
         """
         async def handle_page_lifecycle_events(lifecycle_event, *args, **kwargs):
-            nonlocal continue_reload, reload_count
-            if lifecycle_event.name == "InteractiveTime" or reload_count >= 4:
+            nonlocal continue_reload, tab, first_url
+            if (tab.target.url != first_url):
                 continue_reload = False
         async def tab_reloader_if_redirect_link(tab, old_url):
             pass
@@ -390,8 +400,11 @@ class BrowserInterface:
             continue_reload = True
             # Please find another efficient way to make sure the url hasn't loaded before attempting a change, you can use target url change in combination
             reload_count = 0
+            first_url = None
             target_id = tab.target.target_id
             if target_id not in self.preliminary_activated_tabs:
+                await tab.sleep(1.5)
+                first_url = tab.target.url
                 await devtools_primary.enable_page(tab)
                 await devtools_primary.listen_to_page_lifecycle(tab, handle_page_lifecycle_events)
                 # The first url does not go through the proxy for obvious reasons as the tab was created with the url before adding the interceptor
@@ -399,11 +412,10 @@ class BrowserInterface:
                 await self.preliminary_tab_activation(tab)
                 self.preliminary_activated_tabs.add(target_id)
                 # requires fix
-                await tab.sleep(1.5)
-                while continue_reload:
+                while continue_reload and (reload_count < 4):
                     await tab.reload()
-                    print("reload triggered")
-                    await tab.sleep(2.5)
+                    print("reload triggered", reload_count)
+                    await tab.sleep(3)
                     reload_count += 1
 
 
