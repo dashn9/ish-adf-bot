@@ -178,12 +178,28 @@ class NetworkRunner:
                         print(
                             f"Bot Process Id {self.bot_process_id} <:::> Invalid Proxy Credentials, Exiting to avoid getting burnt"
                         )
+                        asyncio.get_event_loop().stop
                         exit()
                     # fix against ip leaks
                     if generate_empty_response_on_fail and retries < 1:
                         await asyncio.sleep(0.5)
                         asyncio.create_task(network_through_proxy(retries=retries + 1))
                     else:
+                        if pausedRequest.network_id not in failed_loading_requests:
+                            asyncio.create_task(
+                                devtools_primary.fail_request(
+                                    target_tab,
+                                    request_id=pausedRequest.request_id,
+                                    frame_id=pausedRequest.frame_id,
+                                )
+                            )
+                        print(
+                            f"Bot Process Id {self.bot_process_id} <:::> {request.url} generated an ssl or proxy error, "
+                            f"it won't go through proxy, so it was failed"
+                        )
+                    return False
+                except ClientConnectionError as e:
+                    if pausedRequest.network_id not in failed_loading_requests:
                         asyncio.create_task(
                             devtools_primary.fail_request(
                                 target_tab,
@@ -191,32 +207,12 @@ class NetworkRunner:
                                 frame_id=pausedRequest.frame_id,
                             )
                         )
-                        print(
-                            f"Bot Process Id {self.bot_process_id} <:::> {request.url} generated an ssl or proxy error, "
-                            f"it won't go through proxy, so it was failed"
-                        )
-                    return False
-                except ClientConnectionError as e:
-                    asyncio.create_task(
-                        devtools_primary.fail_request(
-                            target_tab,
-                            request_id=pausedRequest.request_id,
-                            frame_id=pausedRequest.frame_id,
-                        )
-                    )
                     print(
                         f"Bot Process Id {self.bot_process_id} <:::> {request.url} did not connect"
                     )
 
             await self.track_request_size(request)
             if config.PRINT_NETWORK:
-                asyncio.create_task(
-                    devtools_primary.fail_request(
-                        target_tab,
-                        request_id=pausedRequest.request_id,
-                        frame_id=pausedRequest.frame_id,
-                    )
-                )
                 print(f"Request url: {request.url}[{request.method}]")
 
             request_first_mime = request.headers.get("Accept", "*/*").split(",")[0]

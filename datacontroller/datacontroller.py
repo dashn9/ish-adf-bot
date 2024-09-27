@@ -47,7 +47,7 @@ class DataController:
         identity_timezone.close()
         if identity_timezone.status_code == 407:
             print("Invalid Proxy Credentials, Exiting....")
-            exit(0)
+            exit()
         return identity_timezone.json()
         # except:
         #     if retries <= 2:

@@ -290,6 +290,7 @@ class BrowserInterface:
 
                         # I do not like this solution one bit because if the program was meant to be running at loop, it terminates.
                         # I do not have a choice as I do not have a way to exit the current function. except i have a way to pass an event.
+                        asyncio.get_event_loop().stop()
                         exit()
                 except ConnectionRefusedError:
                     print(

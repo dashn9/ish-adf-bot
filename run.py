@@ -32,6 +32,7 @@ brc.FULL_DIRECTORY_PATH = os.path.dirname(os.path.realpath(__file__))
 
 async def restart_plug():
     if not RUN_INFINITELY:
+        asyncio.get_event_loop().stop()
         exit()
     else:
         print("Attempting to ReRun operations")
@@ -65,8 +66,8 @@ async def run_bot(
             identity.ad_keywords = None
         ad_click_probability = random.random()
         ad_to_click = None
-        # if ad_click_probability <= identity.ad_click_probability:
-        ad_to_click = identity.ad_type_to_click
+        if ad_click_probability <= identity.ad_click_probability:
+            ad_to_click = identity.ad_type_to_click
 
         await web_bot.set_ad_behaviour_environment(
             ad_to_click=ad_to_click,
