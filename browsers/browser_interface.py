@@ -5,14 +5,164 @@ import random
 import time
 import tempfile
 from functools import reduce
-from threading import Thread
 
-from nodriver import Element as WebElement, Tab
+from nodriver import Element as WebElement, Tab, Browser
 import nodriver as uc
 
 from bots import utils
 from bots.devtools import devtools_primary
 from constants import bot_constants, browser_constants, config
+
+
+
+
+
+# I created this to fix the issue with nodriver browser start not waiting long enough
+from nodriver.core.browser import HTTPApi
+import asyncio
+import logging
+import pathlib
+import warnings
+from nodriver import cdp
+from nodriver.core.browser import util
+from nodriver.core._contradict import ContraDict
+from nodriver.core.config import is_posix
+from nodriver.core.connection import Connection
+
+logger = logging.getLogger(__name__)
+class ExtendingBrowser(Browser):
+    _http: HTTPApi = None
+    async def start(self=None) -> Browser:
+        """launches the actual browser"""
+        if not self:
+            warnings.warn("use ``await Browser.create()`` to create a new instance")
+            return
+
+        if self._process or self._process_pid:
+            if self._process.returncode is not None:
+                return await self.create(config=self.config)
+            warnings.warn("ignored! this call has no effect when already running.")
+            return
+
+        # self.config.update(kwargs)
+        connect_existing = False
+        if self.config.host is not None and self.config.port is not None:
+            connect_existing = True
+        else:
+            self.config.host = "127.0.0.1"
+            self.config.port = util.free_port()
+
+        if not connect_existing:
+            logger.debug(
+                "BROWSER EXECUTABLE PATH: %s", self.config.browser_executable_path
+            )
+            if not pathlib.Path(self.config.browser_executable_path).exists():
+                raise FileNotFoundError(
+                    (
+                        """
+                    ---------------------
+                    Could not determine browser executable.
+                    ---------------------
+                    Make sure your browser is installed in the default location (path).
+                    If you are sure about the browser executable, you can specify it using
+                    the `browser_executable_path='{}` parameter."""
+                    ).format(
+                        "/path/to/browser/executable"
+                        if is_posix
+                        else "c:/path/to/your/browser.exe"
+                    )
+                )
+
+        if getattr(self.config, "_extensions", None):  # noqa
+            self.config.add_argument(
+                "--load-extension=%s"
+                % ",".join(str(_) for _ in self.config._extensions)
+            )  # noqa
+
+        exe = self.config.browser_executable_path
+        params = self.config()
+
+        logger.info(
+            "starting\n\texecutable :%s\n\narguments:\n%s", exe, "\n\t".join(params)
+        )
+        if not connect_existing:
+            self._process: asyncio.subprocess.Process = (
+                await asyncio.create_subprocess_exec(
+                    # self.config.browser_executable_path,
+                    # *cmdparams,
+                    exe,
+                    *params,
+                    stdin=asyncio.subprocess.PIPE,
+                    stdout=asyncio.subprocess.PIPE,
+                    stderr=asyncio.subprocess.PIPE,
+                    close_fds=is_posix,
+                )
+            )
+            self._process_pid = self._process.pid
+
+        self._http = HTTPApi((self.config.host, self.config.port))
+        util.get_registered_instances().add(self)
+        await asyncio.sleep(0.25)
+        for _ in range(10):
+            try:
+                self.info = ContraDict(await self._http.get("version"), silent=True)
+            except (Exception,):
+                if _ == 4:
+                    logger.debug("could not start", exc_info=True)
+                await self.sleep(0.5)
+            else:
+                break
+
+        if not self.info:
+            raise Exception(
+                (
+                    """
+                ---------------------
+                Failed to connect to browser
+                ---------------------
+                One of the causes could be when you are running as root.
+                In that case you need to pass no_sandbox=True 
+                """
+                )
+            )
+
+        self.connection = Connection(self.info.webSocketDebuggerUrl, _owner=self)
+
+        if self.config.autodiscover_targets:
+            logger.info("enabling autodiscover targets")
+
+            # self.connection.add_handler(
+            #     cdp.target.TargetInfoChanged, self._handle_target_update
+            # )
+            # self.connection.add_handler(
+            #     cdp.target.TargetCreated, self._handle_target_update
+            # )
+            # self.connection.add_handler(
+            #     cdp.target.TargetDestroyed, self._handle_target_update
+            # )
+            # self.connection.add_handler(
+            #     cdp.target.TargetCreated, self._handle_target_update
+            # )
+            #
+            self.connection.handlers[cdp.target.TargetInfoChanged] = [
+                self._handle_target_update
+            ]
+            self.connection.handlers[cdp.target.TargetCreated] = [
+                self._handle_target_update
+            ]
+            self.connection.handlers[cdp.target.TargetDestroyed] = [
+                self._handle_target_update
+            ]
+            self.connection.handlers[cdp.target.TargetCrashed] = [
+                self._handle_target_update
+            ]
+            await self.connection.send(cdp.target.set_discover_targets(discover=True))
+        await self
+        # self.connection.handlers[cdp.inspector.Detached] = [self.stop]
+        # return self
+
+
+
 
 
 class BrowserInterface:
@@ -346,14 +496,14 @@ class BrowserInterface:
                 '--start-maximized'
                 # supposed to help with storage usage, but i'm not sure
                 ], user_data_dir=browser_constants.CHROME_DATA_DIRECTORY+"/profiles/"+str(self.identity_id), 
-                browser_executable_path=bot_constants.FULL_DIRECTORY_PATH+browser_constants.CHROME_BINARY_LOCATION)
+                browser_executable_path=bot_constants.FULL_DIRECTORY_PATH+browser_constants.CHROME_BINARY_LOCATION,
+                headless=False)
             browser_config.add_extension(f'{bot_constants.FULL_DIRECTORY_PATH+browser_constants.CHROME_EXTENSIONS_LOCATION+"/browser_spoofer.crx"}')
             browser_config.add_extension(f'{bot_constants.FULL_DIRECTORY_PATH+browser_constants.CHROME_EXTENSIONS_LOCATION+"/browser_network.crx"}')
             if self.user_agent:
                 browser_config.add_argument(f"--user-agent={self.user_agent}")
             browser_config.binary_location = browser_constants.CHROME_BINARY_LOCATION
-            self.web_browser_driver = await uc.start(
-                headless=False,
+            self.web_browser_driver = await ExtendingBrowser.create(
                 config=browser_config)
             self.active_tab = self.web_browser_driver.main_tab
             await asyncio.sleep(0.6)
