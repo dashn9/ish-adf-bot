@@ -26,8 +26,8 @@ data:
 
         [BOT]
         bot-id = 0
-        max-alive-time = 300
-        min-alive-time = 240
+        max-alive-time = 180
+        min-alive-time = 150
         run-infinitely = True
         engage-reader = True
         # Don't touch mouse-use-probability unless you know what it does
