@@ -160,17 +160,19 @@ async def run_bot(
 
 async def main():
     identity = Identity()
-    await identity.auto_initiate_identity(FETCH_BY, FETCH_BY_VALUE)
-    if FETCH_BY == "random":
-        for _ in range(12):
-            try:
-                print(
-                    f"Initiating Identity with ID: {identity.id} failed, Reinitiating at: {_}"
-                )
-                await identity.auto_initiate_identity(FETCH_BY, FETCH_BY_VALUE)
-                break
-            except TimezoneFetchException:
-                await asyncio.sleep(0.5)
+    try:
+        await identity.auto_initiate_identity(FETCH_BY, FETCH_BY_VALUE)
+    except TimezoneFetchException:
+        if FETCH_BY == "random":
+            for _ in range(12):
+                try:
+                    print(
+                        f"Initiating Identity with ID: {identity.id} failed, Reinitiating at: {_}"
+                    )
+                    await identity.auto_initiate_identity(FETCH_BY, FETCH_BY_VALUE)
+                    break
+                except TimezoneFetchException:
+                    await asyncio.sleep(0.5)
     if CONTAINERIZED:
         screen_width = identity.screen_width
         screen_height = identity.screen_height
