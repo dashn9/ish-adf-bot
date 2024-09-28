@@ -103,13 +103,13 @@ class ExtendingBrowser(Browser):
         self._http = HTTPApi((self.config.host, self.config.port))
         util.get_registered_instances().add(self)
         await asyncio.sleep(0.25)
-        for _ in range(10):
+        for _ in range(12):
             try:
                 self.info = ContraDict(await self._http.get("version"), silent=True)
             except (Exception,):
                 if _ == 4:
                     logger.debug("could not start", exc_info=True)
-                await self.sleep(0.5)
+                await self.sleep(0.8)
             else:
                 break
 
