@@ -15,6 +15,8 @@ from identity.client import Identity
 import constants.browser_constants as brc
 import constants.bot_constants as boc
 from datacontroller.datacontroller import DataController
+
+from exceptions.identity import TimezoneFetchException
 from constants.config import (
     BOT_ID,
     CONTAINERIZED,
@@ -158,8 +160,17 @@ async def run_bot(
 
 async def main():
     identity = Identity()
-
     await identity.auto_initiate_identity(FETCH_BY, FETCH_BY_VALUE)
+    if FETCH_BY == "random":
+        for _ in range(12):
+            try:
+                print(
+                    f"Initiating Identity with ID: {identity.id} failed, Reinitiating at: {_}"
+                )
+                await identity.auto_initiate_identity(FETCH_BY, FETCH_BY_VALUE)
+                break
+            except TimezoneFetchException:
+                await asyncio.sleep(0.5)
     if CONTAINERIZED:
         screen_width = identity.screen_width
         screen_height = identity.screen_height

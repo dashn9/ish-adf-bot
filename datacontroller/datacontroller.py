@@ -4,6 +4,8 @@ import requests
 from constants.config import DEBUG
 from constants.bot_constants import IDENTITY_API_BASE_HOST
 
+from exceptions.identity import TimezoneFetchException
+
 
 class DataController:
     server_addr = IDENTITY_API_BASE_HOST
@@ -48,11 +50,10 @@ class DataController:
         if identity_timezone.status_code == 407:
             print("Invalid Proxy Credentials, Exiting....")
             exit()
-        return identity_timezone.json()
-        # except:
-        #     if retries <= 2:
-        #         retries += 1
-        #         return self.fetch_timezone(identity_id, proxy, retries)
+        if identity_timezone.ok:
+            return identity_timezone.json()
+        else:
+            raise TimezoneFetchException
 
     async def fetch_geolocation_data(self, proxy=None):
         try:
