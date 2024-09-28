@@ -352,19 +352,9 @@ class BrowserInterface:
             if self.user_agent:
                 browser_config.add_argument(f"--user-agent={self.user_agent}")
             browser_config.binary_location = browser_constants.CHROME_BINARY_LOCATION
-            for _ in range(12):
-                try:
-                    # Starting the browser is notorious for not waiting enough for the browser to start, raised an issue for it, but I don't know when it will be fixed
-                    # For now this is my solution
-                    self.web_browser_driver = await uc.start(
-                        headless=False,
-                        config=browser_config)
-                    break
-                except Exception as e:
-                    if _ == 11:
-                        raise e
-                    print(f"Starting browser failed")
-                    pass
+            self.web_browser_driver = await uc.start(
+                headless=False,
+                config=browser_config)
             self.active_tab = self.web_browser_driver.main_tab
             await asyncio.sleep(0.6)
             if open_browser_in_full_screen:
