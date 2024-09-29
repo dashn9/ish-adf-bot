@@ -85,46 +85,76 @@ class ExtendingBrowser(Browser):
         logger.info(
             "starting\n\texecutable :%s\n\narguments:\n%s", exe, "\n\t".join(params)
         )
-        if not connect_existing:
-            self._process: asyncio.subprocess.Process = (
-                await asyncio.create_subprocess_exec(
-                    # self.config.browser_executable_path,
-                    # *cmdparams,
-                    exe,
-                    *params,
-                    stdin=asyncio.subprocess.PIPE,
-                    stdout=asyncio.subprocess.PIPE,
-                    stderr=asyncio.subprocess.PIPE,
-                    close_fds=is_posix,
-                )
+        async def launch_browser():
+            process = await asyncio.create_subprocess_exec(
+                exe,
+                *params,
+                stdin=asyncio.subprocess.PIPE,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+                close_fds=is_posix,
             )
-            self._process_pid = self._process.pid
+            return process
 
-        self._http = HTTPApi((self.config.host, self.config.port))
-        util.get_registered_instances().add(self)
-        await asyncio.sleep(1)
-        for _ in range(10):
-            try:
-                self.info = ContraDict(await self._http.get("version"), silent=True)
-            except (Exception,):
-                if _ == 4:
-                    logger.debug("could not start", exc_info=True)
-                await self.sleep(1)
-            else:
-                break
+        async def check_browser_exit(process):
+            """Check if the browser process has exited, and if so, print the error details."""
+            # Poll the process to see if it has exited
+            if process.returncode is not None:
+                stdout, stderr = await process.communicate()  # Get any stdout/stderr output
+                print(f"Browser exited unexpectedly with return code {process.returncode}")
+                if stderr:
+                    print(f"Browser error details: {stderr.decode()}")
+                return True
+            return False
 
-        if not self.info:
-            raise Exception(
-                (
-                    """
-                ---------------------
-                Failed to connect to browser
-                ---------------------
-                One of the causes could be when you are running as root.
-                In that case you need to pass no_sandbox=True 
-                """
-                )
-            )
+        async def start_browser_instance():
+            process = await launch_browser()
+            self._process_pid = process.pid
+            self._http = HTTPApi((self.config.host, self.config.port))
+            util.get_registered_instances().add(self)
+            return process
+
+        async def connect_to_browser(process):
+            """Attempt to connect to the browser and return True if successful, False otherwise."""
+            await asyncio.sleep(0.25)  # Short delay to allow the browser to initialize
+
+            for attempt in range(5):  # Retry 5 times
+                if await check_browser_exit(process):
+                    # If the browser exited, break out and restart
+                    return False
+
+                try:
+                    self.info = ContraDict(await self._http.get("version"), silent=True)
+                except Exception as e:
+                    if attempt == 4:
+                        print("Could not connect to browser after multiple attempts", e)
+                    else:
+                        print(f"Retrying connection to browser ({attempt + 1}/5)...")
+                    await asyncio.sleep(0.5)  # Wait between retries
+                else:
+                    return True  # Successfully connected
+
+            return False  # Failed to connect after retries
+
+        async def main_loop():
+            process = await start_browser_instance()
+            restart_attempts = 0
+
+            while True:
+                connected = await connect_to_browser(process)
+
+                if not connected or not self.info:
+                    restart_attempts += 1
+                    print(f"Browser connection failed, restarting browser... (Attempt {restart_attempts})")
+                    
+                    process.terminate()
+                    await process.wait()
+                    process = await start_browser_instance()
+                else:
+                    break
+
+                if not connect_existing:
+                    await main_loop()
 
         self.connection = Connection(self.info.webSocketDebuggerUrl, _owner=self)
 
