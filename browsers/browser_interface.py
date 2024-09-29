@@ -6,208 +6,12 @@ import time
 import tempfile
 from functools import reduce
 
-from nodriver import Element as WebElement, Tab, Browser
+from nodriver import Element as WebElement, Tab
 import nodriver as uc
 
 from bots import utils
 from bots.devtools import devtools_primary
 from constants import bot_constants, browser_constants, config
-
-
-
-
-
-# I created this to fix the issue with nodriver browser start not waiting long enough
-from nodriver.core.browser import HTTPApi
-import asyncio
-import logging
-import pathlib
-import warnings
-from nodriver import cdp
-from nodriver.core.browser import util
-from nodriver.core._contradict import ContraDict
-from nodriver.core.config import is_posix
-from nodriver.core.connection import Connection
-
-logger = logging.getLogger(__name__)
-class ExtendingBrowser(Browser):
-    _http: HTTPApi = None
-    async def start(self=None) -> Browser:
-        """launches the actual browser"""
-        if not self:
-            warnings.warn("use ``await Browser.create()`` to create a new instance")
-            return
-
-        if self._process or self._process_pid:
-            if self._process.returncode is not None:
-                return await self.create(config=self.config)
-            warnings.warn("ignored! this call has no effect when already running.")
-            return
-
-        # self.config.update(kwargs)
-        connect_existing = False
-        if self.config.host is not None and self.config.port is not None:
-            connect_existing = True
-        else:
-            self.config.host = "127.0.0.1"
-            self.config.port = util.free_port()
-
-        if not connect_existing:
-            logger.debug(
-                "BROWSER EXECUTABLE PATH: %s", self.config.browser_executable_path
-            )
-            if not pathlib.Path(self.config.browser_executable_path).exists():
-                raise FileNotFoundError(
-                    (
-                        """
-                    ---------------------
-                    Could not determine browser executable.
-                    ---------------------
-                    Make sure your browser is installed in the default location (path).
-                    If you are sure about the browser executable, you can specify it using
-                    the `browser_executable_path='{}` parameter."""
-                    ).format(
-                        "/path/to/browser/executable"
-                        if is_posix
-                        else "c:/path/to/your/browser.exe"
-                    )
-                )
-
-        if getattr(self.config, "_extensions", None):  # noqa
-            self.config.add_argument(
-                "--load-extension=%s"
-                % ",".join(str(_) for _ in self.config._extensions)
-            )  # noqa
-
-        exe = self.config.browser_executable_path
-        params = self.config()
-
-        logger.info(
-            "starting\n\texecutable :%s\n\narguments:\n%s", exe, "\n\t".join(params)
-        )
-        async def launch_browser():
-            process = await asyncio.create_subprocess_exec(
-                exe,
-                *params,
-                stdin=asyncio.subprocess.PIPE,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE,
-                close_fds=is_posix,
-            )
-            return process
-
-        async def check_browser_exit(process):
-            """Check if the browser process has exited, and if so, print the error details."""
-            # Poll the process to see if it has exited
-            if process.returncode is not None:
-                stdout, stderr = await process.communicate()  # Get any stdout/stderr output
-                print(f"Browser exited unexpectedly with return code {process.returncode}")
-                if stderr:
-                    print(f"Browser error details: {stderr.decode()}")
-                return True
-            return False
-
-        async def start_browser_instance():
-            process = await launch_browser()
-            self._process_pid = process.pid
-            self._http = HTTPApi((self.config.host, self.config.port))
-            util.get_registered_instances().add(self)
-            return process
-
-        async def connect_to_browser(process):
-            """Attempt to connect to the browser and return True if successful, False otherwise."""
-            await asyncio.sleep(0.25)  # Short delay to allow the browser to initialize
-
-            for attempt in range(5):  # Retry 5 times
-                if await check_browser_exit(process):
-                    # If the browser exited, break out and restart
-                    return False
-
-                try:
-                    self.info = ContraDict(await self._http.get("version"), silent=True)
-                except Exception as e:
-                    if attempt == 4:
-                        print("Could not connect to browser after multiple attempts", e)
-                    else:
-                        print(f"Retrying connection to browser ({attempt + 1}/5)...")
-                    await asyncio.sleep(1)  # Wait between retries
-                else:
-                    return True  # Successfully connected
-
-            return False  # Failed to connect after retries
-
-        async def main_loop():
-            process = await start_browser_instance()
-            restart_attempts = 0
-
-            while True:
-                await connect_to_browser(process)
-
-                if not self.info:
-                    # remove this exception if you want want instant browser restart
-                    raise Exception(
-                        (
-                            """
-                        ---------------------
-                        Failed to connect to browser
-                        ---------------------
-                        One of the causes could be when you are running as root.
-                        In that case you need to pass no_sandbox=True 
-                        """
-                        )
-                    )
-                    restart_attempts += 1
-                    print(f"Browser connection failed, restarting browser... (Attempt {restart_attempts})")
-                    
-                    try:
-                        process.terminate()
-                        await process.wait()
-                    except ProcessLookupError:
-                        print("Browser Process already terminated or does not exist.")
-                    process = await start_browser_instance()
-                else:
-                    break
-
-        if not connect_existing:
-            await main_loop()
-
-        self.connection = Connection(self.info.webSocketDebuggerUrl, _owner=self)
-
-        if self.config.autodiscover_targets:
-            logger.info("enabling autodiscover targets")
-
-            # self.connection.add_handler(
-            #     cdp.target.TargetInfoChanged, self._handle_target_update
-            # )
-            # self.connection.add_handler(
-            #     cdp.target.TargetCreated, self._handle_target_update
-            # )
-            # self.connection.add_handler(
-            #     cdp.target.TargetDestroyed, self._handle_target_update
-            # )
-            # self.connection.add_handler(
-            #     cdp.target.TargetCreated, self._handle_target_update
-            # )
-            #
-            self.connection.handlers[cdp.target.TargetInfoChanged] = [
-                self._handle_target_update
-            ]
-            self.connection.handlers[cdp.target.TargetCreated] = [
-                self._handle_target_update
-            ]
-            self.connection.handlers[cdp.target.TargetDestroyed] = [
-                self._handle_target_update
-            ]
-            self.connection.handlers[cdp.target.TargetCrashed] = [
-                self._handle_target_update
-            ]
-            await self.connection.send(cdp.target.set_discover_targets(discover=True))
-        await self
-        # self.connection.handlers[cdp.inspector.Detached] = [self.stop]
-        # return self
-
-
-
 
 
 class BrowserInterface:
@@ -543,15 +347,15 @@ class BrowserInterface:
                 '--start-maximized'
                 # supposed to help with storage usage, but i'm not sure
                 ], user_data_dir=user_data_dir, 
-                browser_executable_path=bot_constants.FULL_DIRECTORY_PATH+browser_constants.CHROME_BINARY_LOCATION,
-                sandbox=False)
+                browser_executable_path=bot_constants.FULL_DIRECTORY_PATH+browser_constants.CHROME_BINARY_LOCATION)
             browser_config.add_extension(f'{bot_constants.FULL_DIRECTORY_PATH+browser_constants.CHROME_EXTENSIONS_LOCATION+"/browser_spoofer.crx"}')
             browser_config.add_extension(f'{bot_constants.FULL_DIRECTORY_PATH+browser_constants.CHROME_EXTENSIONS_LOCATION+"/browser_network.crx"}')
             if self.user_agent:
                 browser_config.add_argument(f"--user-agent={self.user_agent}")
             browser_config.binary_location = browser_constants.CHROME_BINARY_LOCATION
-            self.web_browser_driver = await ExtendingBrowser.create(
-                config=browser_config)
+            self.web_browser_driver = await uc.start(
+                config=browser_config,
+                sandbox=False)
             self.active_tab = self.web_browser_driver.main_tab
             await asyncio.sleep(0.6)
             if open_browser_in_full_screen:
