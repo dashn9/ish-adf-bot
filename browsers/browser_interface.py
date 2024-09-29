@@ -139,19 +139,19 @@ class ExtendingBrowser(Browser):
         async def main_loop():
             process = await start_browser_instance()
             restart_attempts = 0
+            connected = await connect_to_browser(process)
 
-            while True:
-                connected = await connect_to_browser(process)
-
-                if not connected or not self.info:
-                    restart_attempts += 1
-                    print(f"Browser connection failed, restarting browser... (Attempt {restart_attempts})")
-                    
+            if not connected or not self.info:
+                restart_attempts += 1
+                print(f"Browser connection failed, restarting browser... (Attempt {restart_attempts})")
+                
+                try:
                     process.terminate()
                     await process.wait()
-                    process = await start_browser_instance()
-                else:
-                    break
+                except ProcessLookupError:
+                    print("Browser Process already terminated or does not exist.")
+                process = await start_browser_instance()
+
 
         if not connect_existing:
             await main_loop()
@@ -513,6 +513,8 @@ class BrowserInterface:
         if random.random() >= browser_constants.MAXIMUM_WINDOW_PROBABILITY and self.device_type == "computer":
             open_browser_in_full_screen = False
             window_size = utils.fetch_random_window_size_relative_to_screen(*window_size)
+        user_data_dir = browser_constants.CHROME_DATA_DIRECTORY+"/profiles/"+str(self.identity_id)
+        utils.remove_profile_lock(user_data_dir)
         # Opens a Chrome browser
         if self.browser_to_use_id == browser_constants.CHROME_ID:
             print(f"Bot Process Id {self.bot_process_id} <:::> Opening Chrome Browser")
@@ -525,7 +527,7 @@ class BrowserInterface:
                 '--window-position=0,0',
                 '--start-maximized'
                 # supposed to help with storage usage, but i'm not sure
-                ], user_data_dir=browser_constants.CHROME_DATA_DIRECTORY+"/profiles/"+str(self.identity_id), 
+                ], user_data_dir=user_data_dir, 
                 browser_executable_path=bot_constants.FULL_DIRECTORY_PATH+browser_constants.CHROME_BINARY_LOCATION,
                 sandbox=False)
             browser_config.add_extension(f'{bot_constants.FULL_DIRECTORY_PATH+browser_constants.CHROME_EXTENSIONS_LOCATION+"/browser_spoofer.crx"}')

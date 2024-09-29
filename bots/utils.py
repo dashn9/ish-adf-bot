@@ -419,3 +419,15 @@ def generate_mouse_wheel_plot(px_to_adjust_by=1000, duration=3000):
 def normalize_version(version, indexes=4):
     parts = str(version).split(".")[:indexes]
     return ".".join(parts + ["0"] * (indexes - len(parts)))
+
+
+def remove_profile_lock(profile_path):
+    lock_files = ["SingletonLock"]
+    for lock_file in lock_files:
+        lock_path = os.path.join(profile_path, lock_file)
+        if os.path.exists(lock_path):
+            try:
+                os.remove(lock_path)
+                print(f"Removed lock file: {lock_path}")
+            except Exception as e:
+                print(f"Error removing lock file {lock_path}: {e}")
