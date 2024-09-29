@@ -434,7 +434,7 @@ class BrowserInterface:
                 try:
                     if not self.web_browser_driver.stopped:
                         print(f"Bot Process Id {self.bot_process_id} <:::> Updating Cookies To Cloud")
-                        await asyncio.gather(self.release_proxies(), self.update_cookies_to_cloud())
+                        await self.update_cookies_to_cloud()
                         self.web_browser_driver.stop()
 
 
