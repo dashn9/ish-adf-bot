@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: webbot
-          image: us-east4-docker.pkg.dev/centering-rider-426308-i2/ish-bot/ish_bot:eb54dffcfe7e4fd1d6c2931b5d1b6046499c5aca
+          image: us-east4-docker.pkg.dev/centering-rider-426308-i2/ish-bot/ish_bot:51a665044d776792a681b8446e2839d6fd5d886e
           envFrom:
             - secretRef:
                 name: ish-bot-proxy-auths
