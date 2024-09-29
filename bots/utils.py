@@ -434,5 +434,3 @@ def remove_profile_lock(profile_path):
                 print(f"Removed lock file: {lock_path}")
             except Exception as e:
                 print(f"Error removing lock file {lock_path}: {e}")
-        else:
-            print(f"Lock file does not exist: {lock_path}")

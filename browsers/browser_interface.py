@@ -139,19 +139,34 @@ class ExtendingBrowser(Browser):
         async def main_loop():
             process = await start_browser_instance()
             restart_attempts = 0
-            connected = await connect_to_browser(process)
 
-            if not connected or not self.info:
-                restart_attempts += 1
-                print(f"Browser connection failed, restarting browser... (Attempt {restart_attempts})")
-                
-                try:
-                    process.terminate()
-                    await process.wait()
-                except ProcessLookupError:
-                    print("Browser Process already terminated or does not exist.")
-                process = await start_browser_instance()
+            while True:
+                await connect_to_browser(process)
 
+                if not self.info:
+                    # remove this exception if you want want instant browser restart
+                    raise Exception(
+                        (
+                            """
+                        ---------------------
+                        Failed to connect to browser
+                        ---------------------
+                        One of the causes could be when you are running as root.
+                        In that case you need to pass no_sandbox=True 
+                        """
+                        )
+                    )
+                    restart_attempts += 1
+                    print(f"Browser connection failed, restarting browser... (Attempt {restart_attempts})")
+                    
+                    try:
+                        process.terminate()
+                        await process.wait()
+                    except ProcessLookupError:
+                        print("Browser Process already terminated or does not exist.")
+                    process = await start_browser_instance()
+                else:
+                    break
 
         if not connect_existing:
             await main_loop()
