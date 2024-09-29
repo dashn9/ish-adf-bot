@@ -86,18 +86,19 @@ class ExtendingBrowser(Browser):
             "starting\n\texecutable :%s\n\narguments:\n%s", exe, "\n\t".join(params)
         )
         if not connect_existing:
-            self._process: asyncio.subprocess.Process = (
-                await asyncio.create_subprocess_exec(
-                    # self.config.browser_executable_path,
-                    # *cmdparams,
-                    exe,
-                    *params,
-                    stdin=asyncio.subprocess.PIPE,
-                    stdout=asyncio.subprocess.PIPE,
-                    stderr=asyncio.subprocess.PIPE,
-                    close_fds=is_posix,
-                )
+            import subprocess
+            self._process = subprocess.Popen(
+                [
+                    exe,  # executable
+                    *params  # parameters
+                ],
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                close_fds=is_posix
             )
+
+            # Get the process PID
             self._process_pid = self._process.pid
 
         self._http = HTTPApi((self.config.host, self.config.port))
