@@ -130,7 +130,7 @@ class ExtendingBrowser(Browser):
                         print("Could not connect to browser after multiple attempts", e)
                     else:
                         print(f"Retrying connection to browser ({attempt + 1}/5)...")
-                    await asyncio.sleep(0.5)  # Wait between retries
+                    await asyncio.sleep(1)  # Wait between retries
                 else:
                     return True  # Successfully connected
 
@@ -153,8 +153,8 @@ class ExtendingBrowser(Browser):
                 else:
                     break
 
-                if not connect_existing:
-                    await main_loop()
+        if not connect_existing:
+            await main_loop()
 
         self.connection = Connection(self.info.webSocketDebuggerUrl, _owner=self)
 
