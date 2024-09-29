@@ -285,6 +285,7 @@ class BrowserInterface:
                         print(f"Bot Process Id {self.bot_process_id} <:::> Updating Cookies To Cloud")
                         await self.update_cookies_to_cloud()
                         self.web_browser_driver.stop()
+                        await asyncio.sleep(0.5)
 
 
                     # I do not like this solution one bit because if the program was meant to be running at loop, it terminates.
