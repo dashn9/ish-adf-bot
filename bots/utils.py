@@ -421,13 +421,18 @@ def normalize_version(version, indexes=4):
     return ".".join(parts + ["0"] * (indexes - len(parts)))
 
 
+import os
+
+
 def remove_profile_lock(profile_path):
     lock_files = ["SingletonLock"]
     for lock_file in lock_files:
         lock_path = os.path.join(profile_path, lock_file)
-        if os.path.exists(lock_path):
+        if os.path.exists(lock_path) or os.path.islink(lock_path):
             try:
                 os.remove(lock_path)
                 print(f"Removed lock file: {lock_path}")
             except Exception as e:
                 print(f"Error removing lock file {lock_path}: {e}")
+        else:
+            print(f"Lock file does not exist: {lock_path}")
