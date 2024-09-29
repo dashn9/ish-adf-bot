@@ -109,7 +109,7 @@ class ExtendingBrowser(Browser):
             except (Exception,):
                 if _ == 4:
                     logger.debug("could not start", exc_info=True)
-                await self.sleep(0.8)
+                await self.sleep(0.45)
             else:
                 break
 
@@ -497,7 +497,7 @@ class BrowserInterface:
                 # supposed to help with storage usage, but i'm not sure
                 ], user_data_dir=browser_constants.CHROME_DATA_DIRECTORY+"/profiles/"+str(self.identity_id), 
                 browser_executable_path=bot_constants.FULL_DIRECTORY_PATH+browser_constants.CHROME_BINARY_LOCATION,
-                headless=False)
+                sandbox=False)
             browser_config.add_extension(f'{bot_constants.FULL_DIRECTORY_PATH+browser_constants.CHROME_EXTENSIONS_LOCATION+"/browser_spoofer.crx"}')
             browser_config.add_extension(f'{bot_constants.FULL_DIRECTORY_PATH+browser_constants.CHROME_EXTENSIONS_LOCATION+"/browser_network.crx"}')
             if self.user_agent:

@@ -134,7 +134,7 @@ async def run_bot(
         try:
             print("Updating Cookies To Cloud")
             await web_bot.update_cookies_to_cloud()
-            await web_bot.release_proxies()
+            # await web_bot.release_proxies()
             web_bot.web_browser_driver.stop()
         except ConnectionRefusedError:
             print(
