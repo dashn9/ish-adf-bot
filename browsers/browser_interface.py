@@ -376,7 +376,7 @@ class BrowserInterface:
 
         await self.preliminary_tab_activation(self.active_tab)
         await asyncio.sleep(1)
-        await devtools_primary.set_all_cookies(self.web_browser_driver, await self.identity.fetch_identity_cookies_info_for_extension())
+        await devtools_primary.set_all_cookies(self.active_tab, await self.identity.fetch_identity_cookies_info_for_extension())
         await asyncio.sleep(1)
         self.preliminary_activated_tabs.add(self.active_tab.target.target_id)
         await devtools_primary.listen_to_tab_creation(self.web_browser_driver.connection, self._handle_new_tab_creation)

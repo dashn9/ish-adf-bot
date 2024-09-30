@@ -234,7 +234,7 @@ async def fail_request(
     await tab.send(cdp.fetch.fail_request(request_id, error_reason))
 
 async def set_all_cookies(tab: Tab, cookies):
-    await tab.connection.send(cdp.storage.set_cookies([cdp.network.CookieParam.from_json(cookie) for cookie in cookies]))
+    await tab.send(cdp.storage.set_cookies([cdp.network.CookieParam.from_json(cookie) for cookie in cookies]))
 
 async def stop_tab_loading(tab: Tab):
     await tab.send(cdp.page.stop_loading())
