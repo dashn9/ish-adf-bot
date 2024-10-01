@@ -425,7 +425,7 @@ import os
 
 
 def remove_profile_lock(profile_path):
-    lock_files = ["SingletonLock", "SingletonSocket", "SingletonCookie"]
+    lock_files = ["SingletonLock"]
     for lock_file in lock_files:
         lock_path = os.path.join(profile_path, lock_file)
         if os.path.exists(lock_path) or os.path.islink(lock_path):

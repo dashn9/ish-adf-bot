@@ -320,29 +320,25 @@ class Identity:
         else:
             return standard_browser_version_replacer(user_agent, browser_version)
 
-    async def fetch_identity_cookies_info_for_extension(
-        self, url="http://spoof-data.ish.bot.local"
-    ):
+    async def fetch_identity_data_for_extension(self):
         browser_name = self.browser_name
         if browser_name == "chrome" and self.os == "iOS":
             browser_name = "chrome-ios"
-        return [
-            dict(url=url, name="fontHeightOffset", value=self.font_fp_offset[0]),
-            dict(url=url, name="fontWidthOffset", value=self.font_fp_offset[1]),
-            dict(url=url, name="hasBattery", value=self.has_battery),
-            dict(url=url, name="browser", value=browser_name),
-            dict(url=url, name="webglValueIndexSeed", value=self.webgl_fp_offset[0]),
-            dict(url=url, name="webglValueOffset", value=self.webgl_fp_offset[1]),
-            dict(
-                url=url, name="audioContextOffset", value=self.audio_context_fp_offset
-            ),
-            dict(url=url, name="webglParam37445", value=self.gpu_vendor),
-            dict(url=url, name="webglParam37446", value=self.gpu_renderer),
-            dict(url=url, name="memory", value=self.memory),
-            dict(url=url, name="referrer", value=self.referrer),
-            dict(url=url, name="canvasIndexes", value=self.canvas_fp_offset),
-            dict(url=url, name="windowHistoryCount", value=random.randint(0, 16)),
-        ]
+        return {
+            "fontHeightOffset": self.font_fp_offset[0],
+            "fontWidthOffset": self.font_fp_offset[1],
+            "hasBattery": self.has_battery,
+            "browser": browser_name,
+            "webglValueIndexSeed": self.webgl_fp_offset[0],
+            "webglValueOffset": self.webgl_fp_offset[1],
+            "audioContextOffset": self.audio_context_fp_offset,
+            "webglParam37445": self.gpu_vendor,
+            "webglParam37446": self.gpu_renderer,
+            "memory": self.memory,
+            "referrer": self.referrer,
+            "canvasIndexes": self.canvas_fp_offset,
+            "windowHistoryCount": random.randint(0, 16),
+        }
 
     async def disconnect_all_vpn(self):
         if Identity.ovpn_process is not None:

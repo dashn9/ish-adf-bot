@@ -375,13 +375,16 @@ class BrowserInterface:
         print(f"Bot Process Id {self.bot_process_id} <:::> Web Browser Opened")
 
         await self.preliminary_tab_activation(self.active_tab)
-        await asyncio.sleep(1)
-        await devtools_primary.set_all_cookies(self.active_tab, await self.identity.fetch_identity_cookies_info_for_extension())
-        await asyncio.sleep(1)
         self.preliminary_activated_tabs.add(self.active_tab.target.target_id)
         await devtools_primary.listen_to_tab_creation(self.web_browser_driver.connection, self._handle_new_tab_creation)
-        # give browser time to settle
-        await self.active_tab.sleep(4)
+        await self.active_tab.get('https://blank.org')
+        await asyncio.sleep(1)
+        # The purpose of these code below is to be able to dispatch an event to the extension, which only comes alive after a url load
+        identitySpoofData = json.dumps(await self.identity.fetch_identity_data_for_extension())
+        await self.active_tab.evaluate(f"""
+            window.dispatchEvent(new CustomEvent('ishBotSpoofData', {{ detail: {identitySpoofData} }}));
+        """)
+        # consider moving this to a thread instead
         asyncio.create_task(self.quit_browser_after_max_alive())
 
     async def _handle_new_tab_creation(self, new_tab):

@@ -17,7 +17,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.ISH_BOT_EXTENSIONS_GITHUB_TOKEN }}
         run: |
-          curl -L -H "Accept: application/octet-stream" -H "Authorization: token ${{ secrets.ISH_BOT_EXTENSIONS_GITHUB_TOKEN }}" https://api.github.com/repos/Ishogbon/ish-bot-fp-spoofer/releases/assets/194017183 -o executables/extensions/chrome/browser_spoofer.crx
+          curl -L -H "Accept: application/octet-stream" -H "Authorization: token ${{ secrets.ISH_BOT_EXTENSIONS_GITHUB_TOKEN }}" https://api.github.com/repos/Ishogbon/ish-bot-fp-spoofer/releases/assets/196019283 -o executables/extensions/chrome/browser_spoofer.crx
           curl -L -H "Accept: application/octet-stream" -H "Authorization: token ${{ secrets.ISH_BOT_EXTENSIONS_GITHUB_TOKEN }}" https://api.github.com/repos/Ishogbon/ish-bot-chrome-network-extension/releases/assets/194017614 -o executables/extensions/chrome/browser_network.crx
 
       - name: Authenticate Google Cloud SDK
