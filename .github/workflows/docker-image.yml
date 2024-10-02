@@ -42,3 +42,22 @@ jobs:
           tags: us-east4-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/ish-bot/ish_bot:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Checkout Deployment Repo
+        uses: actions/checkout@v4
+        with:
+          repository: Ishogbon/ish-bot-deploy
+          token: ${{ secrets.ISH_BOT_DEPLOY_REPO_GITHUB_TOKEN }}
+          path: deploy-repo
+
+      - name: Update Image in Deployment Manifest
+        run: |
+          sed -i 's|image: us-east4-docker.pkg.dev/centering-rider-426308-i2/ish-bot/ish_bot:.*|image: us-east4-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/ish-bot/ish_bot:${{ github.sha }}|' deploy-repo/k8s/deployment.yaml
+
+      - name: Commit and Push Changes
+        working-directory: deploy-repo
+        run: |
+          git config user.name "github-actions[ish-bot]"
+          git config user.email "github-actions[ish-bot]@users.noreply.github.com"
+          git commit -am "Update image to us-east4-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/ish-bot/ish_bot:${{ github.sha }}"
+          git push
