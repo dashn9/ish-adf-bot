@@ -57,7 +57,8 @@ jobs:
       - name: Commit and Push Changes
         working-directory: deploy-repo
         run: |
+          original_commit_message=$(git -C $GITHUB_WORKSPACE log -1 --pretty=%B)
           git config user.name "github-actions[ish-bot]"
           git config user.email "github-actions[ish-bot]@users.noreply.github.com"
-          git commit -am "Update image to us-east4-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/ish-bot/ish_bot:${{ github.sha }}"
+          git commit -am "Update image to us-east4-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/ish-bot/ish_bot:${{ github.sha }} - $original_commit_message"
           git push
