@@ -346,7 +346,6 @@ class BrowserInterface:
                 '--disable-dev-shm-usage',
                 '--window-position=0,0',
                 '--start-maximized'
-                # supposed to help with storage usage, but i'm not sure
                 ], user_data_dir=user_data_dir, 
                 browser_executable_path=bot_constants.FULL_DIRECTORY_PATH+browser_constants.CHROME_BINARY_LOCATION)
             browser_config.add_extension(f'{bot_constants.FULL_DIRECTORY_PATH+browser_constants.CHROME_EXTENSIONS_LOCATION+"/browser_spoofer.crx"}')
@@ -360,7 +359,8 @@ class BrowserInterface:
             self.active_tab = self.web_browser_driver.main_tab
             await asyncio.sleep(0.6)
             if open_browser_in_full_screen:
-                if random.random() <= browser_constants.FULLSCREEN_PROBABILITY:
+                # Full screen behaves like kiosk mode on containers, plus it's buggy and much to deal with so.
+                if random.random() <= browser_constants.FULLSCREEN_PROBABILITY and not config.CONTAINERIZED:
                     await self.active_tab.set_window_state(0, 0, *window_size, state="fullscreen")
                 elif config.CONTAINERIZED:
                     await self.active_tab.set_window_state(0, 0, *window_size, state="fullscreen")
