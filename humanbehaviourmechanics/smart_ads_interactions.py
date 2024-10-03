@@ -159,7 +159,7 @@ class SmartAdsInteractions:
                 element_position = await ad_element.get_position()
                 rect = {
                     # normally i'm supposed to add it with the browser's x position, but i'm going assume it's going to be 0
-                    "x": element_position.x,
+                    "x": element_position.x + document_offset.get("x"),
                     "y": element_position.y + document_offset.get("y"),
                     "width": element_position.width,
                     "height": element_position.height,

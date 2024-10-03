@@ -373,9 +373,9 @@ class BrowserInterface:
                 await self.active_tab.set_window_state(0, 0, bot_constants.SCREEN_WIDTH - 1, bot_constants.SCREEN_HEIGHT - 1)
 
         print(f"Bot Process Id {self.bot_process_id} <:::> Web Browser Opened")
-        await asyncio.sleep(0.5)
+        await asyncio.sleep(0.8)
         await self.preliminary_tab_activation(self.active_tab)
-        await asyncio.sleep(0.5)
+        await asyncio.sleep(0.8)
         self.preliminary_activated_tabs.add(self.active_tab.target.target_id)
         await devtools_primary.listen_to_tab_creation(self.web_browser_driver.connection, self._handle_new_tab_creation)
         await self.active_tab.get('https://blank.org')
