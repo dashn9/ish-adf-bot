@@ -148,7 +148,10 @@ class SmartAdsInteractions:
             # Iframe not found
             except asyncio.TimeoutError:
                 return
-            document_offset = await self.get_document_offset_from_screen()
+            if self.device_type == "smartphone":
+                document_offset = {"x": 0, "y": 0}
+            else:
+                document_offset = await self.get_document_offset_from_screen()
             ads_elements = await iframe.query_selector_all(ads_elements_selector)
             ads_elements_rect = []
             # You would need to make upgrades before ad keyword click would work with vignettes
