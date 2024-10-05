@@ -164,6 +164,7 @@ class Identity:
         self.ad_type_to_click = identity["ADS"]["type"]
         self.proxy_type = identity.get("PROXY_TYPE")
         self.proxy_url = identity.get("PROXY_URL")
+        self.country_proxy_url = identity.get("COUNTRY_PROXY_URL", self.proxy_url)
         self.proxy_release_url = identity.get("PROXY_RELEASE_URL", None)
         self._raw_identity = identity
 
@@ -176,6 +177,14 @@ class Identity:
                     "<proxy_password>",
                     config.DATAIMPULSE_MOBILE_PROXY_CREDENTIALS["password"],
                 )
+                if hasattr(self, "country_proxy_url"):
+                    self.country_proxy_url = self.country_proxy_url.replace(
+                        "<proxy_user>",
+                        config.DATAIMPULSE_MOBILE_PROXY_CREDENTIALS["user"],
+                    ).replace(
+                        "<proxy_password>",
+                        config.DATAIMPULSE_MOBILE_PROXY_CREDENTIALS["password"],
+                    )
             else:
                 self.proxy_url = self.proxy_url.replace(
                     "<proxy_user>",
@@ -184,6 +193,14 @@ class Identity:
                     "<proxy_password>",
                     config.DATAIMPULSE_RESIDENTIAL_PROXY_CREDENTIALS["password"],
                 )
+                if hasattr(self, "country_proxy_url"):
+                    self.country_proxy_url = self.country_proxy_url.replace(
+                        "<proxy_user>",
+                        config.DATAIMPULSE_MOBILE_PROXY_CREDENTIALS["user"],
+                    ).replace(
+                        "<proxy_password>",
+                        config.DATAIMPULSE_MOBILE_PROXY_CREDENTIALS["password"],
+                    )
 
     async def auto_initiate_identity(self, method, method_value):
         await self.resolve_identity_from_cloud(method, method_value)

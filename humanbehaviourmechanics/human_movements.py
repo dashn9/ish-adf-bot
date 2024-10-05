@@ -205,9 +205,9 @@ class HumanMovements:
         async def random_miscellaneous_key_presses(key_down_probability):
             for i in range(random.randint(1, 5)):
                 if random.random() < key_down_probability:
-                    self.keyboard.down(K_Keys["ArrowDown"])
+                    await self.keyboard.down(K_Keys["ArrowDown"])
                 else:
-                    self.keyboard.down(K_Keys["ArrowUp"])
+                    await self.keyboard.down(K_Keys["ArrowUp"])
                 await asyncio.sleep(random.uniform(0.05, 0.45))
 
         async def scroll_with_touch(direction, duration):

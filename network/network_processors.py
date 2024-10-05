@@ -27,11 +27,13 @@ class NetworkRunner:
         self.proxy = None
 
         if use_proxy:
-            self.proxy_url = self.identity.proxy_url
-            self.proxy = "http://" + self.identity.proxy_url
+            self.proxy_url = getattr(
+                self.identity, "country_proxy_url", self.identity.proxy_url
+            )
+            self.proxy = "http://" + self.proxy_url
             print(
                 f"Bot Process Id {self.bot_process_id} <:::> Adding a proxy option for this session on this proxy"
-                f" path: {self.identity.proxy_url}"
+                f" path: {self.proxy_url}"
             )
 
     @asynccontextmanager
