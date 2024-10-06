@@ -1,9 +1,7 @@
-import ctypes
 import pyautogui
 import random
 import time
 import asyncio
-from multiprocessing import Value
 
 from nodriver import Element as WebElement
 
@@ -13,11 +11,10 @@ from constants.keyboard_keys import Keys as K_Keys
 from humanbehaviourmechanics.human_behaviour_reveries import HumanBehaviourReveries
 from humanbehaviourmechanics.human_movements import HumanMovements
 from humanbehaviourmechanics.smart_ads_interactions import SmartAdsInteractions
+from log import logger
 
 
 class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourReveries):
-    active_on_mouse_movement = Value(ctypes.c_int, -1)
-
     def __init__(self, reading_speed=900, no_of_clicks=0):
         self.reading_speed = reading_speed
         HumanMovements.__init__(self, no_of_clicks)
@@ -255,15 +252,15 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
         """
         time_started = time.time()
 
+        logger.info("<--> Calculating Seconds And Percentage To Read For <-->")
         seconds_to_read = await self.calculate_and_generate_page_read_time(
             html_web_element, self.reading_speed, random.randint(-15, 12)
         )
         content_read_percentage = random.randint(85, 100)
-        print(
-            f"Bot Process Id {self.bot_process_id} <:::> Percentage Of Content To Read And Seconds To Read For: ",
-            content_read_percentage,
-            seconds_to_read,
+        logger.info(
+            f"<--> Percentage Of Content To Read And Seconds To Read For:{content_read_percentage},{seconds_to_read}"
         )
+        logger.info("<--> Scrolling Element Into View <-->")
         await self.scroll_element_into_vertical_view(
             html_web_element, element_scroll_to=0
         )

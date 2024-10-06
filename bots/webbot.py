@@ -63,22 +63,8 @@ class WebBot(
 
         BrowserInterface.__init__(
             self,
+            identity=identity,
             browser_to_use_id=browser_to_use_id,
-            bot_process_id=bot_process_id,
-            timezone_id=identity.timezone[0],
-            device_type=identity.device_type,
-            hardware_concurrency=identity.hardware_concurrency,
-            has_touch=identity.has_touch,
-            has_mouse=identity.has_mouse,
-            languages=identity.languages,
-            user_agent=identity.user_agent,
-            hardware=identity.hardware,
-            platform=identity.platform,
-            screen_width=identity.screen_width,
-            screen_height=identity.screen_height,
-            device_pixel_ratio=identity.screen_resolution["density_pixel_ratio"],
-            cookies=identity.cookies,
-            identity_id=identity.id,
             cookies_update_callback=identity.update_cookies,
         )
 

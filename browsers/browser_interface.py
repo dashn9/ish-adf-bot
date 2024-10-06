@@ -12,35 +12,19 @@ import nodriver as uc
 from bots import utils
 from bots.devtools import devtools_primary
 from constants import bot_constants, browser_constants, config
+from log import logger
 
 
 class BrowserInterface:
-    def __init__(self, browser_to_use_id=browser_constants.CHROME_ID,
-                 bot_process_id=None, timezone_id=None, device_type="computer", hardware_concurrency=2,
-                 has_touch="no_touch", has_mouse="no_mouse", languages=["en-US", "en"], user_agent=None, hardware=None,
-                 platform={}, screen_width=1920, screen_height=1080, device_pixel_ratio=1, cookies=list(),
-                 identity_id=None, cookies_update_callback=None):
+    def __init__(self, identity, browser_to_use_id=browser_constants.CHROME_ID,
+                 cookies_update_callback=None):
         self.web_browser_driver: uc.Browser = None
         self.time_activated = time.time()
         self.browser_to_use_id = browser_to_use_id
         self.opened_browser_urls = dict()
-        self.bot_process_id = bot_process_id
+        self.identity=identity
         self.current_tab_length = 1
-        self.timezone_id = timezone_id
-        self.device_type = device_type
-        self.has_touch = has_touch
-        self.has_mouse = has_mouse
-        self.languages = languages
-        self.user_agent = user_agent
-        self.hardware = hardware
-        self.hardware_concurrency=hardware_concurrency
-        self.platform = platform
-        self.screen_width = screen_width
-        self.screen_height = screen_height
-        self.device_pixel_ratio = device_pixel_ratio
-        self.cookies = cookies
         self.cookies_update_callback = cookies_update_callback
-        self.identity_id = identity_id
         self.dom_storage = None
         self.preliminary_activated_tabs = set()
         self.active_tab = None
@@ -264,9 +248,9 @@ class BrowserInterface:
 
     async def activate_mobile(self, target_tab: Tab):
         await devtools_primary.activate_mobile(target_tab,
-                                         {"width": self.screen_width,
-                                          "height": self.screen_height, "device_scale_factor":
-                                              self.device_pixel_ratio, "screen_orientation":
+                                         {"width": self.identity.screen_resolution.get("logical_width"),
+                                          "height": self.identity.screen_resolution.get("logical_height"), "device_scale_factor":
+                                              self.identity.screen_resolution.get("device_pixel_ratio"), "screen_orientation":
                                               {"type": "portrait_primary", "angle": 0},
                                           "mobile": True})
 
@@ -298,42 +282,13 @@ class BrowserInterface:
             else:
                 asyncio.create_task(self.quit_browser_after_max_alive(sleep_time=5))
 
-    @staticmethod
-    async def _handle_prefs(options):
-        if prefs := options.experimental_options.get("prefs"):
-            # turn a (dotted key, value) into a proper nested dict
-            async def un_dot_key(key, value):
-                if "." in key:
-                    key, rest = key.split(".", 1)
-                    value = un_dot_key(rest, value)
-                return {key: value}
-
-            # un-dot prefs dict keys
-            un_dot_prefs = reduce(
-                lambda d1, d2: {**d1, **d2},  # merge dicts
-                (un_dot_key(key, value) for key, value in prefs.items()),
-            )
-
-            # create a user_data_dir and add its path to the options
-            user_data_dir = os.path.normpath(tempfile.mkdtemp())
-            options.add_argument(f"--user-data-dir={user_data_dir}")
-
-            # create the preferences json file in its default directory
-            default_dir = os.path.join(user_data_dir, "Default")
-            os.mkdir(default_dir)
-
-            prefs_file = os.path.join(default_dir, "Preferences")
-            with open(prefs_file, encoding="latin1", mode="w") as f:
-                json.dump(un_dot_prefs, f)
-
     async def open_web_browser(self):
         open_browser_in_full_screen = True
-        window_size = (self.screen_width, self.screen_height)
-        # An 8% chance and device is pc that randomly resize the web browser in a manner that is un-obstructive
-        if random.random() >= browser_constants.MAXIMUM_WINDOW_PROBABILITY and self.device_type == "computer":
+        window_size = (self.identity.screen_width, self.identity.screen_height)
+        if random.random() >= browser_constants.MAXIMUM_WINDOW_PROBABILITY and self.identity.device_type == "computer":
             open_browser_in_full_screen = False
             window_size = utils.fetch_random_window_size_relative_to_screen(*window_size)
-        user_data_dir = browser_constants.CHROME_DATA_DIRECTORY+"/profiles/"+str(self.identity_id)
+        user_data_dir = browser_constants.CHROME_DATA_DIRECTORY+"/profiles/"+str(self.identity.id)
         utils.remove_profile_lock(user_data_dir)
         # Opens a Chrome browser
         if self.browser_to_use_id == browser_constants.CHROME_ID:
@@ -350,36 +305,42 @@ class BrowserInterface:
                 browser_executable_path=bot_constants.FULL_DIRECTORY_PATH+browser_constants.CHROME_BINARY_LOCATION)
             browser_config.add_extension(f'{bot_constants.FULL_DIRECTORY_PATH+browser_constants.CHROME_EXTENSIONS_LOCATION+"/browser_spoofer.crx"}')
             browser_config.add_extension(f'{bot_constants.FULL_DIRECTORY_PATH+browser_constants.CHROME_EXTENSIONS_LOCATION+"/browser_network.crx"}')
-            if self.user_agent:
-                browser_config.add_argument(f"--user-agent={self.user_agent}")
+            browser_config.add_argument(f"--user-agent={self.identity.user_agent}")
             browser_config.binary_location = browser_constants.CHROME_BINARY_LOCATION
+            logger.info("{{{ Opening Web Browser... }}}")
             self.web_browser_driver = await uc.start(
                 config=browser_config,
                 sandbox=False)
+            logger.info("{{{ Web Browser Opened }}}")
             self.active_tab = self.web_browser_driver.main_tab
-            await asyncio.sleep(0.6)
             if open_browser_in_full_screen:
                 # Full screen behaves like kiosk mode on containers, plus it's buggy and much to deal with so.
                 if random.random() <= browser_constants.FULLSCREEN_PROBABILITY and not config.CONTAINERIZED:
+                    logger.info("{{{ Setting Window Size To Fullscreen... }}}")
                     await self.active_tab.set_window_state(0, 0, *window_size, state="fullscreen")
                 elif config.CONTAINERIZED:
+                    logger.info("{{{ Setting Window Size To Maximized: Container Method... }}}")
                     await self.active_tab.set_window_state(0, 0, *window_size, state="fullscreen")
                     await self.active_tab.set_window_state(0, 0, *window_size, state="maximized")
                 else:
+                    logger.info("{{{ Setting Window Size To Maximized... }}}")
                     await self.active_tab.set_window_state(0, 0, *window_size, state="maximized")
             else:
+                logger.info("{{{ Setting Window Size To: %d,%d... }}}" % window_size)
                 await self.active_tab.set_window_state(0, 0, *window_size)
-            if self.device_type == "smartphone" and config.CONTAINERIZED:
+            if self.identity.device_type == "smartphone" and config.CONTAINERIZED:
                 await self.active_tab.set_window_state(0, 0, bot_constants.SCREEN_WIDTH - 1, bot_constants.SCREEN_HEIGHT - 1)
-
-        print(f"Bot Process Id {self.bot_process_id} <:::> Web Browser Opened")
         await asyncio.sleep(0.8)
+        logger.info("{{{ Activating Tab Preliminarily... }}}")
         await self.preliminary_tab_activation(self.active_tab)
         await asyncio.sleep(0.8)
         self.preliminary_activated_tabs.add(self.active_tab.target.target_id)
+        logger.info("{{{ Adding Listener to New Tabs Creation... }}}")
         await devtools_primary.listen_to_tab_creation(self.web_browser_driver.connection, self._handle_new_tab_creation)
+        logger.info("{{{ Opening Blank Website... }}}")
         await self.active_tab.get('https://blank.org')
         await asyncio.sleep(1)
+        logger.info("{{{ Executing JS: Dispatching Event With Identity Spoof Data... }}}")
         # The purpose of these code below is to be able to dispatch an event to the extension, which only comes alive after a url load
         identitySpoofData = json.dumps(await self.identity.fetch_identity_data_for_extension())
         await self.active_tab.evaluate(f"""
@@ -397,56 +358,37 @@ class BrowserInterface:
         Args:
             new_tab (_type_): _description_
         """
-        async def handle_page_lifecycle_events(lifecycle_event, *args, **kwargs):
-            nonlocal continue_reload, tab, first_url
-            if (tab.target.url != first_url):
-                continue_reload = False
-        async def tab_reloader_if_redirect_link(tab, old_url):
-            pass
         for tab in self.web_browser_driver.tabs:
-            continue_reload = True
-            # Please find another efficient way to make sure the url hasn't loaded before attempting a change, you can use target url change in combination
-            reload_count = 0
-            first_url = None
             target_id = tab.target.target_id
             if target_id not in self.preliminary_activated_tabs:
-                await tab.sleep(1.5)
-                first_url = tab.target.url
+                logger.info("{{{ New Tab Discovered: %s }}}" % (target_id))
+                logger.info("{{{ Enabling Page Events For Tab: %s }}}" % (target_id))
                 await devtools_primary.enable_page(tab)
-                await devtools_primary.listen_to_page_lifecycle(tab, handle_page_lifecycle_events)
-                # The first url does not go through the proxy for obvious reasons as the tab was created with the url before adding the interceptor
-                # I created an extension(browser_network) to help deal with this issue by stopping early requests
+                logger.info("{{{ Activating Tab: %s Preliminarily... }}}" % (target_id))
                 await self.preliminary_tab_activation(tab)
-                self.preliminary_activated_tabs.add(target_id)
-                # requires fix
-                while continue_reload and (reload_count < 4):
-                    await tab.reload()
-                    print("reload triggered", reload_count)
-                    await tab.sleep(3)
-                    reload_count += 1
+                await time.sleep(2)
+                logger.info("{{{ Reloading Tab: %s... }}}" % (target_id))
+                await tab.reload()
 
 
     async def preliminary_tab_activation(self, target_tab: Tab):
+        target_id = target_tab.target.target_id
+        logger.info("{{{ Adding Network Interception to Tab: %s... }}}" % (target_id))
         await self.add_network_interception_to_tab(target_tab)
         await asyncio.sleep(0.5)
-        print(f"Bot Process Id {self.bot_process_id} <:::> Activating Browser Based On Device Type")
         # If device to emulate is a smartphone, set chrome to mobile mode
-        if self.device_type == "smartphone":
-            print(f"Bot Process Id {self.bot_process_id} <:::> Device Name:", self.hardware)
+        if self.identity.device_type == "smartphone":
+            logger.info("{{{ Activating Mobile On Browser For Device: %s... }}}" % (self.identity.hardware))
             await self.activate_mobile(target_tab)
-        print(f"Bot Process Id {self.bot_process_id} <:::> Setting Page To Always Be In Focus")
-        print(f"Bot Process Id {self.bot_process_id} <:::> Setting Timezone From Identity")
         await target_tab.sleep(0.5)
-        await devtools_primary.set_hardware_concurrency(target_tab, self.hardware_concurrency)
-        # Set Timezone
-        await devtools_primary.set_timezone(target_tab, self.timezone_id)
-        # If identity has a user agent, change browser user agent to identity's
-        if self.user_agent:
-            print(
-                f"Bot Process Id {self.bot_process_id} <:::> Setting User Agent: {self.user_agent} From Identity")
-            await devtools_primary.change_user_agent(
-                target_tab,
-                self.user_agent, self.platform, self.languages, self.identity.browser_name, self.identity.device_type == "smartphone", self.identity.device_model)
+        logger.info("{{{ Setting Hardware Concurrency: %d... }}}" % (self.identity.hardware_concurrency))
+        await devtools_primary.set_hardware_concurrency(target_tab, self.identity.hardware_concurrency)
+        logger.info("{{{ Setting Up Timezone: %s... }}}" % (self.identity.timezone.get("id")))
+        await devtools_primary.set_timezone(target_tab, self.identity.timezone.get("id"))
+        logger.info("{{{ Activating FULL_USER_AGENT For Identity... }}}")
+        await devtools_primary.change_user_agent(
+            target_tab,
+            self.identity.user_agent, self.identity.platform, self.identity.languages, self.identity.browser_name, self.identity.device_type == "smartphone", self.identity.device_model)
 
     async def add_network_interception_to_tab(self, target_tab: Tab):
         await devtools_primary.enable_network_interception(target_tab)

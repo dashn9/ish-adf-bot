@@ -15,6 +15,7 @@ from identity.client import Identity
 import constants.browser_constants as brc
 import constants.bot_constants as boc
 from datacontroller.datacontroller import DataController
+from log import logger
 
 from exceptions.identity import TimezoneFetchException
 from constants.config import (
@@ -61,16 +62,23 @@ async def run_bot(
     await web_bot.open_web_browser()
     try:
         web_bot.time_activated = time.time()
-        print("Opening Web Browser Url")
+        logger.info("{{{ Opening Url On Run... }}}")
         await web_bot.web_browser_driver.get(page_info.get("page_url"))
-        print("Opened Web Browser url")
+        logger.info("{{{ Opened Url On Run... }}}")
         if random.random() >= identity.ad_keywords_click_probability:
+            logger.info(
+                f"<--> Negating Ad Click Via Keywords Based On Probability of ${identity.ad_keywords_click_probability} <-->"
+            )
             identity.ad_keywords = None
         ad_click_probability = random.random()
         ad_to_click = None
         if ad_click_probability <= identity.ad_click_probability:
+            logger.info(
+                f"<--> Ad: ${identity.ad_type_to_click} Set For Engagement <-->"
+            )
             ad_to_click = identity.ad_type_to_click
 
+        logger.info("<--> Setting Ad Behaviour Envoronment <-->")
         await web_bot.set_ad_behaviour_environment(
             ad_to_click=ad_to_click,
             vignette_ad_close=page_info["vignette_close_ad_elements"],
@@ -80,8 +88,12 @@ async def run_bot(
         )
         await asyncio.sleep(random.uniform(0, 1))
         if boc.ENGAGE_READER:
+            logger.info("<--> Reader Set To Engage <-->")
             if web_bot.identity.device_type == "computer":
+                logger.info("<--> Moving Mouse To Random Area On Document <-->")
                 await web_bot.move_mouse_to_random_area_on_document()
+                logger.info("<--> Done Moving Mouse To Random Area On Document <--> ")
+                logger.info(f"<--> Reading Element: {page_info["page_content_element"]} <--> ")
             if (
                 await web_bot.read_element_content(
                     await web_bot.active_tab.select(page_info["page_content_element"])

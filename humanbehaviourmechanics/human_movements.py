@@ -18,7 +18,7 @@ class HumanMovements:
         self._keyboard = Keyboard(self)
         pyautogui.FAILSAFE = False
         self._touch = None
-        if self.has_touch:
+        if self.identity.has_touch:
             self._touch = Touchscreen(self, self._keyboard)
         self._mouse = Mouse(self, self._keyboard)
         self.last_document_offsets = [0, 0]
@@ -191,207 +191,76 @@ class HumanMovements:
     async def scroll_to_percentage_in_element(
         self, html_web_element, percentage_to_scroll_to, time_to_sleep=1
     ):
+        document_bounds = await self.get_window_document_bounds()
+        max_px = self.identity.screen_resolution.get("logical_height") - 100
+
         async def has_page_offset_changed():
-            document_offsets = await self.get_window_document_offsets()
-            document_offsets = [
-                document_offsets["x_offset"],
-                document_offsets["y_offset"],
-            ]
-            if self.last_document_offsets == document_offsets:
+            if self.last_document_offsets == document_bounds:
                 return False
             else:
                 return True
 
-        async def random_miscellaneous_key_presses(key_down_probability):
-            for i in range(random.randint(1, 5)):
-                if random.random() < key_down_probability:
-                    await self.keyboard.down(K_Keys["ArrowDown"])
-                else:
-                    await self.keyboard.down(K_Keys["ArrowUp"])
-                await asyncio.sleep(random.uniform(0.05, 0.45))
-
         async def scroll_with_touch(direction, duration):
             if direction:
-                px_to_adjust_by = random.randint(1, 500)
+                px_to_adjust_by = random.randint(1, max_px)
             if not direction:
-                px_to_adjust_by = random.randint(-500, -1)
+                px_to_adjust_by = random.randint(-max_px, -1)
             await self.read_with_touch(px_to_adjust_by, duration)
 
+        async def scroll(direction):
+            if self.touch:
+                await scroll_with_touch(direction, 0.5)
+            else:
+                # seperate into config
+                if random.random <= 0.9:
+                    pass
+                else:
+                    self.read_with_arrow_keys(
+                        offset_to_adjust_to - document_bounds.get("bottom")
+                    )
+
         async def offset_adjuster(offset_to_adjust_to, html_web_element):
-            element_coordinates = await self.get_element_location_window_offset(
-                html_web_element
-            )
-            if offset_to_adjust_to > element_coordinates["y_offset"]:
-                if isinstance(self.touch, Touchscreen):
-                    while offset_to_adjust_to >= element_coordinates["y_offset"]:
-                        if not await has_page_offset_changed():
-                            return True
-                        await scroll_with_touch(False, 0.5)
-                        element_coordinates = (
-                            await self.get_element_location_window_offset(
-                                html_web_element
-                            )
-                        )
-                else:
-                    while offset_to_adjust_to >= element_coordinates["y_offset"]:
-                        asyncio.create_task(
-                            self.keyboard.down_persistent(K_Keys["ArrowUp"])
-                        )
-                        if (
-                            utils.clean_negative(element_coordinates["y_offset"])
-                            - utils.clean_negative(offset_to_adjust_to)
-                            < bot_constants.PX_VALUE_TO_CHECK_WHEN_SCROLL_TO_POINT
-                        ):
-                            await asyncio.sleep(random.uniform(0.01, 0.267))
-                            await self.keyboard.up(K_Keys["ArrowUp"])
-                            await asyncio.sleep(random.uniform(0.15, 0.6))
-                        else:
-                            await asyncio.sleep(0.3)
-                        element_coordinates = (
-                            await self.get_element_location_window_offset(
-                                html_web_element
-                            )
-                        )
-                    await self.keyboard.up(K_Keys["ArrowUp"])
-                    if random.random() > 0.5:
-                        await random_miscellaneous_key_presses(0.75)
-            elif offset_to_adjust_to < element_coordinates["y_offset"]:
-                if isinstance(self.touch, Touchscreen):
-                    while offset_to_adjust_to <= element_coordinates["y_offset"]:
-                        if not has_page_offset_changed():
-                            return True
-                        scroll_with_touch(True, 0.5)
-                        element_coordinates = (
-                            await self.get_element_location_window_offset(
-                                html_web_element
-                            )
-                        )
-                else:
-                    while offset_to_adjust_to <= element_coordinates["y_offset"]:
-                        asyncio.create_task(
-                            self.keyboard.down_persistent(K_Keys["ArrowDown"])
-                        )
-                        if (
-                            utils.clean_negative(offset_to_adjust_to)
-                            - utils.clean_negative(element_coordinates["y_offset"])
-                            < bot_constants.PX_VALUE_TO_CHECK_WHEN_SCROLL_TO_POINT
-                        ):
-                            await asyncio.sleep(random.uniform(0.01, 0.267))
-                            await self.keyboard.up(K_Keys["ArrowDown"])
-                            await asyncio.sleep(random.uniform(0.15, 0.6))
-                        else:
-                            await asyncio.sleep(0.3)
-                        element_coordinates = (
-                            await self.get_element_location_window_offset(
-                                html_web_element
-                            )
-                        )
+            while offset_to_adjust_to > document_bounds.get("y_offset"):
+                if not await has_page_offset_changed():
+                    return True
+                await scroll(False)
+                document_bounds = await self.get_window_document_bounds()
+            while offset_to_adjust_to < document_bounds.get("bottom"):
+                if not has_page_offset_changed():
+                    return True
+                await scroll(True)
+                document_bounds = await self.get_window_document_bounds()
 
-                    await self.keyboard.up(K_Keys["ArrowDown"])
-                    if random.random() > 0.5:
-                        await random_miscellaneous_key_presses(0.25)
-
-        # Element Height - Browser Window Makes It Possible To Eject Browser Dimensions From Calculations
-        workable_height = (await html_web_element.get_position()).width - (
-            await self.active_tab.get_window()
-        )[1].height
+        workable_height = (await html_web_element.get_position(abs=True)).bottom
 
         offset_to_adjust_to = utils.fetch_percentage_value(
             workable_height, percentage_to_scroll_to
         )
-        offset_to_adjust_to *= -1
-
-        original_y_offset = (
-            await self.get_element_location_window_offset(html_web_element)
-        )["y_offset"]
 
         await offset_adjuster(offset_to_adjust_to, html_web_element)
-        await asyncio.sleep(time_to_sleep)
-        await offset_adjuster(original_y_offset, html_web_element)
 
     async def read_with_arrow_keys(
         self,
-        html_web_element,
         boundary,
-        key=K_Keys["ArrowDown"],
-        direction_to_move=True,
     ):
-        asyncio.create_task(self.keyboard.down_persistent(key))
-        element_coordinates = await self.get_element_location_window_offset(
-            html_web_element
-        )
-        old_element_coordinates = element_coordinates
-        boundary = (
-            element_coordinates.get("y_offset") - boundary
-            if direction_to_move
-            else element_coordinates.get("y_offset") + boundary
-        )
-        offset_same_count = 0
+        asyncio.create_task(self.keyboard.down_persistent())
+        doc_boundary = self.get_window_document_boundary()
+        key = K_Keys["ArrowDown"]
+        direction_to_move = True
+        if boundary < 0:
+            key = K_Keys["ArrowUp"]
+            direction_to_move = False
+        boundary = doc_boundary["y_offset"] + boundary
+        while doc_boundary["y_offset"] < boundary and direction_to_move:
+            await asyncio.sleep(0.3)
+            doc_boundary = self.get_window_document_boundary()
 
-        if direction_to_move:
-            while element_coordinates.get("y_offset") >= boundary:
-                old_element_coordinates = await self.get_element_location_window_offset(
-                    html_web_element
-                )
-                await asyncio.sleep(0.3)
-                element_coordinates = await self.get_element_location_window_offset(
-                    html_web_element
-                )
+        while doc_boundary["y_offset"] > boundary and not direction_to_move:
+            await asyncio.sleep(0.3)
+            doc_boundary = self.get_window_document_boundary()
 
-                if offset_same_count > 1:
-                    break
-                if element_coordinates.get("y_offset") == old_element_coordinates.get(
-                    "y_offset"
-                ):
-                    offset_same_count += 1
-
-        elif not direction_to_move:
-            while boundary >= element_coordinates.get("y_offset"):
-                old_element_coordinates = await self.get_element_location_window_offset(
-                    html_web_element
-                )
-                await asyncio.sleep(0.3)
-                element_coordinates = await self.get_element_location_window_offset(
-                    html_web_element
-                )
-
-                if offset_same_count > 1:
-                    break
-                if element_coordinates.get("y_offset") == old_element_coordinates.get(
-                    "y_offset"
-                ):
-                    offset_same_count += 1
         await self.keyboard.up(key)
         return True
-
-    async def read_with_mouse_to_scrollbar(
-        self,
-        coordinates_offset_overshoot=dict(
-            x=0,
-            y=0,
-            x_offset_percentage=0,
-            y_offset_percentage=0,
-            max_overshoot=0,
-            probability_of_overshoot=0,
-        ),
-        is_asychronous=False,
-        counter=0,
-    ):
-        pyautogui.mouseDown()
-        if self.no_of_clicks > 0:
-            while self.revert_to_active_page():
-                pyautogui.mouseUp()
-                pyautogui.mouseDown()
-
-        asyncio.create_task(
-            self.simulate_human_mouse_move_behavior_to_point(
-                coordinates_offset_overshoot["x"],
-                coordinates_offset_overshoot["y"],
-                coordinates_offset_overshoot["probability_of_overshoot"],
-            )
-        )
-        pyautogui.mouseUp()
-        return counter
 
     async def read_with_touch(
         self, px_to_adjust_by, duration=None, force_screen_reset=False
@@ -483,143 +352,12 @@ class HumanMovements:
         :param simulate_human_behaviour: If Argument Is True, Method Will Attempt To Simulate Human Interaction Scroll
         :return: Return True When Scroll Is Complete
         """
-
-        async def has_page_offset_changed():
-            document_offsets = await self.get_window_document_offsets()
-            document_offsets = [
-                document_offsets["x_offset"],
-                document_offsets["y_offset"],
-            ]
-            if self.last_document_offsets == document_offsets:
-                return False
-            else:
-                return True
-
-        async def scroll(key, direction):
-            """
-            Use Directional Keys To Scroll To Element
-            :return: True
-            """
-            if random.random() < 0.85:
-                await self.mouse.mouse_wheel(
-                    *pyautogui.position(),
-                    random.randint(10, 100),
-                    is_reading=False,
-                    deltaY=self.identity.mouse_delta_y,
-                    yDirection=direction,
-                )
-            else:
-                asyncio.create_task(self.keyboard.down_persistent(key))
-                await asyncio.sleep(random.uniform(1.1, 1.75))
-                await self.keyboard.up(key)
-                await asyncio.sleep(random.uniform(0.5, 1.5))
-
-        async def scroll_with_touch(direction, duration):
-            if direction:
-                px_to_adjust_by = random.randint(1, 500)
-            if not direction:
-                px_to_adjust_by = random.randint(-500, -1)
-            await self.read_with_touch(px_to_adjust_by, duration)
-
-        element_browser_coordinates = await self.get_element_location_screen_offset(
-            html_web_element
-        )
-
         if simulate_human_behaviour:
-            if element_scroll_to == 0:
-                if (
-                    element_browser_coordinates["html_web_element"]["y_offset"]
-                    > element_browser_coordinates["browser_window_rect"][1]
-                ):
-                    while (
-                        element_browser_coordinates["html_web_element"]["y_offset"]
-                        >= element_browser_coordinates["browser_window_rect"][1]
-                    ):
-                        if isinstance(self.touch, Touchscreen):
-                            await scroll_with_touch(True, 1)
-                        else:
-                            await scroll(K_Keys["ArrowDown"], True)
-                        if not await has_page_offset_changed():
-                            return True
-                        element_browser_coordinates = (
-                            await self.get_element_location_screen_offset(
-                                html_web_element
-                            )
-                        )
-                elif (
-                    element_browser_coordinates["html_web_element"]["y_offset"]
-                    < element_browser_coordinates["browser_window_rect"][1]
-                ):
-                    while (
-                        element_browser_coordinates["html_web_element"]["y_offset"]
-                        <= element_browser_coordinates["browser_window_rect"][1]
-                    ):
-                        if isinstance(self.touch, Touchscreen):
-                            await scroll_with_touch(False, 1)
-                        else:
-                            await scroll(K_Keys["ArrowUp"], False)
-                        if not await has_page_offset_changed():
-                            return True
-                        element_browser_coordinates = (
-                            await self.get_element_location_screen_offset(
-                                html_web_element
-                            )
-                        )
-
-            elif element_scroll_to == 1:
-                if (
-                    element_browser_coordinates["html_web_element"]["bottom"]
-                    > element_browser_coordinates["browser_window_rect"][2]
-                ):
-                    while (
-                        element_browser_coordinates["html_web_element"]["bottom"]
-                        >= element_browser_coordinates["browser_window_rect"][2]
-                    ):
-                        if isinstance(self.touch, Touchscreen):
-                            await scroll_with_touch(True, 1)
-                        else:
-                            await scroll(K_Keys["ArrowDown"], True)
-                        if not await has_page_offset_changed():
-                            return True
-                        element_browser_coordinates = (
-                            await self.get_element_location_screen_offset(
-                                html_web_element
-                            )
-                        )
-                elif (
-                    element_browser_coordinates["html_web_element"]["y_offset"]
-                    < element_browser_coordinates["browser_window_rect"][1]
-                ):
-                    while (
-                        element_browser_coordinates["html_web_element"]["y_offset"]
-                        <= element_browser_coordinates["browser_window_rect"][1]
-                    ):
-                        if isinstance(self.touch, Touchscreen):
-                            await scroll_with_touch(False, 1)
-                        else:
-                            await scroll(K_Keys["ArrowUp"], False)
-                        if not await has_page_offset_changed():
-                            return True
-                        element_browser_coordinates = (
-                            await self.get_element_location_screen_offset(
-                                html_web_element
-                            )
-                        )
-
+            await self.scroll_to_percentage_in_element(
+                html_web_element, 0 if element_scroll_to else 1
+            )
         else:
             await html_web_element.scroll_into_view()
-
-    async def send_mouse_to_scrollbar(self, is_asychronous=False):
-        scroll_bar = self.get_scroll_bar_coordinates(2)
-        return asyncio.create_task(
-            self.simulate_human_mouse_move_behavior_to_area(
-                scroll_bar["x_pos"] + 2,
-                scroll_bar["y_pos"] + 2,
-                scroll_bar["width"],
-                scroll_bar["height"],
-                random.uniform(0.4, 1.0),
-            )
-        )
 
     async def click_trigger(self, x_coord=50, y_coord=50, device_type="computer"):
         if device_type == "smartphone":
