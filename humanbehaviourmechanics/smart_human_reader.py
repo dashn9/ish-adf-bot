@@ -258,7 +258,7 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
         )
         content_read_percentage = random.randint(85, 100)
         logger.info(
-            f"<--> Percentage Of Content To Read And Seconds To Read For:{content_read_percentage},{seconds_to_read}"
+            f"<--> Percentage Of Content To Read And Seconds To Read For:{content_read_percentage},{seconds_to_read} <-->"
         )
         logger.info("<--> Scrolling Element Into View <-->")
         await self.scroll_element_into_vertical_view(
@@ -273,13 +273,10 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
         browser_inner_size = await self.get_browser_inner_size()
         mode = ""
         while remaining_reading_content_percentage > 0 and (
-            await self.get_element_location_window_offset(html_web_element)
-        ).get("bottom") > browser_inner_size.get("height"):
+            await html_web_element.get_position()
+        ).bottom > browser_inner_size.get("height"):
             if remaining_reading_content_percentage < 50 and random.random() < 0.08:
-                print(
-                    f"Bot Process Id {self.bot_process_id} <:::> Current Activity --> Scrolling To Random Point On "
-                    f"Article"
-                )
+                print(f"<--> Scrolling To Random Point On Article <-->")
                 random_max = 100 - remaining_reading_content_percentage
                 await self.scroll_to_percentage_in_element(
                     html_web_element,

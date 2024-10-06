@@ -11,6 +11,7 @@ from constants import bot_constants
 from constants.keyboard_keys import Keys as K_Keys
 from bots.devtools.devtools_input import Keyboard, Touchscreen, Mouse
 from bots import utils
+from log import logger
 
 
 class HumanMovements:
@@ -189,15 +190,17 @@ class HumanMovements:
             html_web_element.scroll_into_view()
 
     async def scroll_to_percentage_in_element(
-        self, html_web_element, percentage_to_scroll_to, time_to_sleep=1
+        self, html_web_element, percentage_to_scroll_to, time_to_sleep=0
     ):
         document_bounds = await self.get_window_document_bounds()
-        max_px = self.identity.screen_resolution.get("logical_height") - 100
+        max_px = self.identity.screen_resolution.get("logical_height") - 200
 
         async def has_page_offset_changed():
+            logger.info("{{{ Checking If Document Offsets Changed }}}")
             if self.last_document_offsets == document_bounds:
                 return False
             else:
+                logger.info("{{{ Document Offset Did Not Change }}}")
                 return True
 
         async def scroll_with_touch(direction, duration):
@@ -209,35 +212,55 @@ class HumanMovements:
 
         async def scroll(direction):
             if self.touch:
+                logger.info("<--> Scrolling To Percentage In Element With Touch <-->")
                 await scroll_with_touch(direction, 0.5)
             else:
                 # seperate into config
                 if random.random <= 0.9:
-                    pass
+                    logger.info(
+                        "<--> Scrolling To Percentage In Element With Mouse Wheel <-->"
+                    )
+                    await self.mouse.mouse_wheel_with_bezier_animation(
+                        *pyautogui.position(), random.randint(1, max_px), direction
+                    )
                 else:
+                    logger.info(
+                        "<--> Scrolling To Percentage In Element With Arrow Keys <-->"
+                    )
                     self.read_with_arrow_keys(
                         offset_to_adjust_to - document_bounds.get("bottom")
                     )
 
-        async def offset_adjuster(offset_to_adjust_to, html_web_element):
-            while offset_to_adjust_to > document_bounds.get("y_offset"):
+        async def offset_adjuster(offset_to_adjust_to):
+            while offset_to_adjust_to < document_bounds.get("y_offset"):
                 if not await has_page_offset_changed():
                     return True
                 await scroll(False)
                 document_bounds = await self.get_window_document_bounds()
-            while offset_to_adjust_to < document_bounds.get("bottom"):
+            while offset_to_adjust_to > document_bounds.get("bottom"):
+                logger.info(
+                    f"<--> Offsetting Downwards To: {offset_to_adjust_to} From {document_bounds.get('y_offset')} <-->"
+                )
                 if not has_page_offset_changed():
                     return True
                 await scroll(True)
                 document_bounds = await self.get_window_document_bounds()
 
         workable_height = (await html_web_element.get_position(abs=True)).bottom
-
+        curr_window_y_offset = (await self.get_window_document_offsets()).get(
+            "y_offset"
+        )
+        logger.info(f"<--> Estimated Workable Height To: {workable_height} <-->")
         offset_to_adjust_to = utils.fetch_percentage_value(
             workable_height, percentage_to_scroll_to
         )
-
-        await offset_adjuster(offset_to_adjust_to, html_web_element)
+        await offset_adjuster(offset_to_adjust_to)
+        logger.info("<--> Done Scrolling to Percentage in Element <-->")
+        if time_to_sleep:
+            logger.info("<--> Sleeping... <-->")
+            await asyncio.sleep(time_to_sleep)
+            logger.info("<--> Returning To Original Position <-->")
+            offset_adjuster(curr_window_y_offset)
 
     async def read_with_arrow_keys(
         self,
@@ -245,6 +268,9 @@ class HumanMovements:
     ):
         asyncio.create_task(self.keyboard.down_persistent())
         doc_boundary = self.get_window_document_boundary()
+        logger.info(
+            "<--> Arrow Keys Read: Document Offset Currently At: <-->", doc_boundary
+        )
         key = K_Keys["ArrowDown"]
         direction_to_move = True
         if boundary < 0:
@@ -254,12 +280,15 @@ class HumanMovements:
         while doc_boundary["y_offset"] < boundary and direction_to_move:
             await asyncio.sleep(0.3)
             doc_boundary = self.get_window_document_boundary()
+            logger.info("<--> Arrow Keys Read: Going Up <-->", doc_boundary)
 
         while doc_boundary["y_offset"] > boundary and not direction_to_move:
             await asyncio.sleep(0.3)
             doc_boundary = self.get_window_document_boundary()
+            logger.info("<--> Arrow Keys Read: Going Down <-->", doc_boundary)
 
         await self.keyboard.up(key)
+        logger.info("<--> Arrow Keys Read: Done <-->")
         return True
 
     async def read_with_touch(
@@ -272,6 +301,7 @@ class HumanMovements:
         # [[(x, y, width, height) x3] x3]
         generated_page_boundaries = []
         if not hasattr(self, "generated_page_boundaries") or force_screen_reset:
+            logger.info("<--> Touch Read: Generating Page Boundaries <-->")
             a_third_width = self.screen_width / 3
             a_third_height = self.screen_height / 3
             for h in range(3):
@@ -287,8 +317,10 @@ class HumanMovements:
                             a_third_height * h_multiplier,
                         )
                     )
+            logger.info("<--> Touch Read: Saving Generated Page Boundaries <-->")
             self.generated_page_boundaries = generated_page_boundaries
         else:
+            logger.info("<--> Touch Read: Reusing Generated Page Boundaries <-->")
             generated_page_boundaries = self.generated_page_boundaries
 
         if random.uniform(0.0, 1.0) <= 0.95:
@@ -334,9 +366,13 @@ class HumanMovements:
         x_end = x_end if x_end >= 0 else 0
         y_end = y_end if y_end >= 0 else 0
 
+        logger.info(f"<--> Touch Read : : ({x_start,y_start}), ({x_end,y_end})")
+
+        logger.info("<--> Touch Read: Simualating Human Touch Movement With Mouse")
         await self.touch.simulate_human_touch_movement_with_mouse(
             (x_start, y_start), (x_end, y_end), duration
         )
+        logger.info("<--> Engaging Smart Click Trigger <-->")
         await self.smart_click_trigger((x_start, y_start), self.device_type)
 
     async def scroll_element_into_vertical_view(
@@ -354,7 +390,7 @@ class HumanMovements:
         """
         if simulate_human_behaviour:
             await self.scroll_to_percentage_in_element(
-                html_web_element, 0 if element_scroll_to else 1
+                html_web_element, 0.1 if element_scroll_to else 100
             )
         else:
             await html_web_element.scroll_into_view()

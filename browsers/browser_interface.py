@@ -93,76 +93,6 @@ class BrowserInterface:
         return dict(width=await self.active_tab.evaluate("window.innerWidth", await_promise=True),
                     height=await self.active_tab.evaluate("window.innerHeight", await_promise=True))
 
-    async def get_scroll_bar_coordinates(self, relative_to=0):
-        """
-        Calculates And Returns The Prospective Location And Dimesion Of The Browser Scrollbar
-        :param relative_to: To Determine The Boundaries By Which To Calculate The Positions
-        :return: The Position And Dimensions Of The ScrollBar In A Dictionary, False If No Scroll Bar Exists
-        """
-        browser_window_body_size = await self.get_browser_window_body_size()
-
-        browser_inner_size = await self.get_browser_inner_size()
-
-        if browser_window_body_size.get("height") <= browser_inner_size.get("height"):
-            # No Scrollbar
-            return False
-
-        # Fetch Browser Document Inner Offset
-        window_page_y_offset = await self.active_tab.evaluate("window.pageYOffset")
-        window_page_y_offset = 1 if window_page_y_offset <= 0 else window_page_y_offset
-
-        browser_outer_size = dict(width=await self.active_tab.evaluate("window.outerWidth", await_promise=True),
-                                  height=await self.active_tab.evaluate("window.outerHeight", await_promise=True))
-
-        scroll_bar_x_position = browser_window_body_size.get("width")
-        scroll_bar_y_position = utils.fetch_percentage_value(
-            browser_inner_size.get("height"),
-            utils.fetch_value_percentage(browser_window_body_size.get("height"), window_page_y_offset)) + \
-                                bot_constants.UP_TASKBAR_HEIGHT
-
-        scroll_bar_width = browser_inner_size.get("width") - browser_window_body_size.get("width")
-
-        if 0 <= scroll_bar_width >= 18:
-            scroll_bar_x_position += (scroll_bar_width - 14)
-            scroll_bar_width = 14
-
-        scroll_bar_height = utils.fetch_percentage_value(
-            browser_inner_size.get("height"),
-            utils.fetch_value_percentage(browser_window_body_size.get("height"), browser_inner_size.get("height")))
-
-        scroll_bar_height = scroll_bar_height if scroll_bar_height > 0 else 15
-
-        # Bound To Screen
-        if relative_to == 2:
-            browser_rect = self.active_tab.get_window()
-            return {
-                "x_pos": scroll_bar_x_position + browser_rect.get("x") +
-                         (browser_outer_size.get("width") - browser_inner_size.get("width")),
-                "y_pos": scroll_bar_y_position + browser_rect.get("y") +
-                         (browser_outer_size.get("height") - browser_inner_size.get("height")),
-                "width": scroll_bar_width,
-                "height": scroll_bar_height
-            }
-        # Bound To Browser Window
-        elif relative_to == 1:
-            browser_rect = await self.active_tab.get_window()
-            return {
-                "x_pos": scroll_bar_x_position + (browser_outer_size.get("width") - browser_inner_size.get("width")),
-                "y_pos": scroll_bar_y_position + (browser_outer_size.get("height") - browser_inner_size.get("height")),
-                "width": scroll_bar_width,
-                "height": scroll_bar_height
-            }
-        # Bound To Web Page Inner Body
-        elif relative_to == 0:
-            return {
-                "x_pos": scroll_bar_x_position,
-                "y_pos": scroll_bar_y_position,
-                "width": scroll_bar_width,
-                "height": scroll_bar_height
-            }
-        else:
-            return False
-
     async def get_element_location_screen_offset(self, html_web_element: WebElement):
         """
         Calculate And Return Both Window And Element Location Offsets Relative To Screen
@@ -225,7 +155,14 @@ class BrowserInterface:
     async def get_window_document_offsets(self):
         return {"y_offset": await self.active_tab.evaluate("window.pageYOffset", await_promise=True),
                 "x_offset": await self.active_tab.evaluate("window.pageXOffset", await_promise=True)}
-
+    
+    async def get_window_document_boundary(self):
+        logger.info("{{{ Fetching Document Offsets }}}")
+        offsets = self.get_window_document_offsets()
+        logger.info("{{{ Fetching Document Bounds }}}")
+        bounds = self.get_browser_inner_size()
+        return dict(**offsets, **bounds, bottom=bounds.get("height") + bounds.get("y_offset"))
+    
     async def bring_window_to_front(self):
         await self.active_tab.bring_to_front()
 
