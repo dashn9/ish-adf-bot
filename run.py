@@ -35,7 +35,6 @@ brc.FULL_DIRECTORY_PATH = os.path.dirname(os.path.realpath(__file__))
 
 async def restart_plug():
     if not RUN_INFINITELY:
-        asyncio.get_event_loop().stop()
         exit()
     else:
         print("Attempting to ReRun operations")
@@ -91,7 +90,7 @@ async def run_bot(
         if boc.ENGAGE_READER:
             logger.info("<--> Reader Set To Engage <-->")
             if web_bot.identity.device_type == "computer":
-                logger.info("<--> Moving Mouse To Random Area On Document <-->")
+                logger.info("<--> Moving Mouse To Random Area On Document... <-->")
                 await web_bot.move_mouse_to_random_area_on_document()
                 logger.info("<--> Done Moving Mouse To Random Area On Document <--> ")
                 logger.info(f"<--> Reading Element: {page_info["page_content_element"]} <--> ")

@@ -459,9 +459,11 @@ class HumanMovements:
             return False
 
     # Look at this function when you decide to make use of popunders in prod
-    async def smart_click_trigger(self, coordinates=(100, 100), device_type="computer"):
+    async def smart_click_trigger(
+        self, coordinates=(100, 100), device_type="computer", probability=None
+    ):
         if self.no_of_clicks > 0:
-            if random.uniform(0, 1) <= self.probability_of_click:
+            if random.random() <= (probability or self.probability_of_click):
                 self.probability_of_click -= utils.fetch_percentage_value(
                     self.probability_of_click, 15
                 )
@@ -470,7 +472,9 @@ class HumanMovements:
                 print(
                     f"Bot Process Id {self.bot_process_id} <:::> Click was triggered successfully"
                 )
-                await self.revert_to_active_page()
+                await self.revert_to_active_page(
+                    time_interval_to_check=random.uniform(1.5, 4)
+                )
                 return True
             else:
                 self.probability_of_click += utils.fetch_percentage_value(

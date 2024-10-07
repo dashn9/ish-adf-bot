@@ -29,8 +29,10 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
         direction=True,
     ):
         px_to_adjust_by = max(px_to_adjust_by, 10)
-        if random.random() < 0.25 and not self.identity.has_touch:
+        if random.random() < 0.5 and not self.identity.has_touch:
+            logger.info("<--> Moving To Random Area On Reading Element <-->")
             await self.move_mouse_to_random_area_on_element(html_web_element)
+            await self.smart_click_trigger(probability=1)
         if mode == "arrow_keys":
             await self.read_with_arrow_keys(px_to_adjust_by, direction)
             # Wait to complete scroll

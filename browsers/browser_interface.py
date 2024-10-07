@@ -303,10 +303,10 @@ class BrowserInterface:
             if target_id not in self.preliminary_activated_tabs:
                 logger.info("{{{ New Tab Discovered: %s }}}" % (target_id))
                 logger.info("{{{ Subscribing To Page Events For Tab: %s }}}" % (target_id))
-                self._subscribe_tab_to_lifecycle_events(tab)
+                await self._subscribe_tab_to_lifecycle_events(tab)
                 logger.info("{{{ Activating Tab: %s Preliminarily... }}}" % (target_id))
                 await self.preliminary_tab_activation(tab)
-                await time.sleep(2)
+                await asyncio.sleep(2.5)
                 logger.info("{{{ Reloading Tab: %s... }}}" % (target_id))
                 await tab.reload()
 
@@ -326,7 +326,7 @@ class BrowserInterface:
         target_id = str(tab.target.target_id)
         while time.time() - start_time < timeout:
             logger.info("{{{ Checking If Tab: %s, Has Fully Loaded... }}}" % target_id)
-            if getattr(self.pages_lifecycle_events.get(target_id, [""])[-1], "name", None) in ['networkIdle', 'InteractiveTime']:
+            if getattr(self.pages_lifecycle_events.get(target_id, [""])[-1], "name", None) in ['networkAlmostIdle', 'firstMeaningfulPaint', 'networkIdle', 'InteractiveTime']:
                 logger.info("{{{ Tab: %s, Has Fully Loaded }}}" % target_id)
                 return True
             await asyncio.sleep(1)
