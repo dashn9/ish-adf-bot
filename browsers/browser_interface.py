@@ -1,10 +1,7 @@
 import asyncio
 import json
-import os
 import random
 import time
-import tempfile
-from functools import reduce
 
 from nodriver import Element as WebElement, Tab
 import nodriver as uc
@@ -13,6 +10,7 @@ from bots import utils
 from bots.devtools import devtools_primary
 from constants import bot_constants, browser_constants, config
 from log import logger
+from exceptions.browser import PageLoadTimeoutException
 
 
 class BrowserInterface:
@@ -27,6 +25,7 @@ class BrowserInterface:
         self.cookies_update_callback = cookies_update_callback
         self.dom_storage = None
         self.preliminary_activated_tabs = set()
+        self.pages_lifecycle_events = dict()
         self.active_tab = None
 
     async def update_cookies_to_cloud(self):
@@ -267,6 +266,9 @@ class BrowserInterface:
                 await self.active_tab.set_window_state(0, 0, *window_size)
             if self.identity.device_type == "smartphone" and config.CONTAINERIZED:
                 await self.active_tab.set_window_state(0, 0, bot_constants.SCREEN_WIDTH - 1, bot_constants.SCREEN_HEIGHT - 1)
+
+        logger.info("{{{ Subscribing To Lifecycle Events For Tab: %s }}}", self.active_tab.target.target_id)
+        await self._subscribe_tab_to_lifecycle_events(self.active_tab)
         await asyncio.sleep(0.8)
         logger.info("{{{ Activating Tab Preliminarily... }}}")
         await self.preliminary_tab_activation(self.active_tab)
@@ -274,9 +276,10 @@ class BrowserInterface:
         self.preliminary_activated_tabs.add(self.active_tab.target.target_id)
         logger.info("{{{ Adding Listener to New Tabs Creation... }}}")
         await devtools_primary.listen_to_tab_creation(self.web_browser_driver.connection, self._handle_new_tab_creation)
-        logger.info("{{{ Opening Blank Website... }}}")
+        logger.info("{{{ Opening Blank Website And Waiting For Full Load... }}}")
         await self.active_tab.get('https://blank.org')
-        await asyncio.sleep(1)
+        await asyncio.sleep(0.5)
+        await self.wait_for_tab_load(self.active_tab)
         logger.info("{{{ Executing JS: Dispatching Event With Identity Spoof Data... }}}")
         # The purpose of these code below is to be able to dispatch an event to the extension, which only comes alive after a url load
         identitySpoofData = json.dumps(await self.identity.fetch_identity_data_for_extension())
@@ -299,14 +302,35 @@ class BrowserInterface:
             target_id = tab.target.target_id
             if target_id not in self.preliminary_activated_tabs:
                 logger.info("{{{ New Tab Discovered: %s }}}" % (target_id))
-                logger.info("{{{ Enabling Page Events For Tab: %s }}}" % (target_id))
-                await devtools_primary.enable_page(tab)
+                logger.info("{{{ Subscribing To Page Events For Tab: %s }}}" % (target_id))
+                self._subscribe_tab_to_lifecycle_events(tab)
                 logger.info("{{{ Activating Tab: %s Preliminarily... }}}" % (target_id))
                 await self.preliminary_tab_activation(tab)
                 await time.sleep(2)
                 logger.info("{{{ Reloading Tab: %s... }}}" % (target_id))
                 await tab.reload()
 
+    async def _subscribe_tab_to_lifecycle_events(self, tab: Tab):
+        await devtools_primary.enable_page(tab)
+        await devtools_primary.listen_to_page_lifecycle(tab, self._handle_page_event_for_tab)
+
+    async def _handle_page_event_for_tab(self, event):
+        logger.info(f"000 Received Lifecycle Event: {event.name} For Tab: {event.frame_id} 000")
+        frame_id = str(event.frame_id)
+        self.pages_lifecycle_events[frame_id] = self.pages_lifecycle_events.get(frame_id, [])
+        self.pages_lifecycle_events[frame_id].append(event)
+
+    async def wait_for_tab_load(self, tab: Tab | None = None, timeout=20):
+        tab = tab or self.active_tab
+        start_time = time.time()
+        target_id = str(tab.target.target_id)
+        while time.time() - start_time < timeout:
+            logger.info("{{{ Checking If Tab: %s, Has Fully Loaded... }}}" % target_id)
+            if getattr(self.pages_lifecycle_events.get(target_id, [""])[-1], "name", None) in ['networkIdle', 'InteractiveTime']:
+                logger.info("{{{ Tab: %s, Has Fully Loaded }}}" % target_id)
+                return True
+            await asyncio.sleep(1)
+        raise PageLoadTimeoutException()
 
     async def preliminary_tab_activation(self, target_tab: Tab):
         target_id = target_tab.target.target_id

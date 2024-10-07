@@ -27,12 +27,9 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
         px_to_adjust_by,
         mode="arrow_keys",
         direction=True,
-        **kwargs,
     ):
         px_to_adjust_by = max(px_to_adjust_by, 10)
-        # Stamp the initial time before reading began
-        read_mode_time_used = time.time()
-        if random.random() < 0.25 and not self.has_touch:
+        if random.random() < 0.25 and not self.identity.has_touch:
             await self.move_mouse_to_random_area_on_element(html_web_element)
         if mode == "arrow_keys":
             await self.read_with_arrow_keys(px_to_adjust_by, direction)
@@ -54,8 +51,7 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
         elif mode == "touch":
             if not direction:
                 px_to_adjust_by *= -1
-            # Reason why i divided by 1.5 is because read_with_touch splits the screen in 3 segment, you don't want a scenario where a user crosses all three at once, it's technically not humanlike
-            await self.read_with_touch(px_to_adjust_by / 1.5)
+            await self.read_with_touch(px_to_adjust_by)
 
     async def smart_human_like_content_navigator(
         self,
@@ -102,34 +98,30 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
             if random.random() < 0.2:
                 await asyncio.sleep(random.uniform(0.4, 1.4))
 
-                kwargs["read_by_mode_data"] = await self.read_by_mode(
+                await self.read_by_mode(
                     html_web_element,
                     browser_inner_size.get("height") * random.uniform(0.15, 0.35),
                     mode,
                     False,
-                    **kwargs.get("read_by_mode_data", {}),
                 )
 
                 await asyncio.sleep(random.uniform(0.5, 2.5))
 
                 # Attempt to return page to original point before going up
-                kwargs["read_by_mode_data"] = await self.read_by_mode(
+                await self.read_by_mode(
                     html_web_element,
                     browser_inner_size.get("height") * random.uniform(0.15, 0.35),
                     mode,
                     True,
-                    **kwargs.get("read_by_mode_data", {}),
                 )
 
         await asyncio.sleep(time_to_pause_activity)
-        # Store read_by_mode data at each function iteration to be repassed, reason is for read_by_mode
-        # mouse_to_scrollbar mode
-        kwargs["read_by_mode_data"] = await self.read_by_mode(
+
+        await self.read_by_mode(
             html_web_element,
             px_to_adjust_by,
             mode,
             True,
-            **kwargs.get("read_by_mode_data", {}),
         )
 
         # Changing The Value Of px_to_adjust_by To The Amount Of px Actually Adjusted

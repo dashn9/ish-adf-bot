@@ -64,7 +64,8 @@ async def run_bot(
         web_bot.time_activated = time.time()
         logger.info("{{{ Opening Url On Run... }}}")
         await web_bot.web_browser_driver.get(page_info.get("page_url"))
-        logger.info("{{{ Opened Url On Run... }}}")
+        await web_bot.wait_for_tab_load()
+        logger.info("{{{ Opened Url On Run }}}")
         if random.random() >= identity.ad_keywords_click_probability:
             logger.info(
                 f"<--> Negating Ad Click Via Keywords Based On Probability of {identity.ad_keywords_click_probability} <-->"
