@@ -153,15 +153,16 @@ class BrowserInterface:
         return {"x_offset": web_element_x_offset, "y_offset": web_element_y_offset, "bottom": web_element_bottom}
 
     async def get_window_document_offsets(self):
-        return {"y_offset": await self.active_tab.evaluate("window.pageYOffset", await_promise=True),
-                "x_offset": await self.active_tab.evaluate("window.pageXOffset", await_promise=True)}
+        # return values of evaluate ends up as None if it's actually 0, issue is from nodriver
+        return {"y_offset": (await self.active_tab.evaluate("window.pageYOffset", await_promise=True)) or 0,
+                "x_offset": (await self.active_tab.evaluate("window.pageXOffset", await_promise=True)) or 0}
     
-    async def get_window_document_boundary(self):
-        logger.info("{{{ Fetching Document Offsets }}}")
-        offsets = self.get_window_document_offsets()
-        logger.info("{{{ Fetching Document Bounds }}}")
-        bounds = self.get_browser_inner_size()
-        return dict(**offsets, **bounds, bottom=bounds.get("height") + bounds.get("y_offset"))
+    async def get_window_document_bounds(self):
+        logger.info("{{{ Fetching Document Offsets... }}}")
+        offsets = await self.get_window_document_offsets()
+        logger.info("{{{ Fetching Document Bounds... }}}")
+        bounds = await self.get_browser_inner_size()
+        return dict(**offsets, **bounds, bottom=bounds.get("height") + offsets.get("y_offset"))
     
     async def bring_window_to_front(self):
         await self.active_tab.bring_to_front()
@@ -187,7 +188,7 @@ class BrowserInterface:
         await devtools_primary.activate_mobile(target_tab,
                                          {"width": self.identity.screen_resolution.get("logical_width"),
                                           "height": self.identity.screen_resolution.get("logical_height"), "device_scale_factor":
-                                              self.identity.screen_resolution.get("device_pixel_ratio"), "screen_orientation":
+                                              self.identity.screen_resolution.get("density_pixel_ratio", 1), "screen_orientation":
                                               {"type": "portrait_primary", "angle": 0},
                                           "mobile": True})
 
@@ -229,7 +230,6 @@ class BrowserInterface:
         utils.remove_profile_lock(user_data_dir)
         # Opens a Chrome browser
         if self.browser_to_use_id == browser_constants.CHROME_ID:
-            print(f"Bot Process Id {self.bot_process_id} <:::> Opening Chrome Browser")
             browser_config = uc.Config(browser_args=[
                 '--disable-background-timer-throttling',
                 '--disable-backgrounding-occluded-windows',
@@ -244,7 +244,7 @@ class BrowserInterface:
             browser_config.add_extension(f'{bot_constants.FULL_DIRECTORY_PATH+browser_constants.CHROME_EXTENSIONS_LOCATION+"/browser_network.crx"}')
             browser_config.add_argument(f"--user-agent={self.identity.user_agent}")
             browser_config.binary_location = browser_constants.CHROME_BINARY_LOCATION
-            logger.info("{{{ Opening Web Browser... }}}")
+            logger.info("{{{ Opening Chrome Browser... }}}")
             self.web_browser_driver = await uc.start(
                 config=browser_config,
                 sandbox=False)

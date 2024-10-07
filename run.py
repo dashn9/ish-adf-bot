@@ -67,14 +67,14 @@ async def run_bot(
         logger.info("{{{ Opened Url On Run... }}}")
         if random.random() >= identity.ad_keywords_click_probability:
             logger.info(
-                f"<--> Negating Ad Click Via Keywords Based On Probability of ${identity.ad_keywords_click_probability} <-->"
+                f"<--> Negating Ad Click Via Keywords Based On Probability of {identity.ad_keywords_click_probability} <-->"
             )
             identity.ad_keywords = None
         ad_click_probability = random.random()
         ad_to_click = None
         if ad_click_probability <= identity.ad_click_probability:
             logger.info(
-                f"<--> Ad: ${identity.ad_type_to_click} Set For Engagement <-->"
+                f"<--> Ad: {identity.ad_type_to_click} Set For Engagement <-->"
             )
             ad_to_click = identity.ad_type_to_click
 

@@ -7,6 +7,7 @@ from datacontroller.datacontroller import DataController
 from constants import bot_constants
 from bots import utils
 from constants import config
+from log import logger
 
 
 class Identity:
@@ -212,33 +213,24 @@ class Identity:
 
     async def resolve_timezone(self):
         resolved_proxy_url = self.proxy_url if bot_constants.USE_PROXY else None
-        if self.improvised_public_ip:
-            geolocation = self.data_controller.fetch_geolocation_data(
-                resolved_proxy_url
-            )
-
-            self.timezone = [
-                geolocation["timezone"],
-                geolocation["offset"] / 60,
-                geolocation["continent"] + " " + geolocation["city"] + " Standard Time",
-            ]
-        elif self._raw_identity["TIMEZONE"]:
-            self.timezone = [
-                self._raw_identity["TIMEZONE"]["id"],
-                self._raw_identity["TIMEZONE"]["offset"],
-                self._raw_identity["TIMEZONE"]["full_name"],
-            ]
+        if self._raw_identity["TIMEZONE"]:
+            logger.info("$@$ Identity Already Has TimeZone, Setting Up... $@$")
+            self.timezone = {
+                "id": self._raw_identity["TIMEZONE"]["id"],
+                "offset": self._raw_identity["TIMEZONE"]["offset"],
+                "full_name": self._raw_identity["TIMEZONE"]["full_name"],
+            }
         else:
-            print("Resolving Timezone From Cloud")
+            logger.info("$@$ Resolving Identity TimeZone From Cloud... $@$")
             identity_timezone = await self.data_controller.fetch_timezone(
                 self.id, resolved_proxy_url
             )
             if identity_timezone and identity_timezone.get("id", None):
-                self.timezone = [
-                    identity_timezone["id"],
-                    identity_timezone["offset"],
-                    identity_timezone["full_name"],
-                ]
+                self.timezone = {
+                    "id": identity_timezone["id"],
+                    "offset": identity_timezone["offset"],
+                    "full_name": identity_timezone["full_name"],
+                }
             else:
                 print("An empty timezone was resolved from cloud - fixing")
                 geolocation = self.data_controller.fetch_geolocation_data(

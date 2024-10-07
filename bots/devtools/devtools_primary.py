@@ -6,6 +6,7 @@ from typing import Callable, Optional, List, Dict
 from nodriver import Tab, cdp
 
 from .. import utils
+from log import logger
 
 
 async def simulate_screen(tab: Tab, device_metrics: dict = {
@@ -13,6 +14,7 @@ async def simulate_screen(tab: Tab, device_metrics: dict = {
         "height": 768, "device_scale_factor": 2,
         "mobile": False
         }):
+    logger.info("000 Sending Command To Set Device Screen Up... 000", device_metrics)
     await tab.send(cdp.emulation.set_device_metrics_override(
         position_x=0,
         position_y=0,
@@ -32,8 +34,10 @@ async def activate_mobile(
 ):
     await simulate_screen(tab, device_metrics)
     await asyncio.sleep(0.1)
+    logger.info("000 Sending Command To Set Touch Events For Mouse... 000")
     await tab.send(cdp.emulation.set_emit_touch_events_for_mouse(enabled=True))
     await asyncio.sleep(0.1)
+    logger.info(f"000 Sending Command To Set Touch Emulation Enabled... Max Touch Points: {max_touch_points}")
     await tab.send(cdp.emulation.set_touch_emulation_enabled(enabled=True, max_touch_points=max_touch_points))
     await asyncio.sleep(0.1)
 

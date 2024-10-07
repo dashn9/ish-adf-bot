@@ -32,7 +32,7 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
         px_to_adjust_by = max(px_to_adjust_by, 10)
         # Stamp the initial time before reading began
         read_mode_time_used = time.time()
-        if random.random() < 0.25 and not self.has_touch:
+        if random.random() < 0.25 and not self.identity.has_touch:
             await self.move_mouse_to_random_area_on_element(html_web_element)
         if mode == "arrow_keys":
             key = K_Keys["ArrowDown"]
@@ -59,7 +59,8 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
         elif mode == "touch":
             if not direction:
                 px_to_adjust_by *= -1
-            await self.read_with_touch(px_to_adjust_by)
+            # Reason why i divided by 1.5 is because read_with_touch splits the screen in 3 segment, you don't want a scenario where a user crosses all three at once, it's technically not humanlike
+            await self.read_with_touch(px_to_adjust_by / 1.5)
         elif mode == "mouse_to_scrollbar":
 
             async def read_with_mouse_to_scrollbar():
@@ -292,7 +293,7 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
                 )
             mode = "arrow_keys"
             # use device type
-            if self.has_touch:
+            if self.identity.has_touch:
                 mode = "touch"
             elif self.has_mouse:
                 if (

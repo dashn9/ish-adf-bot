@@ -190,17 +190,23 @@ class HumanMovements:
             html_web_element.scroll_into_view()
 
     async def scroll_to_percentage_in_element(
-        self, html_web_element, percentage_to_scroll_to, time_to_sleep=0
+        self, html_web_element, percentage_to_scroll_to, time_to_sleep=None
     ):
         document_bounds = await self.get_window_document_bounds()
         max_px = self.identity.screen_resolution.get("logical_height") - 200
 
-        async def has_page_offset_changed():
+        last_element_position = None
+
+        async def has_element_offset_changed():
+            nonlocal last_element_position
             logger.info("{{{ Checking If Document Offsets Changed }}}")
-            if self.last_document_offsets == document_bounds:
+            new_position = await html_web_element.get_position()
+            if last_element_position == new_position:
+                logger.info("{{{ Element Position Did Not Change }}}")
                 return False
             else:
-                logger.info("{{{ Document Offset Did Not Change }}}")
+                logger.info("{{{ Element Position Changed }}}")
+                last_element_position = new_position
                 return True
 
         async def scroll_with_touch(direction, duration):
@@ -232,42 +238,53 @@ class HumanMovements:
                     )
 
         async def offset_adjuster(offset_to_adjust_to):
-            while offset_to_adjust_to < document_bounds.get("y_offset"):
-                if not await has_page_offset_changed():
-                    return True
-                await scroll(False)
-                document_bounds = await self.get_window_document_bounds()
-            while offset_to_adjust_to > document_bounds.get("bottom"):
-                logger.info(
-                    f"<--> Offsetting Downwards To: {offset_to_adjust_to} From {document_bounds.get('y_offset')} <-->"
-                )
-                if not has_page_offset_changed():
-                    return True
-                await scroll(True)
-                document_bounds = await self.get_window_document_bounds()
+            """When scrolling, if the px to adjust to goes within bounds of the document, an infinite scroll will occur, I don't want to complicate, so I shall stick with detecting and exiting"""
+            nonlocal document_bounds
+            if offset_to_adjust_to > document_bounds.get("y_offset"):
+                while offset_to_adjust_to > document_bounds.get("y_offset"):
+                    logger.info(
+                        f"<--> Offsetting Upwards To: {offset_to_adjust_to} From {document_bounds.get('y_offset')} <-->"
+                    )
+                    if not (await has_element_offset_changed()):
+                        return True
+                    await scroll(True)
+                    document_bounds = await self.get_window_document_bounds()
+            else:
+                while offset_to_adjust_to < document_bounds.get("bottom"):
+                    logger.info(
+                        f"<--> Offsetting Downwards To: {offset_to_adjust_to} From {document_bounds.get('y_offset')} <-->"
+                    )
+                    if not (await has_element_offset_changed()):
+                        return True
+                    await scroll(False)
+                    document_bounds = await self.get_window_document_bounds()
 
-        workable_height = (await html_web_element.get_position(abs=True)).bottom
+        element_bounds = await html_web_element.get_position()
         curr_window_y_offset = (await self.get_window_document_offsets()).get(
             "y_offset"
         )
-        logger.info(f"<--> Estimated Workable Height To: {workable_height} <-->")
-        offset_to_adjust_to = utils.fetch_percentage_value(
-            workable_height, percentage_to_scroll_to
+        offset_to_adjust_to = (
+            utils.fetch_percentage_value(element_bounds.height, percentage_to_scroll_to)
+            + element_bounds.y
+            + curr_window_y_offset
+        )
+        logger.info(
+            f"<--> Setting Up Adjustment To Element's Top: {element_bounds.y} On Height: {element_bounds.height}"
         )
         await offset_adjuster(offset_to_adjust_to)
         logger.info("<--> Done Scrolling to Percentage in Element <-->")
-        if time_to_sleep:
+        if time_to_sleep is not None:
             logger.info("<--> Sleeping... <-->")
             await asyncio.sleep(time_to_sleep)
-            logger.info("<--> Returning To Original Position <-->")
-            offset_adjuster(curr_window_y_offset)
+            logger.info("<--> Returning To Original Position... <-->")
+            await offset_adjuster(curr_window_y_offset)
 
     async def read_with_arrow_keys(
         self,
         boundary,
     ):
         asyncio.create_task(self.keyboard.down_persistent())
-        doc_boundary = self.get_window_document_boundary()
+        doc_boundary = self.get_window_document_bounds()
         logger.info(
             "<--> Arrow Keys Read: Document Offset Currently At: <-->", doc_boundary
         )
@@ -279,12 +296,12 @@ class HumanMovements:
         boundary = doc_boundary["y_offset"] + boundary
         while doc_boundary["y_offset"] < boundary and direction_to_move:
             await asyncio.sleep(0.3)
-            doc_boundary = self.get_window_document_boundary()
+            doc_boundary = self.get_window_document_bounds()
             logger.info("<--> Arrow Keys Read: Going Up <-->", doc_boundary)
 
         while doc_boundary["y_offset"] > boundary and not direction_to_move:
             await asyncio.sleep(0.3)
-            doc_boundary = self.get_window_document_boundary()
+            doc_boundary = self.get_window_document_bounds()
             logger.info("<--> Arrow Keys Read: Going Down <-->", doc_boundary)
 
         await self.keyboard.up(key)
@@ -294,16 +311,23 @@ class HumanMovements:
     async def read_with_touch(
         self, px_to_adjust_by, duration=None, force_screen_reset=False
     ):
+        """Requires heavy rethink and rework"""
         # In the future, take this of to config
         duration = duration or random.uniform(0.1, 3)
-        px_to_adjust_by = 100 if px_to_adjust_by < 100 else px_to_adjust_by
+
+        logger.info(f"<--> Touch Read: Reading :: To Adjust By: {px_to_adjust_by} <-->")
+        if abs(px_to_adjust_by) < 100:
+            logger.warning(
+                f"<--> Touch Read: Reading :: To Adjust By: {px_to_adjust_by} is Undesirable, Resetting... <-->"
+            )
+            px_to_adjust_by = 100 * (1 if px_to_adjust_by >= 0 else -1)
         # A List Containing The Browser's Page 9-Ways Splitted Dimension In The Following Format
         # [[(x, y, width, height) x3] x3]
         generated_page_boundaries = []
         if not hasattr(self, "generated_page_boundaries") or force_screen_reset:
             logger.info("<--> Touch Read: Generating Page Boundaries <-->")
-            a_third_width = self.screen_width / 3
-            a_third_height = self.screen_height / 3
+            a_third_width = self.identity.screen_resolution.get("logical_width") / 3
+            a_third_height = self.identity.screen_resolution.get("logical_height") / 3
             for h in range(3):
                 generated_page_boundaries.append([])
                 for w in range(3):
@@ -366,14 +390,16 @@ class HumanMovements:
         x_end = x_end if x_end >= 0 else 0
         y_end = y_end if y_end >= 0 else 0
 
-        logger.info(f"<--> Touch Read : : ({x_start,y_start}), ({x_end,y_end})")
+        logger.info(f"<--> Touch Read : : ({x_start,y_start}), ({x_end,y_end}) <-->")
 
-        logger.info("<--> Touch Read: Simualating Human Touch Movement With Mouse")
+        logger.info(
+            "<--> Touch Read: Simualating Human Touch Movement With Mouse... <-->"
+        )
         await self.touch.simulate_human_touch_movement_with_mouse(
             (x_start, y_start), (x_end, y_end), duration
         )
         logger.info("<--> Engaging Smart Click Trigger <-->")
-        await self.smart_click_trigger((x_start, y_start), self.device_type)
+        await self.smart_click_trigger((x_start, y_start), self.identity.device_type)
 
     async def scroll_element_into_vertical_view(
         self,
@@ -390,7 +416,7 @@ class HumanMovements:
         """
         if simulate_human_behaviour:
             await self.scroll_to_percentage_in_element(
-                html_web_element, 0.1 if element_scroll_to else 100
+                html_web_element, 100 if element_scroll_to else 0.01
             )
         else:
             await html_web_element.scroll_into_view()

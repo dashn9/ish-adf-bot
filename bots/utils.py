@@ -1,6 +1,7 @@
 from typing import Union
 import re, math, os, numpy as np
 import random
+from log import logger
 
 
 def return_fingerprintables_spoof_js_code(
@@ -421,9 +422,6 @@ def normalize_version(version, indexes=4):
     return ".".join(parts + ["0"] * (indexes - len(parts)))
 
 
-import os
-
-
 def remove_profile_lock(profile_path):
     lock_files = ["SingletonLock"]
     for lock_file in lock_files:
@@ -431,6 +429,6 @@ def remove_profile_lock(profile_path):
         if os.path.exists(lock_path) or os.path.islink(lock_path):
             try:
                 os.remove(lock_path)
-                print(f"Removed lock file: {lock_path}")
+                logger.info(f"*** Removed lock file: {lock_path} ***")
             except Exception as e:
-                print(f"Error removing lock file {lock_path}: {e}")
+                logger.error(f"*** Error removing lock file {lock_path}: {e} ***")
