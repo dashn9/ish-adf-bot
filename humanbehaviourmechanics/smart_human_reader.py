@@ -32,15 +32,10 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
         px_to_adjust_by = max(px_to_adjust_by, 10)
         # Stamp the initial time before reading began
         read_mode_time_used = time.time()
-        if random.random() < 0.25 and not self.identity.has_touch:
+        if random.random() < 0.25 and not self.has_touch:
             await self.move_mouse_to_random_area_on_element(html_web_element)
         if mode == "arrow_keys":
-            key = K_Keys["ArrowDown"]
-            if not direction:
-                key = K_Keys["ArrowUp"]
-            await self.read_with_arrow_keys(
-                html_web_element, px_to_adjust_by, key, direction
-            )
+            await self.read_with_arrow_keys(px_to_adjust_by, direction)
             # Wait to complete scroll
             await asyncio.sleep(0.12)
         elif mode == "wheel":
@@ -61,58 +56,6 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
                 px_to_adjust_by *= -1
             # Reason why i divided by 1.5 is because read_with_touch splits the screen in 3 segment, you don't want a scenario where a user crosses all three at once, it's technically not humanlike
             await self.read_with_touch(px_to_adjust_by / 1.5)
-        elif mode == "mouse_to_scrollbar":
-
-            async def read_with_mouse_to_scrollbar():
-                browser_inner_size_height = await self.get_browser_inner_size()[
-                    "height"
-                ]
-                mouse_x, mouse_y = pyautogui.position()
-                mouse_x += global_utils.fetch_percentage_value(
-                    browser_inner_size_height, random.randint(0, 1)
-                )
-                px_to_adjust_mouse_y_by = max(
-                    (
-                        (
-                            px_to_adjust_by
-                            / self.web_browser_driver.execute_script(
-                                "document.body.getBoundingClientRect().height"
-                            )
-                        )
-                        * browser_inner_size_height
-                    ),
-                    3,
-                )
-                if not direction:
-                    px_to_adjust_mouse_y_by *= -1
-                mouse_y += px_to_adjust_mouse_y_by
-                print("mouse_y ==>", mouse_y)
-                kwargs["present_mouse_points"]["x"] = mouse_x
-                kwargs["present_mouse_points"]["y"] = mouse_y
-                await self.read_with_mouse_to_scrollbar(
-                    {
-                        "x": mouse_x,
-                        "y": mouse_y,
-                        "x_offset_percentage": 0,
-                        "y_offset_percentage": 0,
-                        "max_overshoot": 0,
-                        "probability_of_overshoot": 0,
-                    }
-                )
-
-            if "present_mouse_points" in kwargs:
-                await read_with_mouse_to_scrollbar()
-            else:
-                present_mouse_points = self.send_mouse_to_scrollbar()
-                if not isinstance(present_mouse_points, dict):
-                    raise TypeError(
-                        "Set Function Asynchronous Parameter To False, If Expecting Dict Of Mouse Coordinates"
-                    )
-                kwargs["present_mouse_points"] = present_mouse_points
-                await asyncio.sleep(random.uniform(0, 1))
-                await read_with_mouse_to_scrollbar()
-        kwargs["read_mode_time_used"] = time.time() - read_mode_time_used
-        return kwargs
 
     async def smart_human_like_content_navigator(
         self,
@@ -295,7 +238,7 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
             # use device type
             if self.identity.has_touch:
                 mode = "touch"
-            elif self.has_mouse:
+            elif self.identity.has_mouse:
                 if (
                     random.random() < bot_constants.USE_MOUSE_READ_PROBABILITY
                     and SmartHumanReader.active_on_mouse_movement.value < 0

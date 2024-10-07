@@ -193,7 +193,6 @@ class HumanMovements:
         self, html_web_element, percentage_to_scroll_to, time_to_sleep=None
     ):
         document_bounds = await self.get_window_document_bounds()
-        max_px = self.identity.screen_resolution.get("logical_height") - 200
 
         last_element_position = None
 
@@ -211,9 +210,9 @@ class HumanMovements:
 
         async def scroll_with_touch(direction, duration):
             if direction:
-                px_to_adjust_by = random.randint(1, max_px)
+                px_to_adjust_by = random.randint(1, 450)
             if not direction:
-                px_to_adjust_by = random.randint(-max_px, -1)
+                px_to_adjust_by = random.randint(-450, -1)
             await self.read_with_touch(px_to_adjust_by, duration)
 
         async def scroll(direction):
@@ -221,38 +220,45 @@ class HumanMovements:
                 logger.info("<--> Scrolling To Percentage In Element With Touch <-->")
                 await scroll_with_touch(direction, 0.5)
             else:
-                # seperate into config
-                if random.random <= 0.9:
+                if random.random() <= 0.9:
                     logger.info(
                         "<--> Scrolling To Percentage In Element With Mouse Wheel <-->"
                     )
                     await self.mouse.mouse_wheel_with_bezier_animation(
-                        *pyautogui.position(), random.randint(1, max_px), direction
+                        *pyautogui.position(), random.randint(1, 600), direction
                     )
                 else:
+                    # seperate into config
                     logger.info(
                         "<--> Scrolling To Percentage In Element With Arrow Keys <-->"
                     )
-                    self.read_with_arrow_keys(
-                        offset_to_adjust_to - document_bounds.get("bottom")
+                    await self.read_with_arrow_keys(
+                        random.randint(
+                            200,
+                            int(
+                                self.identity.screen_resolution.get("logical_height")
+                                * 1.5
+                            ),
+                        ),
+                        direction,
                     )
 
         async def offset_adjuster(offset_to_adjust_to):
             """When scrolling, if the px to adjust to goes within bounds of the document, an infinite scroll will occur, I don't want to complicate, so I shall stick with detecting and exiting"""
             nonlocal document_bounds
-            if offset_to_adjust_to > document_bounds.get("y_offset"):
-                while offset_to_adjust_to > document_bounds.get("y_offset"):
+            if offset_to_adjust_to > document_bounds.get("bottom"):
+                while offset_to_adjust_to > document_bounds.get("bottom"):
                     logger.info(
-                        f"<--> Offsetting Upwards To: {offset_to_adjust_to} From {document_bounds.get('y_offset')} <-->"
+                        f"<--> Offsetting Downwards To: {offset_to_adjust_to} From {document_bounds.get('bottom')} <-->"
                     )
                     if not (await has_element_offset_changed()):
                         return True
                     await scroll(True)
                     document_bounds = await self.get_window_document_bounds()
             else:
-                while offset_to_adjust_to < document_bounds.get("bottom"):
+                while offset_to_adjust_to < document_bounds.get("y_offset"):
                     logger.info(
-                        f"<--> Offsetting Downwards To: {offset_to_adjust_to} From {document_bounds.get('y_offset')} <-->"
+                        f"<--> Offsetting Upwards To: {offset_to_adjust_to} From {document_bounds.get('y_offset')} <-->"
                     )
                     if not (await has_element_offset_changed()):
                         return True
@@ -282,27 +288,45 @@ class HumanMovements:
     async def read_with_arrow_keys(
         self,
         boundary,
+        direction,
     ):
-        asyncio.create_task(self.keyboard.down_persistent())
-        doc_boundary = self.get_window_document_bounds()
+        doc_boundary = await self.get_window_document_bounds()
         logger.info(
-            "<--> Arrow Keys Read: Document Offset Currently At: <-->", doc_boundary
+            f"<--> Arrow Keys Read: Document Offset Currently At: {doc_boundary.get('y_offset')} <-->",
         )
         key = K_Keys["ArrowDown"]
-        direction_to_move = True
-        if boundary < 0:
+        if not direction:
             key = K_Keys["ArrowUp"]
-            direction_to_move = False
-        boundary = doc_boundary["y_offset"] + boundary
-        while doc_boundary["y_offset"] < boundary and direction_to_move:
-            await asyncio.sleep(0.3)
-            doc_boundary = self.get_window_document_bounds()
-            logger.info("<--> Arrow Keys Read: Going Up <-->", doc_boundary)
+            boundary = doc_boundary["bottom"] - boundary
+        else:
+            boundary = doc_boundary["y_offset"] + boundary
+        asyncio.create_task(self.keyboard.down_persistent(key))
 
-        while doc_boundary["y_offset"] > boundary and not direction_to_move:
+        while doc_boundary["y_offset"] < boundary and direction:
             await asyncio.sleep(0.3)
-            doc_boundary = self.get_window_document_bounds()
-            logger.info("<--> Arrow Keys Read: Going Down <-->", doc_boundary)
+            _doc_boundary = await self.get_window_document_bounds()
+            if _doc_boundary == doc_boundary:
+                logger.info(
+                    f"<--> Arrow Keys Read: Operation Seems To Have Hit Max Bounds, Can't Go Any Further Breaking... <-->"
+                )
+                break
+            doc_boundary = _doc_boundary
+            logger.info(
+                f"<--> Arrow Keys Read: Going Down :: {doc_boundary.get('y_offset')} <-->"
+            )
+
+        while doc_boundary["bottom"] > boundary and not direction:
+            await asyncio.sleep(0.3)
+            _doc_boundary = await self.get_window_document_bounds()
+            if _doc_boundary == doc_boundary:
+                logger.info(
+                    f"<--> Arrow Keys Read: Operation Seems To Have Hit Max Bounds, Can't Go Any Further Breaking... <-->"
+                )
+                break
+            doc_boundary = _doc_boundary
+            logger.info(
+                f"<--> Arrow Keys Read: Going Up :: {doc_boundary.get('y_offset')} <-->"
+            )
 
         await self.keyboard.up(key)
         logger.info("<--> Arrow Keys Read: Done <-->")
