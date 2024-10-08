@@ -4,6 +4,8 @@ import asyncio
 
 import pyautogui
 
+from log import logger
+
 
 class SmartAdsInteractions:
     def __init__(
@@ -79,8 +81,11 @@ class SmartAdsInteractions:
             if random.random() < 0.03:
                 await self.trigger_vignette()
                 return
+            logger.info("$$$ Attempting To Open Vignette Ad... $$$")
             await self.trigger_vignette(open_vignette=True)
+            await asyncio.sleep(0.6)
             if tab_length != len(self.web_browser_driver.tabs):
+                logger.info("$$$ Vignette Ad Opened $$$")
                 self.ad_to_click = None
                 ad_click_success = True
             else:  # the reason why this condition branch was added was because of the possibility trigger_vignette
@@ -136,6 +141,8 @@ class SmartAdsInteractions:
                     )
         if ad_click_success and switch_focus_to_new_tab:
             await asyncio.sleep(1)
+            # Switching this way is wrong, recently triggered tabs are always next to the active one not the last
+            # I.E either switch to the next one [1] or find the currently active tab and switch to it's next
             self.active_tab = self.web_browser_driver.tabs[-1]
             await self.active_tab.activate()
         return ad_click_success
@@ -148,7 +155,7 @@ class SmartAdsInteractions:
             # Iframe not found
             except asyncio.TimeoutError:
                 return
-            if self.device_type == "smartphone":
+            if self.identity.device_type == "smartphone":
                 document_offset = {"x": 0, "y": 0}
             else:
                 document_offset = await self.get_document_offset_from_screen()
@@ -192,7 +199,7 @@ class SmartAdsInteractions:
         pass
 
     async def ad_click(self, ad_dimensions: dict, revert_back=False):
-        if self.device_type == "computer":
+        if self.identity.device_type == "computer":
             previous_mouse_pos = pyautogui.position()
             await self.simulate_human_mouse_move_behavior_to_area(
                 ad_dimensions["x"],
@@ -210,7 +217,7 @@ class SmartAdsInteractions:
                 previous_mouse_pos[0], previous_mouse_pos[1]
             )
             return True
-        elif self.device_type == "smartphone":
+        elif self.identity.device_type == "smartphone":
             await self.touch.tap(
                 ad_dimensions["x"] + random.uniform(0, ad_dimensions["width"]),
                 ad_dimensions["y"] + random.uniform(0, ad_dimensions["height"]),

@@ -214,14 +214,14 @@ class Identity:
     async def resolve_timezone(self):
         resolved_proxy_url = self.proxy_url if bot_constants.USE_PROXY else None
         if self._raw_identity["TIMEZONE"]:
-            logger.info("$@$ Identity Already Has TimeZone, Setting Up... $@$")
+            logger.info("@@@ Identity Already Has TimeZone, Setting Up... @@@")
             self.timezone = {
                 "id": self._raw_identity["TIMEZONE"]["id"],
                 "offset": self._raw_identity["TIMEZONE"]["offset"],
                 "full_name": self._raw_identity["TIMEZONE"]["full_name"],
             }
         else:
-            logger.info("$@$ Resolving Identity TimeZone From Cloud... $@$")
+            logger.info("@@@ Resolving Identity TimeZone From Cloud... @@@")
             identity_timezone = await self.data_controller.fetch_timezone(
                 self.id, resolved_proxy_url
             )

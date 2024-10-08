@@ -101,7 +101,7 @@ class HumanBehaviourReveries:
             await self.move_pointing_device_to_element(link_to_follow)
             link_to_follow_position = await link_to_follow.get_position()
             await asyncio.sleep(random.uniform(0.2, 0.8))
-            if self.has_touch:
+            if self.identity.has_touch:
                 await asyncio.sleep(random.uniform(0.3, 0.5))
                 element_location_and_dimensions = (
                     await self.get_element_location_window_offset(link_to_follow)
