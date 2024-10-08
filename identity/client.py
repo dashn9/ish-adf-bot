@@ -190,10 +190,10 @@ class Identity:
                 if hasattr(self, "country_proxy_url"):
                     self.country_proxy_url = self.country_proxy_url.replace(
                         "<proxy_user>",
-                        config.DATAIMPULSE_MOBILE_PROXY_CREDENTIALS["user"],
+                        config.DATAIMPULSE_RESIDENTIAL_PROXY_CREDENTIALS["user"],
                     ).replace(
                         "<proxy_password>",
-                        config.DATAIMPULSE_MOBILE_PROXY_CREDENTIALS["password"],
+                        config.DATAIMPULSE_RESIDENTIAL_PROXY_CREDENTIALS["password"],
                     )
 
     async def auto_initiate_identity(self, method, method_value):
