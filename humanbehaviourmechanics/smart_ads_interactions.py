@@ -46,7 +46,7 @@ class SmartAdsInteractions:
             if await self.strip_ads_with_negative_keywords(ads_dimensions):
                 return False
         if not ads_dimensions:
-            return
+            return None
         await asyncio.sleep(0.5)
         if not open_vignette:
             await self.ad_click(random.choice(ads_dimensions), revert_back=False)
@@ -55,7 +55,7 @@ class SmartAdsInteractions:
         print(
             f"Bot Process Id {self.bot_process_id} <:::> Vignette ad trigger attempted"
         )
-        return
+        return True
 
     async def smart_ad_click(self, switch_focus_to_new_tab=True):
         ad_click_success = False
