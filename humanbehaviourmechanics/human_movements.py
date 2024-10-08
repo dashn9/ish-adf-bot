@@ -464,15 +464,6 @@ class HumanMovements:
     ):
         if self.no_of_clicks > 0:
             if random.random() <= (probability or self.probability_of_click):
-                # Mistake Triggering Ad is more common on Smartphone because of popunder is more common
-                if (
-                    not device_type == "computer"
-                    and (await self.trigger_vignette()) == True
-                ):
-                    logger.info(
-                        "<--> Won't Trigger Click Because A Vignette Ad Was Present And Closed <-->"
-                    )
-                    return False
                 self.probability_of_click -= utils.fetch_percentage_value(
                     self.probability_of_click, 15
                 )
