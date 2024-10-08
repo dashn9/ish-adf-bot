@@ -137,6 +137,12 @@ class Identity:
         self.browser_name = identity["BROWSER"]
         self.browser_version = identity["BROWSER_VERSION"]
         self.screen_resolution = identity["SCREEN_RESOLUTION"]
+        if isinstance(self.screen_resolution, dict):
+            self.screen_width = self.screen_resolution["logical_width"]
+            self.screen_height = self.screen_resolution["logical_height"]
+        else:
+            self.screen_width = 1920
+            self.screen_height = 1080
         self.gpu_vendor = identity["GPU"]["vendor"]
         self.gpu_renderer = identity["GPU"]["webgl_renderer"]
         self.proxy_client = identity["PROXY_CLIENT"]
