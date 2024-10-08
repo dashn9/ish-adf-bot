@@ -199,11 +199,10 @@ class BrowserInterface:
         await asyncio.sleep (sleep_time)
         if hasattr(self, "web_browser_driver"):
             if time.time() - self.time_activated > bot_constants.BOT_MAX_ALIVE_TIME + random.uniform(-6.5, 6.5):
-                print(f"Identity: {self.identity_id} On Process: {self.bot_process_id} Could Not Perform "
-                      f"Activity Within Set Time, Exiting Session...")
+                logger.info(f"*** Could Not Perform Activity Within Set Time, Exiting Session... ***")
                 try:
                     if not self.web_browser_driver.stopped:
-                        print(f"Bot Process Id {self.bot_process_id} <:::> Updating Cookies To Cloud")
+                        print(f"@@@ Updating Identity Cookies Cookies To Cloud... @@@")
                         await self.update_cookies_to_cloud()
                         self.web_browser_driver.stop()
                         await asyncio.sleep(0.5)
@@ -214,8 +213,7 @@ class BrowserInterface:
                     asyncio.get_event_loop().stop()
                     exit()
                 except ConnectionRefusedError:
-                    print(
-                        "A connection refused error occurred, this would likely be as a result of a dead browser session")
+                    logger.warning("*** A Connection Refused Error Occurred, This Would Likely Be As a Result Of a Dead Browser Session ***")
             else:
                 asyncio.create_task(self.quit_browser_after_max_alive(sleep_time=5))
 
