@@ -24,7 +24,7 @@ class BrowserInterface:
         self.current_tab_length = 1
         self.cookies_update_callback = cookies_update_callback
         self.dom_storage = None
-        self.preliminary_activated_tabs = set()
+        self.preliminary_activated_tab_ids = set()
         self.pages_lifecycle_events = dict()
         self.active_tab = None
 
@@ -271,7 +271,7 @@ class BrowserInterface:
         logger.info("{{{ Activating Tab Preliminarily... }}}")
         await self.preliminary_tab_activation(self.active_tab)
         await asyncio.sleep(0.8)
-        self.preliminary_activated_tabs.add(self.active_tab.target.target_id)
+        self.preliminary_activated_tab_ids.add(self.active_tab.target.target_id)
         logger.info("{{{ Adding Listener to New Tabs Creation... }}}")
         await devtools_primary.listen_to_tab_creation(self.web_browser_driver.connection, self._handle_new_tab_creation)
         logger.info("{{{ Opening Blank Website And Waiting For Full Load... }}}")
@@ -298,7 +298,7 @@ class BrowserInterface:
         """
         for tab in self.web_browser_driver.tabs:
             target_id = tab.target.target_id
-            if target_id not in self.preliminary_activated_tabs:
+            if target_id not in self.preliminary_activated_tab_ids:
                 logger.info("{{{ New Tab Discovered: %s }}}" % (target_id))
                 logger.info("{{{ Subscribing To Page Events For Tab: %s }}}" % (target_id))
                 await self._subscribe_tab_to_lifecycle_events(tab)
@@ -306,6 +306,7 @@ class BrowserInterface:
                 await self.preliminary_tab_activation(tab)
                 await asyncio.sleep(2.5)
                 logger.info("{{{ Reloading Tab: %s... }}}" % (target_id))
+                self.preliminary_activated_tab_ids.add(target_id)
                 await tab.reload()
 
     async def _subscribe_tab_to_lifecycle_events(self, tab: Tab):
