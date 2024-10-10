@@ -243,8 +243,7 @@ class BrowserInterface:
             browser_config.binary_location = browser_constants.CHROME_BINARY_LOCATION
             logger.info("{{{ Opening Chrome Browser... }}}")
             self.web_browser_driver = await uc.start(
-                config=browser_config,
-                sandbox=False)
+                config=browser_config)
             logger.info("{{{ Web Browser Opened }}}")
             self.active_tab = self.web_browser_driver.main_tab
             if open_browser_in_full_screen:
