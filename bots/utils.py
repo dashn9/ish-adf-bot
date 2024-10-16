@@ -1,5 +1,6 @@
 from typing import Union
 import re, math, os, numpy as np
+from itertools import combinations
 import random
 from log import logger
 
@@ -335,6 +336,17 @@ def has_string_in(string_to_test, strings_against):
         if string_against in string_to_test:
             return True
     return False
+
+
+def string_total_combinator(strings: list, join_by: str):
+    all_combined_strings = []
+
+    # Loop through all lengths from 1 to the length of strings
+    for r in range(1, len(strings) + 1):
+        combined = combinations(strings, r)
+        all_combined_strings.extend(join_by.join(c) for c in combined)
+
+    return all_combined_strings
 
 
 def normalize_to_target(arr, target):

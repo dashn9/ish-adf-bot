@@ -147,6 +147,7 @@ class Identity:
         self.gpu_renderer = identity["GPU"]["webgl_renderer"]
         self.proxy_client = identity["PROXY_CLIENT"]
         self.proxy_geo = identity["PROXY_GEO"]
+        self.country = identity["COUNTRY"]
         identity["REFERRALS"] = identity["REFERRALS"]
         self.referrals = identity["REFERRALS"]
         self.referrer = None

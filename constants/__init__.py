@@ -60,6 +60,9 @@ def load_configurations():
             "mouse-use-probability", boc.USE_MOUSE_READ_PROBABILITY
         )
         boc.ENGAGE_READER = bot_conf.getboolean("engage-reader", boc.ENGAGE_READER)
+        boc.AD_CTR_EXPONENT_IDENTITY_KEYS = bot_conf.get(
+            "ad-ctr-exponent-identity-keys", ""
+        ).split(",")
         config.BOT_ID = bot_conf.get("bot-id", None)
         config.RUN_INFINITELY = bot_conf.getboolean("run-infinitely", False)
 

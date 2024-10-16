@@ -26,6 +26,7 @@ from constants.config import (
     FETCH_BY,
     FETCH_BY_VALUE,
 )
+from bots.utils import string_total_combinator
 
 # There is an issue where fetching an element position could crash the connection. Fix this by using an event handler to detect if the tab is in a loading stage
 # If so, throw an exception, best implement this in nodriver and raise a PR
@@ -70,11 +71,24 @@ async def run_bot(
                 f"<--> Negating Ad Click Via Keywords Based On Probability of {identity.ad_keywords_click_probability} <-->"
             )
             identity.ad_keywords = None
-        ad_click_probability = random.random()
+        ad_click_probability = identity.ad_click_probability
+        ad_click_probability_sum = 0
+        ctr_exponent_keys = string_total_combinator(
+            [
+                f"identity__{ad_ctr_exponent_identity_key}__{getattr(identity, ad_ctr_exponent_identity_key, "")}"
+                for ad_ctr_exponent_identity_key in boc.AD_CTR_EXPONENT_IDENTITY_KEYS
+            ],
+            "____",
+        )
+        for ctr_exponent_key in ctr_exponent_keys:
+            ad_click_probability_sum += ad_click_probability * (
+                page_info["ads"].get("ctr_exponents").get(ctr_exponent_key, 0)
+            )
+        ad_click_probability += ad_click_probability_sum
         ad_to_click = None
-        if ad_click_probability <= identity.ad_click_probability:
+        if random.random() <= ad_click_probability:
             logger.info(
-                f"<--> Ad: {identity.ad_type_to_click} Set For Engagement <-->"
+                f"<--> Ad: {identity.ad_type_to_click} At Probability Of: {ad_click_probability} Set For Engagement <-->"
             )
             ad_to_click = identity.ad_type_to_click
 
@@ -93,7 +107,9 @@ async def run_bot(
                 logger.info("<--> Moving Mouse To Random Area On Document... <-->")
                 await web_bot.move_mouse_to_random_area_on_document()
                 logger.info("<--> Done Moving Mouse To Random Area On Document <--> ")
-                logger.info(f"<--> Reading Element: {page_info["page_content_element"]} <--> ")
+                logger.info(
+                    f"<--> Reading Element: {page_info["page_content_element"]} <--> "
+                )
             if (
                 await web_bot.read_element_content(
                     await web_bot.active_tab.select(page_info["page_content_element"])
