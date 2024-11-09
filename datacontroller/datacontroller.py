@@ -31,22 +31,32 @@ class DataController:
         return identity.json()
 
     async def fetch_timezone(self, identity_id: int, proxy=None, retries=0):
-        # try:
         req_url = f"bots/identity/{identity_id}/timezone/"
         req_session = requests.session()
         identity_id = str(identity_id)
+
         if proxy:
             req_session.proxies = {
                 "http": "http://" + proxy,
                 "https": "http://" + proxy,
                 "no_proxy": "localhost,127.0.0.1",
             }
+
+        if DEBUG:
+            ip_response = req_session.get("https://api.ipify.org?format=json")
+            if ip_response.ok:
+                ip_address = ip_response.json().get("ip")
+                req_url += f"{ip_address}/"
+            else:
+                print("Failed to fetch IP address For Timezone Local Fetch")
+
         identity_timezone = req_session.get(
             self.server_addr + req_url,
             timeout=DataController.timeout,
             verify=not DEBUG,
         )
         identity_timezone.close()
+
         if identity_timezone.status_code == 407:
             print("Invalid Proxy Credentials, Exiting....")
             exit()
