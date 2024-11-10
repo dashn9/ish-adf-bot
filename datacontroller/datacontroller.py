@@ -47,6 +47,7 @@ class DataController:
             if ip_response.ok:
                 ip_address = ip_response.json().get("ip")
                 req_url += f"{ip_address}/"
+                req_session.proxies.clear()
             else:
                 print("Failed to fetch IP address For Timezone Local Fetch")
 

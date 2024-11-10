@@ -425,6 +425,36 @@ class HumanMovements:
         logger.info("<--> Engaging Smart Click Trigger <-->")
         await self.smart_click_trigger((x_start, y_start), self.identity.device_type)
 
+    async def click_element(self, html_web_element: WebElement):
+        await self.bring_window_to_front()
+        await self.move_pointing_device_to_element(html_web_element)
+        html_web_element_position = await html_web_element.get_position()
+        # attempts to simulate pause before clicking
+        await asyncio.sleep(random.uniform(0.3, 0.5))
+        if self.identity.has_touch:
+            element_location_and_dimensions = (
+                await self.get_element_location_window_offset(html_web_element)
+            )
+            # Do click continually until page remained unchanged after click
+            await self.touch.tap(
+                element_location_and_dimensions["x_offset"]
+                + random.uniform(0, html_web_element_position.width),
+                element_location_and_dimensions["y_offset"]
+                + random.uniform(0, html_web_element_position.height),
+            )
+            while await self.revert_to_active_page():
+                await self.touch.tap(
+                    element_location_and_dimensions["x_offset"]
+                    + random.uniform(0, html_web_element_position.width),
+                    element_location_and_dimensions["y_offset"]
+                    + random.uniform(0, html_web_element_position.height),
+                )
+        else:
+            # Do click continually until page remained unchanged after click
+            pyautogui.click()
+            while await self.revert_to_active_page():
+                pyautogui.click()
+
     async def scroll_element_into_vertical_view(
         self,
         html_web_element: WebElement,

@@ -2,6 +2,7 @@ import pyautogui
 import random
 import time
 import asyncio
+from typing import TypedDict, Dict, List
 
 from nodriver import Element as WebElement
 
@@ -297,3 +298,48 @@ class SmartHumanReader(HumanMovements, SmartAdsInteractions, HumanBehaviourRever
             f"{time.time() - time_started}"
         )
         return True
+
+
+class Interactables(TypedDict):
+    def __init__(
+        self,
+        buttons: List[WebElement],
+        links: List[WebElement],
+        inputs: List[WebElement],
+        textareas: List[WebElement],
+    ):
+        self.buttons = buttons
+        self.links = links
+        self.inputs = inputs
+        self.textareas = textareas
+
+    async def to_dict(self) -> Dict[str, List[WebElement]]:
+        return {
+            "buttons": [self.buttons],
+            "links": [self.links],
+            "inputs": [self.inputs],
+            "textareas": [self.textareas],
+        }
+
+
+class SmartHumanElementInteract(SmartHumanReader):
+    def __init__(reading_speed=900, no_of_clicks=0):
+        super().__init__(reading_speed, no_of_clicks)
+
+    async def find_interactables(self, html_web_element: WebElement) -> Interactables:
+        interactables: Interactables = {
+            "buttons": await html_web_element.query_selector_all("button"),
+            "links": await html_web_element.query_selector_all("a"),
+            "inputs": await html_web_element.query_selector_all("input"),
+            "textareas": await html_web_element.query_selector_all("textarea"),
+        }
+        return interactables
+
+    async def type_input(self, input_webelement: WebElement, text: str) -> bool:
+        self.move_pointing_device_to_element(input_webelement)
+        for t in text:
+            input
+        return True
+
+    async def interact_with_element_content(self, html_web_element: WebElement):
+        await self.read_element_content(html_web_element)
