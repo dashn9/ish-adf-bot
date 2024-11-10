@@ -336,7 +336,7 @@ class SmartHumanElementInteract(SmartHumanReader):
         return interactables
 
     async def type_input(self, input_webelement: WebElement, text: str) -> bool:
-        self.move_pointing_device_to_element(input_webelement)
+        self.click_on_element(input_webelement)
         for t in text:
             input
         return True

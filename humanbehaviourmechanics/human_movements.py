@@ -58,6 +58,11 @@ class HumanMovements:
         pyautogui.FAILSAFE = fail_safe_bool
 
     async def click_on_element(self, html_web_element):
+        """A simple function that sends a click event on an elemen
+
+        Args:
+            html_web_element (WebElement): Element to attempt click on
+        """
         if isinstance(list, html_web_element):
             for ht_el in html_web_element:
                 ht_el.click()
@@ -426,11 +431,16 @@ class HumanMovements:
         await self.smart_click_trigger((x_start, y_start), self.identity.device_type)
 
     async def click_element(self, html_web_element: WebElement):
+        """An Abstracted Implementation that clicks on an element like a human
+
+        Args:
+            html_web_element (WebElement): The element to interact with
+        """
         await self.bring_window_to_front()
         await self.move_pointing_device_to_element(html_web_element)
         html_web_element_position = await html_web_element.get_position()
         # attempts to simulate pause before clicking
-        await asyncio.sleep(random.uniform(0.3, 0.5))
+        await asyncio.sleep(random.uniform(0.2, 0.5))
         if self.identity.has_touch:
             element_location_and_dimensions = (
                 await self.get_element_location_window_offset(html_web_element)
