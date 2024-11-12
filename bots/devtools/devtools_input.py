@@ -138,20 +138,37 @@ class Keyboard:
     async def send_character(self, char: str):
         await self.webbot.active_tab.send(cdp.input_.insert_text(text=char))
 
-    async def type(self, text: str, options={"delay": 0}):
-        delay = 0
-        if options and options.delay:
-            delay = options.delay
-        for char in text:
-            if Keys[char]:
-                self.press(char, {delay})
-            else:
-                self.send_character(char)
-            if delay:
-                await asyncio.sleep(delay)
+    async def type(self, text: str, speed_mode: str = "normal", options={}):
+        # Define delay ranges per character for different speed modes (min, max in seconds)
+        speed_modes = {
+            "slow": (0.2, 0.4),
+            "normal": (0.1, 0.2),
+            "fast": (0.05, 0.1),
+        }
 
-    async def press(self, key, options=(0,)):
-        delay = options
+        min_delay, max_delay = speed_modes.get(speed_mode, speed_modes["normal"])
+
+        for i, char in enumerate(text):
+            # Randomly pick a delay within the defined range
+            char_delay = random.uniform(min_delay, max_delay)
+
+            # Add additional pauses for specific characters, like spaces and punctuation
+            if char in ".,!?;":
+                char_delay += random.uniform(0.2, 0.5)
+            elif char == " ":
+                char_delay += random.uniform(0.1, 0.3)
+            if i % 10 == 0 and i > 0:
+                char_delay += random.uniform(0.3, 0.7)
+
+            if char in Keys:
+                self.press(char, options)
+            else:
+                self.send_character(char, options)
+
+            await asyncio.sleep(char_delay)
+
+    async def press(self, key, options={}):
+        delay = options.get("delay")
         self.down(key, options)
         if delay:
             await asyncio.sleep(delay)

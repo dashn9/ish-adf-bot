@@ -337,8 +337,6 @@ class SmartHumanElementInteract(SmartHumanReader):
 
     async def type_input(self, input_webelement: WebElement, text: str) -> bool:
         self.click_on_element(input_webelement)
-        for t in text:
-            input
         return True
 
     async def interact_with_element_content(self, html_web_element: WebElement):
