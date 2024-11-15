@@ -227,7 +227,7 @@ class NetworkRunner:
     async def request_interceptor(self, target_tab: Tab):
         await devtools_primary.enable_network(target_tab)
         failed_loading_requests = []
-        max_urls_through_proxy = 4
+        max_urls_through_proxy = 5
 
         async def handle_failed_loading_request(failed_request, *args, **kwargs):
             failed_loading_requests.append(failed_request.request_id)
@@ -237,6 +237,7 @@ class NetworkRunner:
         )
 
         async def interceptor(pausedRequest: cdp.fetch.RequestPaused, *args, **kwarg):
+            nonlocal max_urls_through_proxy
             request = pausedRequest.request
             reqHost = urlparse(request.url).netloc
             # Not intercepted at request level
@@ -255,7 +256,13 @@ class NetworkRunner:
 
             # For the purpose of popunders, I need to allow the first three urls which is more than enough to allow all possible hosts go through,
             # Useful, if i'm being stingy
-            if max_urls_through_proxy >= 0:
+            # Make this feature optional
+            if max_urls_through_proxy >= 0 and not (
+                utils.url_ends_with(
+                    request.url, bot_constants.PROXY_BLACKLISTED_EXTENSIONS
+                )
+                or utils.has_string_in(reqHost, bot_constants.PROXY_BLACKLISTED_DOMAINS)
+            ):
                 asyncio.create_task(
                     self.network_through_proxy(
                         pausedRequest,
@@ -264,6 +271,7 @@ class NetworkRunner:
                     )
                 )
                 max_urls_through_proxy -= 1
+                return
 
             if utils.has_string_in(
                 reqHost, bot_constants.PROXY_WHITELISTED_VIP_DOMAINS
@@ -297,6 +305,8 @@ class NetworkRunner:
                 print(
                     f"Bot Process Id {self.bot_process_id} <:::> {pausedRequest.frame_id}: {request.url} is passing through the browser"
                 )
-                self.network_through_browser(target_tab, pausedRequest)
+                asyncio.create_task(
+                    self.network_through_browser(target_tab, pausedRequest)
+                )
 
         return interceptor
