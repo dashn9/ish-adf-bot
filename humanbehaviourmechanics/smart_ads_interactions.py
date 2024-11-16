@@ -1,3 +1,4 @@
+import platform
 import random
 import time
 import asyncio
@@ -145,6 +146,13 @@ class SmartAdsInteractions:
             # I.E either switch to the next one [1] or find the currently active tab and switch to it's next
             self.active_tab = self.web_browser_driver.tabs[-1]
             await self.active_tab.activate()
+            await asyncio.sleep(1)
+            # The reason for this is because reload in _handle_new_tab_creation does not work 100%
+            os_name = platform.system()
+            if os_name == "Windows" or os_name == "Linux":
+                pyautogui.hotkey("ctrl", "r")
+            elif os_name == "Darwin":
+                pyautogui.hotkey("command", "r")
         return ad_click_success
         # print(f"Bot Process Id {self.bot_process_id} <:::> No ads found, Try again")
 

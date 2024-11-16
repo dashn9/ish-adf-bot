@@ -5,5 +5,5 @@ pyautogui
 pyclick
 requests_cache
 
-# Nodriver has support issues with 14.0 and above
+# Nodriver has breaking changes with 14.0 and above
 websockets==13.1
