@@ -227,7 +227,7 @@ class NetworkRunner:
     async def request_interceptor(self, target_tab: Tab):
         await devtools_primary.enable_network(target_tab)
         failed_loading_requests = []
-        max_urls_through_proxy = 5
+        max_urls_through_proxy = 2
 
         async def handle_failed_loading_request(failed_request, *args, **kwargs):
             failed_loading_requests.append(failed_request.request_id)
