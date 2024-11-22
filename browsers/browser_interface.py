@@ -500,5 +500,6 @@ class BrowserInterface:
     async def add_network_interception_to_tab(self, target_tab: Tab):
         await devtools_primary.enable_network_interception(target_tab)
         await devtools_primary.add_request_interception(
-            target_tab, await self.request_interceptor(target_tab)
+            target_tab,
+            await self.request_interceptor(target_tab, bot_constants.NETWORK_RULES),
         )

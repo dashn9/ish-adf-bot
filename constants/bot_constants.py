@@ -50,3 +50,5 @@ PROXY_RANDOM_TEMPLATE = "user-<user>:<pass>@gate.smartproxy.com:10000"
 USE_MOUSE_READ_PROBABILITY = 0.62
 
 IDENTITY_API_BASE_HOST = "http://127.0.0.1:5000/api/"
+
+NETWORK_RULES = {}
