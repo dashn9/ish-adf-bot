@@ -320,15 +320,17 @@ def fetch_random_window_size_relative_to_screen(screen_width, screen_height):
     return dimensions_to_use
 
 
-def url_ends_with(string, endings):
+def url_ends_with(string: str, endings: list):
     for ending in endings:
+        negated = ending.startswith("!")
+        ending = ending[1:] if negated else ending
         if (
             string.endswith(ending)
             or (ending + "?" in string)
             or (ending + "%3F" in string)
         ):
-            return True
-    return False
+            return True and not negated
+    return False or not negated
 
 
 def has_string_in(string_to_test, strings_against):

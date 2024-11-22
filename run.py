@@ -217,8 +217,9 @@ async def main():
     page_info = await DataController.fetch_active_random_url()
 
     # please correct config, and use the one in it
-    boc.PROXY_WHITELISTED_DOMAINS = page_info.get("proxy_domain_whitelists", "*")
-    boc.PROXY_WHITELISTED_VIP_DOMAINS = page_info.get("proxy_domain_vip_whitelists", [])
+    boc.NETWORK_RULES = page_info.get(
+        "network_rules",
+    )
 
     await run_bot(identity, page_info, 0)
     await restart_plug()

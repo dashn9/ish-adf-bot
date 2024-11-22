@@ -1,5 +1,5 @@
 import asyncio
-import re
+import fnmatch
 from contextlib import asynccontextmanager
 from urllib.parse import urlparse
 
@@ -12,6 +12,81 @@ from bots.devtools import devtools_primary
 from bots import utils
 from constants import config, bot_constants, browser_constants
 from identity.client import Identity
+
+
+class NetworkRulesEvaluator:
+    def __init__(self, rules, default_aciton="browser"):
+        self.rules = rules
+        self.default_action = default_aciton
+        self.request_counts = {}  # Track requests per host
+
+    def match_rule(self, host, url, mime_type, tab_url):
+        """Match the host and evaluate its rules."""
+        host_rules = self.rules.get(
+            host, self.rules.get("*", [])
+        )  # Get host-specific or default rules
+        if not host_rules:
+            return self.default_action  # Default action
+
+        action = None
+        for rule in host_rules:
+            result = self.evaluate_rule(rule, host, url, mime_type, tab_url)
+            if result is not None:
+                if result[1]:
+                    return result[0]  # Either `action` or `fail_action`
+                else:
+                    action = result[0]
+
+        return action or self.default_action  # Fallback action
+
+    def evaluate_rule(self, rule, host, url, mime_type, tab_url):
+        """Evaluate a single rule's conditions."""
+        parsed_tab_url = urlparse(tab_url)
+        condition = rule.get("condition", {})
+        passed = True
+        # MIME matching
+        if "mime" in condition and not self.matches_condition(
+            condition["mime"], mime_type
+        ):
+            passed = False
+
+        # URL matching
+        elif "url" in condition and not self.matches_condition(condition["url"], url):
+            passed = False
+
+        elif "tab_url_host" in condition and not self.matches_condition(
+            condition["tab_url_host"], parsed_tab_url.netloc
+        ):
+            passed = False
+
+        # Request limit
+        elif "max_requests" in condition and condition["max_requests"] >= 0:
+            count = self.request_counts.get(host, 0)
+            if count >= condition["max_requests"]:
+                passed = False
+            self.request_counts[host] = count + 1
+        if passed:
+            return (rule["action"], True)  # All conditions passed
+        return (condition.get("fail_action", self.default_action), False)
+
+    @staticmethod
+    def matches_condition(condition, value):
+        """Check if a value matches a condition with optional negation."""
+        if isinstance(condition, str):
+            condition = [condition]  # Normalize to list if a single string
+        matches = False
+
+        for pattern in condition:
+            is_negated = pattern.startswith("!")
+            clean_pattern = pattern[1:] if is_negated else pattern
+            if fnmatch.fnmatch(value, clean_pattern):
+                matches = True
+            else:
+                matches = False
+            if is_negated:
+                matches = not matches
+
+        return matches
 
 
 class NetworkRunner:
@@ -111,7 +186,7 @@ class NetworkRunner:
         return new_headers
 
     async def conform_headers_according_to_browser(self, headers: list):
-        # If identity browser is not chromium
+        # If identityself.default_actionis not chromium
         if (
             self.identity.browser_name not in ["edge", "chrome"]
             or self.identity.os == "iOS"
@@ -224,10 +299,10 @@ class NetworkRunner:
                 f"Bot Process Id {self.bot_process_id} <:::> {request.url} did not connect"
             )
 
-    async def request_interceptor(self, target_tab: Tab):
+    async def request_interceptor(self, target_tab: Tab, rules: dict):
         await devtools_primary.enable_network(target_tab)
         failed_loading_requests = []
-        max_urls_through_proxy = 2
+        network_rules = NetworkRulesEvaluator(rules)
 
         async def handle_failed_loading_request(failed_request, *args, **kwargs):
             failed_loading_requests.append(failed_request.request_id)
@@ -237,9 +312,8 @@ class NetworkRunner:
         )
 
         async def interceptor(pausedRequest: cdp.fetch.RequestPaused, *args, **kwarg):
-            nonlocal max_urls_through_proxy
             request = pausedRequest.request
-            reqHost = urlparse(request.url).netloc
+            req = urlparse(request.url)
             # Not intercepted at request level
             if (
                 pausedRequest.response_error_reason
@@ -254,46 +328,17 @@ class NetworkRunner:
             request_first_mime = request.headers.get("Accept", "*/*").split(",")[0]
             await self.inject_referrer_into_header(request)
 
-            # For the purpose of popunders, I need to allow the first three urls which is more than enough to allow all possible hosts go through,
-            # Useful, if i'm being stingy
-            # Make this feature optional
-            if max_urls_through_proxy >= 0 and not (
-                utils.url_ends_with(
-                    request.url, bot_constants.PROXY_BLACKLISTED_EXTENSIONS
-                )
-                or utils.has_string_in(reqHost, bot_constants.PROXY_BLACKLISTED_DOMAINS)
-            ):
-                asyncio.create_task(
-                    self.network_through_proxy(
-                        pausedRequest,
-                        target_tab,
-                        failed_loading_requests=failed_loading_requests,
-                    )
-                )
-                max_urls_through_proxy -= 1
-                return
-
-            if utils.has_string_in(
-                reqHost, bot_constants.PROXY_WHITELISTED_VIP_DOMAINS
-            ) or (
+            action = network_rules.match_rule(
+                req.netloc,
+                req.path,
+                request_first_mime,
                 (
-                    bot_constants.PROXY_WHITELISTED_DOMAINS == "*"
-                    or utils.has_string_in(
-                        reqHost, bot_constants.PROXY_WHITELISTED_DOMAINS
+                    await self.active_tab.evaluate(
+                        "document.location.href", await_promise=True
                     )
-                )
-                and not (
-                    utils.url_ends_with(
-                        request.url, bot_constants.PROXY_BLACKLISTED_EXTENSIONS
-                    )
-                    or utils.has_string_in(
-                        reqHost, bot_constants.PROXY_BLACKLISTED_DOMAINS
-                    )
-                    or not utils.has_string_in(
-                        request_first_mime, bot_constants.PROXY_WHITELISTED_MIMES
-                    )
-                )
-            ):
+                ),
+            )
+            if action == "proxy":
                 asyncio.create_task(
                     self.network_through_proxy(
                         pausedRequest,
@@ -301,12 +346,21 @@ class NetworkRunner:
                         failed_loading_requests=failed_loading_requests,
                     )
                 )
-            else:
+            elif action == "browser":
                 print(
                     f"Bot Process Id {self.bot_process_id} <:::> {pausedRequest.frame_id}: {request.url} is passing through the browser"
                 )
                 asyncio.create_task(
                     self.network_through_browser(target_tab, pausedRequest)
                 )
+            else:
+                if pausedRequest.network_id not in failed_loading_requests:
+                    asyncio.create_task(
+                        devtools_primary.fail_request(
+                            target_tab,
+                            request_id=pausedRequest.request_id,
+                            frame_id=pausedRequest.frame_id,
+                        )
+                    )
 
         return interceptor

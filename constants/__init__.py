@@ -119,24 +119,6 @@ def load_configurations():
     if "SITE" in configParser:
         ads = configParser["SITE"]
 
-        boc.PROXY_WHITELISTED_DOMAINS = ads.get(
-            "proxy-whitelisted-domains", boc.PROXY_WHITELISTED_DOMAINS
-        ).split(",")
-        boc.PROXY_WHITELISTED_VIP_DOMAINS = ads.get(
-            "proxy-whitelisted-vip-domains", boc.PROXY_WHITELISTED_VIP_DOMAINS
-        ).split(",")
-        boc.PROXY_BLACKLISTED_DOMAINS = ads.get(
-            "proxy-blacklisted-domains", boc.PROXY_BLACKLISTED_DOMAINS
-        ).split(",")
-        boc.PROXY_BLACKLISTED_EXTENSIONS = ads.get(
-            "proxy-blacklisted-extensions", boc.PROXY_BLACKLISTED_EXTENSIONS
-        ).split(",")
-        boc.PROXY_WHITELISTED_MIMES = ads.get("proxy-whitelisted-mimes", "*").split(",")
-        boc.ALLOW_URL_THROUGH_PROXY_IF_MATCHES_BROWSER_ACTIVE_URL = ads.getboolean(
-            "allow-url-through-proxy-if-matches-browser-active-url",
-            boc.ALLOW_URL_THROUGH_PROXY_IF_MATCHES_BROWSER_ACTIVE_URL,
-        )
-
     if "IDENTITY" in configParser:
         idy = configParser["IDENTITY"]
         config.FETCH_BY = idy.get("fetch-by", "scr")

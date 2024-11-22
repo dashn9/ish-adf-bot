@@ -47,35 +47,6 @@ PROXY_PORT = 10000
 PROXY_STICKY_TEMPLATE = "user-<user>-country-<geo_target>-sessionduration-<ss_duration>:<pass>@<geo_target_area>.smartproxy.com:<port>"
 PROXY_RANDOM_TEMPLATE = "user-<user>:<pass>@gate.smartproxy.com:10000"
 
-PROXY_BLACKLISTED_EXTENSIONS = [
-    ".css",
-    ".jpg",
-    ".jpeg",
-    ".png",
-    ".gif",
-    ".svg",
-    ".woff",
-    ".woff2",
-    ".ttf",
-    ".ico",
-    ".webm",
-    ".ogg",
-    ".wav",
-    ".mp3",
-    ".mp4",
-]
-
-PROXY_WHITELISTED_DOMAINS = [
-    "whouseem.com",
-    "dudialgator.com",
-    "bedrapiona.com",
-    "fleraprt.com",
-]
-PROXY_WHITELISTED_VIP_DOMAINS = []
-PROXY_BLACKLISTED_DOMAINS = []
-PROXY_WHITELISTED_MIMES = "*"
-ALLOW_URL_THROUGH_PROXY_IF_MATCHES_BROWSER_ACTIVE_URL = True
-
 USE_MOUSE_READ_PROBABILITY = 0.62
 
 IDENTITY_API_BASE_HOST = "http://127.0.0.1:5000/api/"
