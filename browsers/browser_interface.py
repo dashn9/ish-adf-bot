@@ -305,12 +305,6 @@ class BrowserInterface:
             window_size = utils.fetch_random_window_size_relative_to_screen(
                 *window_size
             )
-        user_data_dir = (
-            browser_constants.CHROME_DATA_DIRECTORY
-            + "/profiles/"
-            + str(self.identity.id)
-        )
-        utils.remove_profile_lock(user_data_dir)
         # Opens a Chrome browser
         if self.browser_to_use_id == browser_constants.CHROME_ID:
             browser_config = uc.Config(
@@ -323,7 +317,6 @@ class BrowserInterface:
                     "--window-position=0,0",
                     "--start-maximized",
                 ],
-                user_data_dir=user_data_dir,
                 browser_executable_path=bot_constants.FULL_DIRECTORY_PATH
                 + browser_constants.CHROME_BINARY_LOCATION,
             )
