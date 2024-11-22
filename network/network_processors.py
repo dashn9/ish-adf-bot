@@ -18,26 +18,24 @@ class NetworkRulesEvaluator:
     def __init__(self, rules, default_aciton="browser"):
         self.rules = rules
         self.default_action = default_aciton
-        self.request_counts = {}  # Track requests per host
+        self.request_counts = {}
 
     def match_rule(self, host, url, mime_type, tab_url):
         """Match the host and evaluate its rules."""
-        host_rules = self.rules.get(
-            host, self.rules.get("*", [])
-        )  # Get host-specific or default rules
+        host_rules = self.rules.get(host, self.rules.get("*", []))
         if not host_rules:
-            return self.default_action  # Default action
+            return self.default_action
 
         action = None
         for rule in host_rules:
             result = self.evaluate_rule(rule, host, url, mime_type, tab_url)
             if result is not None:
                 if result[1]:
-                    return result[0]  # Either `action` or `fail_action`
+                    return result[0]
                 else:
                     action = result[0]
 
-        return action or self.default_action  # Fallback action
+        return action or self.default_action
 
     def evaluate_rule(self, rule, host, url, mime_type, tab_url):
         """Evaluate a single rule's conditions."""
