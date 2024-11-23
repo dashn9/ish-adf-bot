@@ -63,7 +63,7 @@ async def run_bot(
     try:
         web_bot.time_activated = time.time()
         logger.info("{{{ Opening Url On Run... }}}")
-        await web_bot.web_browser_driver.get(page_info.get("page_url"))
+        await web_bot.web_browser_driver.get("https://google.com")
         await web_bot.wait_for_tab_load()
         logger.info("{{{ Opened Url On Run }}}")
         if random.random() >= identity.ad_keywords_click_probability:
@@ -217,9 +217,7 @@ async def main():
     page_info = await DataController.fetch_active_random_url()
 
     # please correct config, and use the one in it
-    boc.NETWORK_RULES = page_info.get(
-        "network_rules",
-    )
+    boc.NETWORK_RULES = page_info.get("network_rules", {})
 
     await run_bot(identity, page_info, 0)
     await restart_plug()

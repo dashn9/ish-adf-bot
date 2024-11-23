@@ -59,10 +59,10 @@ class NetworkRulesEvaluator:
 
         # Request limit
         elif "max_requests" in condition and condition["max_requests"] >= 0:
-            count = self.request_counts.get(host, 0)
+            count = self.request_counts.get(parsed_tab_url.netloc, 0)
             if count >= condition["max_requests"]:
                 passed = False
-            self.request_counts[host] = count + 1
+            self.request_counts[parsed_tab_url.netloc] = count + 1
         if passed:
             return (rule["action"], True)  # All conditions passed
         return (condition.get("fail_action", self.default_action), False)
@@ -301,6 +301,9 @@ class NetworkRunner:
         await devtools_primary.enable_network(target_tab)
         failed_loading_requests = []
         network_rules = NetworkRulesEvaluator(rules)
+        # The first tab would always have a url of chrome://newtab/, the second one would always have the first loaded url, which is mostly thanks to the extension that blocks the first
+        # request of a tab giving enough time to fetch the url otherwise would have been about:blank
+        tab_url = target_tab.target.url
 
         async def handle_failed_loading_request(failed_request, *args, **kwargs):
             failed_loading_requests.append(failed_request.request_id)
@@ -330,11 +333,8 @@ class NetworkRunner:
                 req.netloc,
                 req.path,
                 request_first_mime,
-                (
-                    await self.active_tab.evaluate(
-                        "document.location.href", await_promise=True
-                    )
-                ),
+                tab_url,
+                # "",
             )
             if action == "proxy":
                 asyncio.create_task(
