@@ -40,7 +40,7 @@ class BrowserInterface:
             return self.fetch_all_cookies()
 
     async def update_local_storage_to_cloud(self):
-        print(self.active_tab.get_local_storage)
+        print("local storage: ", await self.active_tab.get_local_storage())
 
     async def open_new_tab(self, url):
         """
@@ -379,10 +379,10 @@ class BrowserInterface:
             self.active_tab.target.target_id,
         )
         await self._subscribe_tab_to_lifecycle_events(self.active_tab)
-        await asyncio.sleep(0.8)
+        await asyncio.sleep(1)
         logger.info("{{{ Activating Tab Preliminarily... }}}")
         await self.preliminary_tab_activation(self.active_tab)
-        await asyncio.sleep(0.8)
+        await asyncio.sleep(1)
         self.preliminary_activated_tab_ids.add(self.active_tab.target.target_id)
         logger.info("{{{ Adding Listener to New Tabs Creation... }}}")
         await devtools_primary.listen_to_tab_creation(
