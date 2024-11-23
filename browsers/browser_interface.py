@@ -8,6 +8,7 @@ import nodriver as uc
 
 from bots import utils
 from bots.devtools import devtools_primary
+from bots.devtools.storage import DOMStorageManager
 from constants import bot_constants, browser_constants, config
 from log import logger
 from exceptions.browser import PageLoadTimeoutException
@@ -27,7 +28,7 @@ class BrowserInterface:
         self.identity = identity
         self.current_tab_length = 1
         self.cookies_update_callback = cookies_update_callback
-        self.dom_storage = None
+        self.dom_storage_manager = None
         self.preliminary_activated_tab_ids = set()
         self.pages_lifecycle_events = dict()
         self.active_tab = None
@@ -40,7 +41,8 @@ class BrowserInterface:
             return self.fetch_all_cookies()
 
     async def update_local_storage_to_cloud(self):
-        print("local storage: ", await self.active_tab.get_local_storage())
+        # print("local storage: ", await self.active_tab.get_local_storage())
+        pass
 
     async def open_new_tab(self, url):
         """
@@ -374,6 +376,7 @@ class BrowserInterface:
                     bot_constants.SCREEN_HEIGHT - 1,
                 )
 
+        self.dom_storage_manager = DOMStorageManager(self.active_tab)
         logger.info(
             "{{{ Subscribing To Lifecycle Events For Tab: %s }}}",
             self.active_tab.target.target_id,
@@ -382,6 +385,10 @@ class BrowserInterface:
         await asyncio.sleep(1)
         logger.info("{{{ Activating Tab Preliminarily... }}}")
         await self.preliminary_tab_activation(self.active_tab)
+        await asyncio.sleep(1)
+        # I purposely did not clear the cookies, however if you reuse the same browser session for multiple identities,
+        # you might want to clear the cookies and local storages before using
+        await devtools_primary.set_all_cookies(self.active_tab, self.identity.cookies)
         await asyncio.sleep(1)
         self.preliminary_activated_tab_ids.add(self.active_tab.target.target_id)
         logger.info("{{{ Adding Listener to New Tabs Creation... }}}")
@@ -471,6 +478,7 @@ class BrowserInterface:
         logger.info("{{{ Adding Network Interception to Tab: %s... }}}" % (target_id))
         await self.add_network_interception_to_tab(target_tab)
         await asyncio.sleep(0.5)
+        await self.dom_storage_manager.activate_listeners(target_tab)
         # If device to emulate is a smartphone, set chrome to mobile mode
         if self.identity.device_type == "smartphone":
             logger.info(

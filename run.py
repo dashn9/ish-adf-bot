@@ -65,6 +65,46 @@ async def run_bot(
         logger.info("{{{ Opening Url On Run... }}}")
         await web_bot.web_browser_driver.get("https://google.com")
         await web_bot.wait_for_tab_load()
+        await web_bot.dom_storage_manager.set_local_storage(
+            [
+                {
+                    "storage_id": {
+                        "is_local_storage": True,
+                        "security_origin": "https://www.google.com",
+                        "storage_key": "https://www.google.com",
+                    },
+                    "key": "user_session",
+                    "value": "abcd1234-google",
+                },
+                {
+                    "storage_id": {
+                        "is_local_storage": True,
+                        "security_origin": "https://www.google.com",
+                        "storage_key": "https://www.google.com",
+                    },
+                    "key": "preferences",
+                    "value": '{"theme":"dark","language":"en"}',
+                },
+                {
+                    "storage_id": {
+                        "is_local_storage": True,
+                        "security_origin": "https://m.facebook.com",
+                        "storage_key": "https://m.facebook.com",
+                    },
+                    "key": "auth_token",
+                    "value": "efgh5678-facebook",
+                },
+                {
+                    "storage_id": {
+                        "is_local_storage": True,
+                        "security_origin": "https://m.facebook.com",
+                        "storage_key": "https://m.facebook.com",
+                    },
+                    "key": "last_login",
+                    "value": "2024-11-23T10:00:00Z",
+                },
+            ]
+        )
         logger.info("{{{ Opened Url On Run }}}")
         if random.random() >= identity.ad_keywords_click_probability:
             logger.info(
