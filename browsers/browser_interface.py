@@ -467,7 +467,9 @@ class BrowserInterface:
     async def preliminary_tab_activation(self, target_tab: Tab):
         target_id = target_tab.target.target_id
         logger.info("{{{ Adding Network Interception to Tab: %s... }}}" % (target_id))
-        await self.add_network_interception_to_tab(target_tab)
+        await self.add_network_interception_to_tab(
+            target_tab, len(target_tab.browser.tabs) - 1
+        )
         await asyncio.sleep(0.5)
         # If device to emulate is a smartphone, set chrome to mobile mode
         if self.identity.device_type == "smartphone":
@@ -501,9 +503,13 @@ class BrowserInterface:
             self.identity.device_model,
         )
 
-    async def add_network_interception_to_tab(self, target_tab: Tab):
+    async def add_network_interception_to_tab(
+        self, target_tab: Tab, tab_creation_index=-1
+    ):
         await devtools_primary.enable_network_interception(target_tab)
         await devtools_primary.add_request_interception(
             target_tab,
-            await self.request_interceptor(target_tab, bot_constants.NETWORK_RULES),
+            await self.request_interceptor(
+                target_tab, bot_constants.NETWORK_RULES, tab_creation_index
+            ),
         )

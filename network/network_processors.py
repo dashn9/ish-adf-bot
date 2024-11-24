@@ -20,7 +20,7 @@ class NetworkRulesEvaluator:
         self.default_action = default_aciton
         self.request_counts = {}
 
-    def match_rule(self, host, url, mime_type, tab_url):
+    def match_rule(self, host, url, mime_type, tab_url, tab_creation_index):
         """Match the host and evaluate its rules."""
         host_rules = self.rules.get(host, self.rules.get("*", []))
         if not host_rules:
@@ -28,7 +28,9 @@ class NetworkRulesEvaluator:
 
         action = None
         for rule in host_rules:
-            result = self.evaluate_rule(rule, host, url, mime_type, tab_url)
+            result = self.evaluate_rule(
+                rule, host, url, mime_type, tab_url, tab_creation_index
+            )
             if result is not None:
                 if result[1]:
                     return result[0]
@@ -37,7 +39,7 @@ class NetworkRulesEvaluator:
 
         return action or self.default_action
 
-    def evaluate_rule(self, rule, host, url, mime_type, tab_url):
+    def evaluate_rule(self, rule, host, url, mime_type, tab_url, tab_creaton_index):
         """Evaluate a single rule's conditions."""
         parsed_tab_url = urlparse(tab_url)
         condition = rule.get("condition", {})
@@ -54,6 +56,12 @@ class NetworkRulesEvaluator:
 
         elif "tab_url_host" in condition and not self.matches_condition(
             condition["tab_url_host"], parsed_tab_url.netloc
+        ):
+            passed = False
+
+        elif (
+            "tab_creation_index" in condition
+            and not tab_creaton_index == condition["tab_creation_index"]
         ):
             passed = False
 
@@ -297,7 +305,9 @@ class NetworkRunner:
                 f"Bot Process Id {self.bot_process_id} <:::> {request.url} did not connect"
             )
 
-    async def request_interceptor(self, target_tab: Tab, rules: dict):
+    async def request_interceptor(
+        self, target_tab: Tab, rules: dict, tab_creation_index=-1
+    ):
         await devtools_primary.enable_network(target_tab)
         failed_loading_requests = []
         network_rules = NetworkRulesEvaluator(rules)
@@ -330,11 +340,7 @@ class NetworkRunner:
             await self.inject_referrer_into_header(request)
 
             action = network_rules.match_rule(
-                req.netloc,
-                req.path,
-                request_first_mime,
-                tab_url,
-                # "",
+                req.netloc, req.path, request_first_mime, tab_url, tab_creation_index
             )
             if action == "proxy":
                 asyncio.create_task(
