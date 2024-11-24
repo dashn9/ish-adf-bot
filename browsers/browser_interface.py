@@ -39,10 +39,6 @@ class BrowserInterface:
         else:
             return self.fetch_all_cookies()
 
-    async def update_local_storage_to_cloud(self):
-        # print("local storage: ", await self.active_tab.get_local_storage())
-        pass
-
     async def open_new_tab(self, url):
         """
         param url: Url Location Of The WebPage
@@ -283,10 +279,7 @@ class BrowserInterface:
                 try:
                     if not self.web_browser_driver.stopped:
                         print(f"@@@ Updating Identity Cookies Cookies To Cloud... @@@")
-                        await asyncio.gather(
-                            self.update_cookies_to_cloud(),
-                            self.update_local_storage_to_cloud(),
-                        )
+                        await self.update_cookies_to_cloud()
                         self.web_browser_driver.stop()
                         await asyncio.sleep(0.5)
 
