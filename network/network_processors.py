@@ -82,16 +82,17 @@ class NetworkRulesEvaluator:
         if isinstance(condition, str):
             condition = [condition]  # Normalize to list if a single string
         matches = False
-
+        is_negated = False
         for pattern in condition:
             is_negated = pattern.startswith("!")
             clean_pattern = pattern[1:] if is_negated else pattern
             if fnmatch.fnmatch(value, clean_pattern):
                 matches = True
+                break
             else:
                 matches = False
-            if is_negated:
-                matches = not matches
+        if is_negated:
+            matches = not matches
 
         return matches
 

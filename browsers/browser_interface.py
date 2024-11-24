@@ -305,6 +305,12 @@ class BrowserInterface:
             window_size = utils.fetch_random_window_size_relative_to_screen(
                 *window_size
             )
+        user_data_dir = (
+            browser_constants.CHROME_DATA_DIRECTORY
+            + "/profiles/"
+            + str(self.identity.id)
+        )
+        utils.remove_profile_lock(user_data_dir)
         # Opens a Chrome browser
         if self.browser_to_use_id == browser_constants.CHROME_ID:
             browser_config = uc.Config(
@@ -317,6 +323,7 @@ class BrowserInterface:
                     "--window-position=0,0",
                     "--start-maximized",
                 ],
+                user_data_dir=user_data_dir,
                 browser_executable_path=bot_constants.FULL_DIRECTORY_PATH
                 + browser_constants.CHROME_BINARY_LOCATION,
             )
@@ -379,8 +386,8 @@ class BrowserInterface:
         await asyncio.sleep(1)
         # I purposely did not clear the cookies, however if you reuse the same browser session for multiple identities,
         # you might want to clear the cookies and local storages before using
+        await devtools_primary.clear_all_cookies(self.active_tab)
         await devtools_primary.set_all_cookies(self.active_tab, self.identity.cookies)
-        await asyncio.sleep(1)
         self.preliminary_activated_tab_ids.add(self.active_tab.target.target_id)
         logger.info("{{{ Adding Listener to New Tabs Creation... }}}")
         await devtools_primary.listen_to_tab_creation(

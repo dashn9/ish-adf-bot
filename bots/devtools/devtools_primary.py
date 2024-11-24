@@ -165,7 +165,7 @@ async def get_all_cookies(tab: Tab, with_local_storage=True):
 
 
 async def clear_all_cookies(tab: Tab):
-    await tab.cookies.clear()
+    await tab.send(cdp.storage.clear_cookies())
 
 
 async def enable_network_interception(tab: Tab):
