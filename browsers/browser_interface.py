@@ -28,7 +28,6 @@ class BrowserInterface:
         self.identity = identity
         self.current_tab_length = 1
         self.cookies_update_callback = cookies_update_callback
-        self.dom_storage_manager = None
         self.preliminary_activated_tab_ids = set()
         self.pages_lifecycle_events = dict()
         self.active_tab = None
@@ -376,7 +375,6 @@ class BrowserInterface:
                     bot_constants.SCREEN_HEIGHT - 1,
                 )
 
-        self.dom_storage_manager = DOMStorageManager(self.active_tab)
         logger.info(
             "{{{ Subscribing To Lifecycle Events For Tab: %s }}}",
             self.active_tab.target.target_id,
@@ -478,7 +476,6 @@ class BrowserInterface:
         logger.info("{{{ Adding Network Interception to Tab: %s... }}}" % (target_id))
         await self.add_network_interception_to_tab(target_tab)
         await asyncio.sleep(0.5)
-        await self.dom_storage_manager.activate_listeners(target_tab)
         # If device to emulate is a smartphone, set chrome to mobile mode
         if self.identity.device_type == "smartphone":
             logger.info(

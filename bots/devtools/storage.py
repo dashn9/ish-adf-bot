@@ -8,6 +8,8 @@ class DOMStorageManager:
     """
     Manages DOM Storage events.
 
+    There are a number of things rendering this manager unusable, major one is you can't set the local storage of an origin if you are not currently on it
+
     Attributes:
         inchoate_local_storage (list): Temporary storage for DOM storage items.
         tab (Tab): The browser tab associated with this manager.
@@ -143,17 +145,19 @@ class DOMStorageManager:
         tab.add_handler(dms.DomStorageItemUpdated, self.storage_item_updated_listener)
 
     async def set_local_storage(self, local_storage: list):
-        for ls in local_storage:
-            ls_sid = ls["storage_id"]
-            self.tab.send(
-                dms.set_dom_storage_item(
-                    dms.StorageId(
-                        ls_sid["is_local_storage"],
-                        ls_sid["security_origin"],
-                        dms.SerializedStorageKey(ls_sid["storage_key"]),
-                    ),
-                    ls["key"],
-                    ls["value"],
+        await asyncio.gather(
+            *(
+                self.tab.send(
+                    dms.set_dom_storage_item(
+                        dms.StorageId(
+                            ls["storage_id"]["is_local_storage"],
+                            ls["storage_id"]["security_origin"],
+                            # dms.SerializedStorageKey(ls["storage_id"]["storage_key"]),
+                        ),
+                        ls["key"],
+                        ls["value"],
+                    )
                 )
+                for ls in local_storage
             )
-            await asyncio.sleep(0.2)
+        )
