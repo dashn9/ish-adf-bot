@@ -54,6 +54,7 @@ class NetworkRulesEvaluator:
         elif "url" in condition and not self.matches_condition(condition["url"], url):
             passed = False
 
+        # tab_url_host is mostly experimental because it's sort of a pain to get the tab url especially if it's loading
         elif "tab_url_host" in condition and not self.matches_condition(
             condition["tab_url_host"], parsed_tab_url.netloc
         ):
@@ -61,7 +62,7 @@ class NetworkRulesEvaluator:
 
         elif (
             "tab_creation_index" in condition
-            and not tab_creaton_index == condition["tab_creation_index"]
+            and tab_creaton_index != condition["tab_creation_index"]
         ):
             passed = False
 
