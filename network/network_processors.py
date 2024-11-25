@@ -66,8 +66,8 @@ class NetworkRulesEvaluator:
         ):
             passed = False
 
-        # Request limit
-        elif "max_requests" in condition and condition["max_requests"] >= 0:
+        # Reason for if and not elif, is so request_counts would be updated
+        if "max_requests" in condition and condition["max_requests"] >= 0:
             count = self.request_counts.get(parsed_tab_url.netloc, 0)
             if count >= condition["max_requests"]:
                 passed = False
