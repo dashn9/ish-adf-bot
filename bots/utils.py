@@ -1,3 +1,4 @@
+import shutil
 from typing import Union
 import re, math, os, numpy as np
 from itertools import combinations
@@ -446,3 +447,17 @@ def remove_profile_lock(profile_path):
                 logger.info(f"*** Removed lock file: {lock_path} ***")
             except Exception as e:
                 logger.error(f"*** Error removing lock file {lock_path}: {e} ***")
+
+
+def delete_dir(dir):
+    """
+    Deletes the specified profile directory if it exists.
+    Using a profile with the same name in a non-containerized environment
+    can prevent the application from being run more than once simultaneously,
+    because resources like profile locks may conflict. However, in this case,
+    mouse usage inherently prevents running multiple instances effectively,
+    so reusing profile names is less of a concern.
+    """
+    if os.path.exists(dir):
+        shutil.rmtree(dir)
+        logger.info(f"*** Removed lock file: {dir} ***")

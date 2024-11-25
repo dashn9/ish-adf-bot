@@ -305,12 +305,11 @@ class BrowserInterface:
             window_size = utils.fetch_random_window_size_relative_to_screen(
                 *window_size
             )
+        # Reusing the same profile name can block multiple instances in non-containerized setups, but mouse usage already prevents that.
         user_data_dir = (
-            browser_constants.CHROME_DATA_DIRECTORY
-            + "/profiles/"
-            + str(self.identity.id)
+            browser_constants.CHROME_DATA_DIRECTORY + "/profiles/temp-profile"
         )
-        utils.remove_profile_lock(user_data_dir)
+        utils.delete_dir(user_data_dir)
         # Opens a Chrome browser
         if self.browser_to_use_id == browser_constants.CHROME_ID:
             browser_config = uc.Config(
