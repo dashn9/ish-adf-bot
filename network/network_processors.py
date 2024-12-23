@@ -74,7 +74,7 @@ class NetworkRulesEvaluator:
             self.request_counts[parsed_tab_url.netloc] = count + 1
         if passed:
             return (rule["action"], True)  # All conditions passed
-        return (condition.get("fail_action", self.default_action), False)
+        return (rule.get("fail_action", self.default_action), False)
 
     @staticmethod
     def matches_condition(condition, value):
