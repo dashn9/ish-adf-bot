@@ -140,7 +140,9 @@ async def run_bot(
                                 page_info["related_articles_elements"]
                             )
                         )
-
+                        await web_bot.wait_for_tab_load(
+                            remove_lifecycle_event_before_check=True
+                        )
                         await web_bot.read_element_content(
                             await web_bot.active_tab.select(
                                 page_info["page_content_element"]

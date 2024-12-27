@@ -451,10 +451,17 @@ class BrowserInterface:
         )
         self.pages_lifecycle_events[frame_id].append(event)
 
-    async def wait_for_tab_load(self, tab: Tab | None = None, timeout=20):
+    async def wait_for_tab_load(
+        self,
+        tab: Tab | None = None,
+        timeout=20,
+        remove_lifecycle_event_before_check=False,
+    ):
         tab = tab or self.active_tab
         start_time = time.time()
         target_id = str(tab.target.target_id)
+        if remove_lifecycle_event_before_check:
+            self.pages_lifecycle_events.pop(target_id)
         while time.time() - start_time < timeout:
             logger.info("{{{ Checking If Tab: %s, Has Fully Loaded... }}}" % target_id)
             if getattr(
