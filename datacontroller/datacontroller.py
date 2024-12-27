@@ -18,8 +18,6 @@ class DataController:
         if isinstance(value, list):
             value = json.dumps(value)
         req_url = f"bots/identity/{method}/{value}/"
-        if method == "random":
-            req_url = f"bots/identity/random/"
         identity = requests.get(
             self.server_addr + req_url,
             timeout=DataController.timeout,

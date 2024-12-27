@@ -121,10 +121,8 @@ def load_configurations():
 
     if "IDENTITY" in configParser:
         idy = configParser["IDENTITY"]
-        config.FETCH_BY = idy.get("fetch-by", "scr")
-        config.FETCH_BY_VALUE = idy.get(
-            "fetch-by-value", [boc.SCREEN_WIDTH, boc.SCREEN_HEIGHT]
-        )
+        config.FETCH_BY = idy.get("fetch-by", "random")
+        config.FETCH_BY_VALUE = idy.get("fetch-by-value", "")
 
     if "IDENTITY_ENDPOINTS" in configParser:
         idy_edp = configParser["IDENTITY_ENDPOINTS"]

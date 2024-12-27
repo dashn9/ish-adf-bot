@@ -42,10 +42,6 @@ async def restart_plug():
         os.execv(sys.executable, ["python", "-u"] + sys.argv)
 
 
-if FETCH_BY == "scr":
-    FETCH_BY_VALUE = [boc.SCREEN_WIDTH, boc.SCREEN_HEIGHT]
-
-
 async def run_bot(
     identity: Identity,
     page_info: dict,
