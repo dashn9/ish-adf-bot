@@ -94,7 +94,7 @@ class HumanMovements:
             y_coordinate = int(random.uniform(y_coordinate, area_height))
 
         return await self.simulate_human_mouse_move_behavior_to_point(
-            x_coordinate, y_coordinate, probability_of_overshoot
+            int(x_coordinate), int(y_coordinate), probability_of_overshoot
         )
 
     async def simulate_human_mouse_move_behavior_to_point(
