@@ -88,10 +88,7 @@ class HumanBehaviourReveries:
                         links_to_follow.append(link_child)
                 else:
                     links_to_follow.append(link)
-        if (
-            HumanBehaviourReveries.active_on_mouse_movement.value < 0
-            and len(links_to_follow) >= 1
-        ):
+        if len(links_to_follow) >= 1:
             HumanBehaviourReveries.active_on_mouse_movement.value = self.bot_process_id
             print(
                 f"Bot Process Id {self.bot_process_id} <:::> Attempting To Open A Link In Related Articles"
