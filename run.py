@@ -135,19 +135,19 @@ async def run_bot(
                     while random.random() < identity.page_depth:
                         web_bot.time_activated = time.time()
                         web_bot.no_of_clicks = page_info.get("page_clicks")
-                        await web_bot.open_link_in_elements(
+                        if await web_bot.open_link_in_elements(
                             await web_bot.active_tab.select_all(
                                 page_info["related_articles_elements"]
                             )
-                        )
-                        await web_bot.wait_for_tab_load(
-                            remove_lifecycle_event_before_check=True
-                        )
-                        await web_bot.read_element_content(
-                            await web_bot.active_tab.select(
-                                page_info["page_content_element"]
+                        ):
+                            await web_bot.wait_for_tab_load(
+                                remove_lifecycle_event_before_check=True
                             )
-                        )
+                            await web_bot.read_element_content(
+                                await web_bot.active_tab.select(
+                                    page_info["page_content_element"]
+                                )
+                            )
                         identity.page_depth = identity.page_depth / 2
             if web_bot.identity.device_type == "computer":
                 await web_bot.move_mouse_to_fool_exit_point()
