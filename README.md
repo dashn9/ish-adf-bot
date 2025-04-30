@@ -42,7 +42,7 @@ A sophisticated automation framework that precisely mimics human behavior on web
 
 - **Infrastructure**:
   - Dockerized deployment
-  - Headless or GUI mode
+  - GUI mode for anti detection
   - Proxy support
   - Detailed logging and monitoring
   - Configurable behavior profiles
@@ -151,7 +151,6 @@ For detailed configuration options, refer to:
 
 - Set target URLs in `run.py` or configure dynamic URL sources
 - Adjust behavior parameters in configuration files
-- Run in headless mode with `HEADLESS = True` for production
 
 ### Advanced Customization
 
